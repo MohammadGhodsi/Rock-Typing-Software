@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QFileDialog, QPushButton, QLabel,
-    QVBoxLayout, QWidget, QMessageBox, QComboBox, QLineEdit
+    QVBoxLayout, QWidget, QMessageBox, QTabWidget, QComboBox, QLineEdit
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
@@ -27,48 +27,95 @@ class MainApp(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        # Main widget and layout
-        self.central_widget = QWidget()
-        self.layout = QVBoxLayout()
+        # Tab widget
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
 
-        # Header
-        header_label = QLabel("KMeans and SVM Classifier")
+        # Tabs
+        self.dataset_tab = QWidget()
+        self.plots_tab = QWidget()
+        self.clustering_tab = QWidget()
+        self.ml_tab = QWidget()
+
+        # Add tabs to QTabWidget
+        self.tabs.addTab(self.dataset_tab, "Dataset")
+        self.tabs.addTab(self.plots_tab, "Plots")
+        self.tabs.addTab(self.clustering_tab, "Clustering")
+        self.tabs.addTab(self.ml_tab, "Machine Learning")
+
+        # Setup tabs
+        self.init_dataset_tab()
+        self.init_plots_tab()
+        self.init_clustering_tab()
+        self.init_ml_tab()
+
+        # Set default tab
+        self.tabs.setCurrentIndex(0)
+
+    def init_dataset_tab(self):
+        layout = QVBoxLayout()
+
+        header_label = QLabel("Dataset Operations")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(header_label)
+        layout.addWidget(header_label)
 
-        # Buttons
         self.load_data_button = QPushButton("Load Dataset")
         self.load_data_button.clicked.connect(self.load_dataset)
         self.style_button(self.load_data_button)
-        self.layout.addWidget(self.load_data_button)
+        layout.addWidget(self.load_data_button)
+
+        self.dataset_tab.setLayout(layout)
+
+    def init_plots_tab(self):
+        layout = QVBoxLayout()
+
+        header_label = QLabel("Plots")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
 
         self.elbow_button = QPushButton("Generate Elbow Plot")
         self.elbow_button.clicked.connect(self.generate_elbow_plot)
         self.style_button(self.elbow_button)
-        self.layout.addWidget(self.elbow_button)
+        layout.addWidget(self.elbow_button)
+
+        self.plot_label = QLabel("Visualization Area")
+        self.plot_label.setStyleSheet("font-size: 22px; font-family: 'Times New Roman';")
+        self.plot_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.plot_label)
+
+        self.plots_tab.setLayout(layout)
+
+    def init_clustering_tab(self):
+        layout = QVBoxLayout()
+
+        header_label = QLabel("Clustering")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
 
         self.cluster_button = QPushButton("Perform Clustering")
         self.cluster_button.clicked.connect(self.perform_clustering)
         self.style_button(self.cluster_button)
-        self.layout.addWidget(self.cluster_button)
+        layout.addWidget(self.cluster_button)
+
+        self.clustering_tab.setLayout(layout)
+
+    def init_ml_tab(self):
+        layout = QVBoxLayout()
+
+        header_label = QLabel("Machine Learning")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
 
         self.svm_button = QPushButton("Train and Evaluate SVM")
         self.svm_button.clicked.connect(self.train_evaluate_svm)
         self.style_button(self.svm_button)
-        self.layout.addWidget(self.svm_button)
+        layout.addWidget(self.svm_button)
 
-        # Visualization area
-        self.plot_label = QLabel("Visualization Area")
-        self.plot_label.setStyleSheet("font-size: 22px; font-family: 'Times New Roman';")
-        self.plot_label.setAlignment(Qt.AlignCenter)
-        self.layout.addWidget(self.plot_label)
-
-        self.canvas = None
-
-        # Set layout
-        self.central_widget.setLayout(self.layout)
-        self.setCentralWidget(self.central_widget)
+        self.ml_tab.setLayout(layout)
 
     def style_button(self, button):
         button.setFixedSize(200, 50)
@@ -175,13 +222,13 @@ class MainApp(QMainWindow):
             QMessageBox.critical(self, "Error", f"Failed to train and evaluate SVM: {e}")
 
     def show_plot(self, fig):
-        if self.canvas:
-            self.layout.removeWidget(self.canvas)
+        if hasattr(self, 'canvas') and self.canvas:
+            self.plots_tab.layout().removeWidget(self.canvas)
             self.canvas.deleteLater()
             self.canvas = None
 
         self.canvas = FigureCanvas(fig)
-        self.layout.addWidget(self.canvas)
+        self.plots_tab.layout().addWidget(self.canvas)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
