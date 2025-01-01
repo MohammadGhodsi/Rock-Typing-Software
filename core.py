@@ -57,13 +57,22 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        self.table = QTableWidget(10, 2)  # Create a table with 10 rows and 2 columns
-        self.table.setHorizontalHeaderLabels(["Porosity", "Absolute Permeability (md)"])
+        self.table = QTableWidget(10, 5)  # Create a table with 10 rows and 5 columns
+        self.table.setHorizontalHeaderLabels([
+            "Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"
+        ])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setStyleSheet("font-size: 18px; font-family: 'Times New Roman';")
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.show_context_menu)
-        self.table.itemChanged.connect(self.update_plot)
+        self.table.itemChanged.connect(self.validate_and_calculate)
+
+        # Initialize all cells in RQI, Phi z, and FZI columns as non-editable
+        for row in range(self.table.rowCount()):
+            for col in range(2, 5):
+                item = QTableWidgetItem()
+                item.setFlags(Qt.ItemIsEnabled)  # Make cells non-editable
+                self.table.setItem(row, col, item)
 
         # Add shortcut for pasting
         paste_shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
@@ -135,6 +144,12 @@ class MainApp(QMainWindow):
 
                 if row >= self.table.rowCount():
                     self.table.insertRow(self.table.rowCount())
+                    # Initialize non-editable cells for new rows
+                    for col in range(2, 5):
+                        item = QTableWidgetItem()
+                        item.setFlags(Qt.ItemIsEnabled)
+                        self.table.setItem(row, col, item)
+
                 self.table.setItem(row, column, QTableWidgetItem(value))
 
     def handle_delete(self):
@@ -151,13 +166,52 @@ class MainApp(QMainWindow):
             for row in range(self.table.rowCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
-    def validate_cell(self, item):
-        self.table.blockSignals(True)  # Prevent recursive signal triggering
+    def validate_and_calculate(self, item):
+        column = item.column()
+        row = item.row()
+
+        if column not in [0, 1]:  # Only validate and calculate for Porosity and Permeability columns
+            return
+
+        self.table.blockSignals(True)
         try:
-            float(item.text())
+            value = float(item.text())
+            item.setText(f"{value}")
         except ValueError:
             item.setText("")  # Clear invalid input without a prompt
-        self.table.blockSignals(False)
+        finally:
+            self.table.blockSignals(False)
+
+        # Calculate derived columns if Porosity and Permeability are valid
+        try:
+            porosity = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
+            permeability = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
+
+            if porosity and permeability:
+                rqi = 0.0314 * (permeability / porosity) ** 0.5
+                phi_z = porosity / (1 - porosity)
+                fzi = rqi / phi_z
+
+                if not self.table.item(row, 2):
+                    self.table.setItem(row, 2, QTableWidgetItem())
+                self.table.item(row, 2).setText(f"{rqi:.4f}")
+
+                if not self.table.item(row, 3):
+                    self.table.setItem(row, 3, QTableWidgetItem())
+                self.table.item(row, 3).setText(f"{phi_z:.4f}")
+
+                if not self.table.item(row, 4):
+                    self.table.setItem(row, 4, QTableWidgetItem())
+                self.table.item(row, 4).setText(f"{fzi:.4f}")
+
+        except (ValueError, ZeroDivisionError):
+            # Clear calculated columns if any error occurs
+            if self.table.item(row, 2):
+                self.table.item(row, 2).setText("")
+            if self.table.item(row, 3):
+                self.table.item(row, 3).setText("")
+            if self.table.item(row, 4):
+                self.table.item(row, 4).setText("")
 
     def init_plots_tab(self):
         layout = QVBoxLayout()
