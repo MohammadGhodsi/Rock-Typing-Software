@@ -75,7 +75,33 @@ class MainApp(QMainWindow):
         paste_shortcut.activated.connect(self.handle_paste)
 
         layout.addWidget(self.table)
+
+        # Add a button to clear the table
+        clear_table_button = QPushButton("Clear Table")
+        clear_table_button.clicked.connect(self.clear_table)
+        clear_table_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #FF6347;
+                color: white;
+                font-size: 18px;
+                border-radius: 8px;
+                font-family: 'Times New Roman';
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #FF4500;
+            }
+            """
+        )
+        layout.addWidget(clear_table_button)
+
         self.dataset_tab.setLayout(layout)
+
+    def clear_table(self):
+        for row in range(self.table.rowCount()):
+            for column in range(self.table.columnCount()):
+                self.table.setItem(row, column, QTableWidgetItem(""))
 
     def show_context_menu(self, position):
         menu = QMenu()
