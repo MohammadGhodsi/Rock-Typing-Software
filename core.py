@@ -2,16 +2,17 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QFileDialog, QPushButton, QLabel,
-    QVBoxLayout, QWidget, QMessageBox, QTabWidget, QComboBox, QLineEdit
+    QApplication, QMainWindow, QPushButton, QLabel,
+    QVBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu
 )
-
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QClipboard
 from sklearn.cluster import KMeans
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from PyQt5.QtGui import QKeySequence
+from PyQt5.QtWidgets import QShortcut
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas
 )
@@ -61,12 +62,72 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        self.load_data_button = QPushButton("Load Dataset")
-        self.load_data_button.clicked.connect(self.load_dataset)
-        self.style_button(self.load_data_button)
-        layout.addWidget(self.load_data_button)
+        self.table = QTableWidget(10, 2)  # Create a table with 10 rows and 2 columns
+        self.table.setHorizontalHeaderLabels(["Porosity", "Absolute Permeability (md)"])
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setStyleSheet("font-size: 18px; font-family: 'Times New Roman';")
+        self.table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self.show_context_menu)
 
+        # Add shortcut for pasting
+        paste_shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
+        paste_shortcut.activated.connect(self.handle_paste)
+
+        layout.addWidget(self.table)
         self.dataset_tab.setLayout(layout)
+
+    def show_context_menu(self, position):
+        menu = QMenu()
+        paste_action = menu.addAction("Paste from Clipboard")
+        delete_action = menu.addAction("Delete")
+        delete_all_action = menu.addAction("Delete All")
+
+        paste_action.triggered.connect(self.handle_paste)
+        delete_action.triggered.connect(self.handle_delete)
+        delete_all_action.triggered.connect(self.handle_delete_all)
+
+        menu.exec_(self.table.viewport().mapToGlobal(position))
+
+    def handle_paste(self):
+        clipboard = QApplication.clipboard()
+        data = clipboard.text()
+
+        if not data:
+            QMessageBox.warning(self, "Warning", "Clipboard is empty.")
+            return
+
+        selected = self.table.selectedRanges()
+        if not selected:
+            QMessageBox.warning(self, "Warning", "Please select a cell to paste data.")
+            return
+
+        start_row = selected[0].topRow()
+        start_column = selected[0].leftColumn()
+
+        rows = data.splitlines()
+        for i, line in enumerate(rows):
+            values = line.split('\t')
+            for j, value in enumerate(values):
+                row = start_row + i
+                column = start_column + j
+
+                if row >= self.table.rowCount():
+                    self.table.insertRow(self.table.rowCount())
+                self.table.setItem(row, column, QTableWidgetItem(value))
+
+    def handle_delete(self):
+        for item in self.table.selectedItems():
+            self.table.setItem(item.row(), item.column(), QTableWidgetItem(""))
+
+    def handle_delete_all(self):
+        selected = self.table.selectedRanges()
+        if not selected:
+            QMessageBox.warning(self, "Warning", "Please select a column to delete all values.")
+            return
+
+        for column in range(selected[0].leftColumn(), selected[0].rightColumn() + 1):
+            for row in range(self.table.rowCount()):
+                self.table.setItem(row, column, QTableWidgetItem(""))
 
     def init_plots_tab(self):
         layout = QVBoxLayout()
@@ -136,23 +197,13 @@ class MainApp(QMainWindow):
             """
         )
 
-    def load_dataset(self):
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
-        if file_path:
-            try:
-                self.data = pd.read_csv(file_path)
-                QMessageBox.information(self, "Success", "Dataset loaded successfully!")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to load dataset: {e}")
-
     def generate_elbow_plot(self):
         if self.data is None:
             QMessageBox.warning(self, "Warning", "Please load a dataset first.")
             return
 
         try:
-            features = self.data[['Porosity', 'Air Permability (md), Kair@323 (K)']]
+            features = self.data[['Porosity', 'Absolute Permeability (md)']]
             wcss = []
             for k in range(1, 11):
                 kmeans = KMeans(n_clusters=k, random_state=42)
@@ -178,19 +229,19 @@ class MainApp(QMainWindow):
             return
 
         try:
-            features = self.data[['Porosity', 'Air Permability (md), Kair@323 (K)']]
+            features = self.data[['Porosity', 'Absolute Permeability (md)']]
             optimal_k = 3  # Based on elbow plot analysis
             kmeans = KMeans(n_clusters=optimal_k, random_state=42)
             self.data['Cluster'] = kmeans.fit_predict(features)
 
             # Plot clusters
             fig, ax = plt.subplots(figsize=(8, 6))
-            scatter = ax.scatter(features['Porosity'], features['Air Permability (md), Kair@323 (K)'], 
+            scatter = ax.scatter(features['Porosity'], features['Absolute Permeability (md)'], 
                                   c=self.data['Cluster'], cmap='viridis', marker='o')
             ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300, c='red', marker='X')
             ax.set_title('KMeans Clustering')
             ax.set_xlabel('Porosity')
-            ax.set_ylabel('Air Permability (md), Kair@323 (K)')
+            ax.set_ylabel('Absolute Permeability (md)')
             fig.colorbar(scatter, label='Cluster')
             ax.grid()
 
@@ -205,8 +256,8 @@ class MainApp(QMainWindow):
             return
 
         try:
-            features = self.data[['Porosity', 'Air Permability (md), Kair@323 (K)']]
-            target = self.data['Rock Type']
+            features = self.data[['Porosity', 'Absolute Permeability (md)']]
+            target = self.data['Target']
 
             scaler = StandardScaler()
             features_scaled = scaler.fit_transform(features)
