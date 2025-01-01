@@ -194,15 +194,15 @@ class MainApp(QMainWindow):
 
                 if not self.table.item(row, 2):
                     self.table.setItem(row, 2, QTableWidgetItem())
-                self.table.item(row, 2).setText(f"{rqi:.4f}")
+                self.table.item(row, 2).setText(f"{rqi:.5f}")
 
                 if not self.table.item(row, 3):
                     self.table.setItem(row, 3, QTableWidgetItem())
-                self.table.item(row, 3).setText(f"{phi_z:.4f}")
+                self.table.item(row, 3).setText(f"{phi_z:.5f}")
 
                 if not self.table.item(row, 4):
                     self.table.setItem(row, 4, QTableWidgetItem())
-                self.table.item(row, 4).setText(f"{fzi:.4f}")
+                self.table.item(row, 4).setText(f"{fzi:.5f}")
 
         except (ValueError, ZeroDivisionError):
             # Clear calculated columns if any error occurs
