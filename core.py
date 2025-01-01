@@ -166,59 +166,56 @@ class MainApp(QMainWindow):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
     def validate_and_calculate(self, item):
-        # Skip validation during batch processing
-        if self.batch_processing:
-            return
-
-        # Debugging output to confirm cell changes
-        print(f"Cell ({item.row()}, {item.column()}) changed to: {item.text()}")
+        # Temporarily block signals to prevent recursion
+        self.table.blockSignals(True)
 
         try:
+            # Debugging output to track changes
+            print(f"Cell ({item.row()}, {item.column()}) changed to: {item.text()}")
+
             # Validate and format the changed value
-            value = float(item.text())
-            item.setText(f"{value}")
-        except ValueError:
-            # Clear invalid entries
-            print(f"Invalid entry in cell ({item.row()}, {item.column()}). Clearing cell.")
-            item.setText("")
-            return
+            try:
+                value = float(item.text())
+                item.setText(f"{value}")
+            except ValueError:
+                print(f"Invalid entry in cell ({item.row()}, {item.column()}). Clearing cell.")
+                item.setText("")
+                return
 
-        # Perform calculations only if Porosity (column 0) and Permeability (column 1) are valid
-        try:
-            porosity = float(self.table.item(item.row(), 0).text()) if self.table.item(item.row(), 0) else None
-            permeability = float(self.table.item(item.row(), 1).text()) if self.table.item(item.row(), 1) else None
+            # Perform calculations if Porosity (column 0) and Permeability (column 1) are valid
+            try:
+                porosity = float(self.table.item(item.row(), 0).text()) if self.table.item(item.row(), 0) else None
+                permeability = float(self.table.item(item.row(), 1).text()) if self.table.item(item.row(), 1) else None
 
-            if porosity is not None and permeability is not None:
-                # Calculate RQI, Phi z, and FZI
-                rqi = 0.0314 * (permeability / porosity) ** 0.5
-                phi_z = porosity / (1 - porosity)
-                fzi = rqi / phi_z
+                if porosity is not None and permeability is not None:
+                    # Calculate RQI, Phi z, and FZI
+                    rqi = 0.0314 * (permeability / porosity) ** 0.5
+                    phi_z = porosity / (1 - porosity)
+                    fzi = rqi / phi_z
 
-                # Update calculated values in non-editable cells
-                if not self.table.item(item.row(), 2):
-                    self.table.setItem(item.row(), 2, QTableWidgetItem())
-                self.table.item(item.row(), 2).setText(f"{rqi:.5f}")
+                    # Update calculated values in non-editable cells
+                    if not self.table.item(item.row(), 2):
+                        self.table.setItem(item.row(), 2, QTableWidgetItem())
+                    self.table.item(item.row(), 2).setText(f"{rqi:.5f}")
 
-                if not self.table.item(item.row(), 3):
-                    self.table.setItem(item.row(), 3, QTableWidgetItem())
-                self.table.item(item.row(), 3).setText(f"{phi_z:.5f}")
+                    if not self.table.item(item.row(), 3):
+                        self.table.setItem(item.row(), 3, QTableWidgetItem())
+                    self.table.item(item.row(), 3).setText(f"{phi_z:.5f}")
 
-                if not self.table.item(item.row(), 4):
-                    self.table.setItem(item.row(), 4, QTableWidgetItem())
-                self.table.item(item.row(), 4).setText(f"{fzi:.5f}")
-        except (ValueError, ZeroDivisionError):
-            # Clear calculated columns if errors occur
-            if self.table.item(item.row(), 2):
-                self.table.item(item.row(), 2).setText("")
-            if self.table.item(item.row(), 3):
-                self.table.item(item.row(), 3).setText("")
-            if self.table.item(item.row(), 4):
-                self.table.item(item.row(), 4).setText("")
-            print(f"Error calculating derived values for row {item.row()}.")
-
-        # Update plots after individual cell changes
-        self.update_plots()
-
+                    if not self.table.item(item.row(), 4):
+                        self.table.setItem(item.row(), 4, QTableWidgetItem())
+                    self.table.item(item.row(), 4).setText(f"{fzi:.5f}")
+            except (ValueError, ZeroDivisionError):
+                # Clear calculated columns if errors occur
+                if self.table.item(item.row(), 2):
+                    self.table.item(item.row(), 2).setText("")
+                if self.table.item(item.row(), 3):
+                    self.table.item(item.row(), 3).setText("")
+                if self.table.item(item.row(), 4):
+                    self.table.item(item.row(), 4).setText("")
+        finally:
+            # Re-enable signals after processing
+            self.table.blockSignals(False)
     
     def update_plots(self):
         # Extract data from the table
@@ -318,53 +315,32 @@ class MainApp(QMainWindow):
         fig, axes = plt.subplots(2, 2, figsize=(10, 8))
         fig.tight_layout(pad=5.0)
 
-            # Data fetching for simultaneous plots
-        porosity = [float(self.table.item(row, 0).text()) for row in range(self.table.rowCount())
-                    if self.table.item(row, 0) and self.table.item(row, 0).text()]
-        permeability = [float(self.table.item(row, 1).text()) for row in range(self.table.rowCount())
-                        if self.table.item(row, 1) and self.table.item(row, 1).text()]
-        rqi = [float(self.table.item(row, 2).text()) for row in range(self.table.rowCount())
-            if self.table.item(row, 2) and self.table.item(row, 2).text()]
-        phi_z = [float(self.table.item(row, 3).text()) for row in range(self.table.rowCount())
-                if self.table.item(row, 3) and self.table.item(row, 3).text()]
-
-            # Subplot 1: Absolute Permeability (md) vs Porosity
-        axes[0, 0].set_title("Absolute Permeability (md) vs Porosity")
-        axes[0, 0].set_xlabel("Porosity")
-        axes[0, 0].set_ylabel("Absolute Permeability (md)")
-        if porosity and permeability:
-            axes[0, 0].scatter(porosity, permeability, color='blue')
-        
-        # Fetch data for Subplot 1
-        porosity = [float(self.table.item(row, 0).text()) for row in range(self.table.rowCount())
-                    if self.table.item(row, 0) and self.table.item(row, 0).text()]
-        permeability = [float(self.table.item(row, 1).text()) for row in range(self.table.rowCount())
-                        if self.table.item(row, 1) and self.table.item(row, 1).text()]
-        axes[0, 0].scatter(porosity, permeability, color='blue')
-
-            # Subplot 2: log(RQI) vs log(Phi z)
-        axes[0, 1].set_title("log(RQI) vs log(Phi z)")
-        axes[0, 1].set_xlabel("log(Phi z)")
-        axes[0, 1].set_ylabel("log(RQI)")
-        if rqi and phi_z:
-            import numpy as np
-            log_rqi = np.log(rqi)
-            log_phi_z = np.log(phi_z)
-            axes[0, 1].scatter(log_phi_z, log_rqi, color='red')
-
-        # Subplots 3 and 4: Empty for now
-        axes[1, 0].set_title("Empty Plot 1")
-        axes[1, 0].axis('off')  # Hide axes
-
-        axes[1, 1].set_title("Empty Plot 2")
-        axes[1, 1].axis('off')  # Hide axes
-
         # Add the figure to the plots tab
         self.plot_canvas = FigureCanvas(fig)
         layout.addWidget(self.plot_canvas)
 
-        self.plots_tab.setLayout(layout)
+        # Add a "Plot Data" button
+        plot_button = QPushButton("Plot Data")
+        plot_button.clicked.connect(self.update_plots)
+        plot_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0078d7;
+                color: white;
+                font-size: 18px;
+                border-radius: 8px;
+                font-family: 'Times New Roman';
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+            """
+        )
+        layout.addWidget(plot_button)
 
+        self.plots_tab.setLayout(layout)
+        
     def init_clustering_tab(self):
         layout = QVBoxLayout()
 
