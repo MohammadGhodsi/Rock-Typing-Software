@@ -212,6 +212,73 @@ class MainApp(QMainWindow):
                 self.table.item(row, 3).setText("")
             if self.table.item(row, 4):
                 self.table.item(row, 4).setText("")
+        
+        # Update the plots whenever data is changed
+        self.update_plots()
+
+    def update_plots(self):
+        # Extract data from the table
+        porosity = []
+        permeability = []
+        rqi = []
+        phi_z = []
+
+        for row in range(self.table.rowCount()):
+            try:
+                p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
+                k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
+                r = float(self.table.item(row, 2).text()) if self.table.item(row, 2) else None
+                z = float(self.table.item(row, 3).text()) if self.table.item(row, 3) else None
+
+                if p is not None and k is not None:
+                    porosity.append(p)
+                    permeability.append(k)
+                if r is not None and z is not None:
+                    rqi.append(r)
+                    phi_z.append(z)
+            except ValueError:
+                continue
+            
+            # Debugging output
+        print(f"Porosity: {porosity}")
+        print(f"Permeability: {permeability}")
+        print(f"RQI: {rqi}")
+        print(f"Phi_z: {phi_z}")
+
+        # Clear the existing figure
+        self.plot_canvas.figure.clear()
+
+        # Create a new set of subplots
+        axes = self.plot_canvas.figure.subplots(2, 2)  # No figsize here
+        self.plot_canvas.figure.tight_layout(pad=5.0)
+
+        # Subplot 1: Absolute Permeability (md) vs Porosity
+        axes[0, 0].set_title("Absolute Permeability (md) vs Porosity")
+        axes[0, 0].set_xlabel("Porosity")
+        axes[0, 0].set_ylabel("Absolute Permeability (md)")
+        if porosity and permeability:
+            axes[0, 0].scatter(porosity, permeability, color='blue')
+
+        # Subplot 2: log(RQI) vs log(Phi z)
+        axes[0, 1].set_title("log(RQI) vs log(Phi z)")
+        axes[0, 1].set_xlabel("log(Phi z)")
+        axes[0, 1].set_ylabel("log(RQI)")
+        if rqi and phi_z:
+            import numpy as np
+            log_rqi = np.log(rqi)
+            log_phi_z = np.log(phi_z)
+            axes[0, 1].scatter(log_phi_z, log_rqi, color='red')
+
+        # Subplots 3 and 4: Empty for now
+        axes[1, 0].set_title("Empty Plot 1")
+        axes[1, 0].axis('off')
+
+        axes[1, 1].set_title("Empty Plot 2")
+        axes[1, 1].axis('off')
+
+        # Redraw the canvas
+        self.plot_canvas.draw()  
+
 
     def init_plots_tab(self):
         layout = QVBoxLayout()
@@ -225,15 +292,39 @@ class MainApp(QMainWindow):
         fig, axes = plt.subplots(2, 2, figsize=(10, 8))
         fig.tight_layout(pad=5.0)
 
-        # Subplot 1: Absolute Permeability (md) vs Porosity
+            # Data fetching for simultaneous plots
+        porosity = [float(self.table.item(row, 0).text()) for row in range(self.table.rowCount())
+                    if self.table.item(row, 0) and self.table.item(row, 0).text()]
+        permeability = [float(self.table.item(row, 1).text()) for row in range(self.table.rowCount())
+                        if self.table.item(row, 1) and self.table.item(row, 1).text()]
+        rqi = [float(self.table.item(row, 2).text()) for row in range(self.table.rowCount())
+            if self.table.item(row, 2) and self.table.item(row, 2).text()]
+        phi_z = [float(self.table.item(row, 3).text()) for row in range(self.table.rowCount())
+                if self.table.item(row, 3) and self.table.item(row, 3).text()]
+
+            # Subplot 1: Absolute Permeability (md) vs Porosity
         axes[0, 0].set_title("Absolute Permeability (md) vs Porosity")
         axes[0, 0].set_xlabel("Porosity")
         axes[0, 0].set_ylabel("Absolute Permeability (md)")
+        if porosity and permeability:
+            axes[0, 0].scatter(porosity, permeability, color='blue')
+        
+        # Fetch data for Subplot 1
+        porosity = [float(self.table.item(row, 0).text()) for row in range(self.table.rowCount())
+                    if self.table.item(row, 0) and self.table.item(row, 0).text()]
+        permeability = [float(self.table.item(row, 1).text()) for row in range(self.table.rowCount())
+                        if self.table.item(row, 1) and self.table.item(row, 1).text()]
+        axes[0, 0].scatter(porosity, permeability, color='blue')
 
-        # Subplot 2: log(RQI) vs log(Phi z)
+            # Subplot 2: log(RQI) vs log(Phi z)
         axes[0, 1].set_title("log(RQI) vs log(Phi z)")
         axes[0, 1].set_xlabel("log(Phi z)")
         axes[0, 1].set_ylabel("log(RQI)")
+        if rqi and phi_z:
+            import numpy as np
+            log_rqi = np.log(rqi)
+            log_phi_z = np.log(phi_z)
+            axes[0, 1].scatter(log_phi_z, log_rqi, color='red')
 
         # Subplots 3 and 4: Empty for now
         axes[1, 0].set_title("Empty Plot 1")
