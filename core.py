@@ -165,7 +165,60 @@ class MainApp(QMainWindow):
             for row in range(self.table.rowCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
-    
+    def validate_and_calculate(self, item):
+        # Skip validation during batch processing
+        if self.batch_processing:
+            return
+
+        # Debugging output to confirm cell changes
+        print(f"Cell ({item.row()}, {item.column()}) changed to: {item.text()}")
+
+        try:
+            # Validate and format the changed value
+            value = float(item.text())
+            item.setText(f"{value}")
+        except ValueError:
+            # Clear invalid entries
+            print(f"Invalid entry in cell ({item.row()}, {item.column()}). Clearing cell.")
+            item.setText("")
+            return
+
+        # Perform calculations only if Porosity (column 0) and Permeability (column 1) are valid
+        try:
+            porosity = float(self.table.item(item.row(), 0).text()) if self.table.item(item.row(), 0) else None
+            permeability = float(self.table.item(item.row(), 1).text()) if self.table.item(item.row(), 1) else None
+
+            if porosity is not None and permeability is not None:
+                # Calculate RQI, Phi z, and FZI
+                rqi = 0.0314 * (permeability / porosity) ** 0.5
+                phi_z = porosity / (1 - porosity)
+                fzi = rqi / phi_z
+
+                # Update calculated values in non-editable cells
+                if not self.table.item(item.row(), 2):
+                    self.table.setItem(item.row(), 2, QTableWidgetItem())
+                self.table.item(item.row(), 2).setText(f"{rqi:.5f}")
+
+                if not self.table.item(item.row(), 3):
+                    self.table.setItem(item.row(), 3, QTableWidgetItem())
+                self.table.item(item.row(), 3).setText(f"{phi_z:.5f}")
+
+                if not self.table.item(item.row(), 4):
+                    self.table.setItem(item.row(), 4, QTableWidgetItem())
+                self.table.item(item.row(), 4).setText(f"{fzi:.5f}")
+        except (ValueError, ZeroDivisionError):
+            # Clear calculated columns if errors occur
+            if self.table.item(item.row(), 2):
+                self.table.item(item.row(), 2).setText("")
+            if self.table.item(item.row(), 3):
+                self.table.item(item.row(), 3).setText("")
+            if self.table.item(item.row(), 4):
+                self.table.item(item.row(), 4).setText("")
+            print(f"Error calculating derived values for row {item.row()}.")
+
+        # Update plots after individual cell changes
+        self.update_plots()
+
     
     def update_plots(self):
         # Extract data from the table
