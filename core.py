@@ -6,11 +6,6 @@ from PyQt5.QtWidgets import (
     QVBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QClipboard
-from sklearn.cluster import KMeans
-from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QShortcut
 from matplotlib.backends.backend_qt5agg import (
@@ -68,7 +63,7 @@ class MainApp(QMainWindow):
         self.table.setStyleSheet("font-size: 18px; font-family: 'Times New Roman';")
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.show_context_menu)
-        self.table.itemChanged.connect(self.validate_cell)
+        self.table.itemChanged.connect(self.update_plot)
 
         # Add shortcut for pasting
         paste_shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
@@ -172,15 +167,7 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        self.elbow_button = QPushButton("Generate Elbow Plot")
-        self.elbow_button.clicked.connect(self.generate_elbow_plot)
-        self.style_button(self.elbow_button)
-        layout.addWidget(self.elbow_button)
-
-        self.plot_label = QLabel("Visualization Area")
-        self.plot_label.setStyleSheet("font-size: 22px; font-family: 'Times New Roman';")
-        self.plot_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.plot_label)
+        self.plot_canvas = None  # Placeholder for the plot canvas
 
         self.plots_tab.setLayout(layout)
 
@@ -316,6 +303,38 @@ class MainApp(QMainWindow):
 
         self.canvas = FigureCanvas(fig)
         self.plots_tab.layout().addWidget(self.canvas)
+
+    def update_plot(self, item):
+        # Extract data from the table
+        porosity = []
+        permeability = []
+
+        for row in range(self.table.rowCount()):
+            try:
+                p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
+                k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
+                if p is not None and k is not None:
+                    porosity.append(p)
+                    permeability.append(k)
+            except ValueError:
+                continue
+
+        # Plot data
+        if hasattr(self, 'plot_canvas') and self.plot_canvas:
+            self.plots_tab.layout().removeWidget(self.plot_canvas)
+            self.plot_canvas.deleteLater()
+
+        if porosity and permeability:
+            fig, ax = plt.subplots()
+            ax.scatter(porosity, permeability, color='blue', label="Data Points")
+            ax.set_title("Porosity vs Absolute Permeability")
+            ax.set_xlabel("Porosity")
+            ax.set_ylabel("Absolute Permeability (md)")
+            ax.legend()
+            ax.grid()
+
+            self.plot_canvas = FigureCanvas(fig)
+            self.plots_tab.layout().addWidget(self.plot_canvas)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
