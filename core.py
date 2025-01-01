@@ -18,9 +18,8 @@ class MainApp(QMainWindow):
         self.setWindowTitle("KMeans and SVM Classifier")
         self.setGeometry(100, 100, 1200, 900)
         self.setStyleSheet("background-color: #f0f0f0;")
-
+        self.batch_processing = False  # Flag to control batch updates
         self.data = None
-
         self.initUI()
 
     def initUI(self):
@@ -166,56 +165,8 @@ class MainApp(QMainWindow):
             for row in range(self.table.rowCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
-    def validate_and_calculate(self, item):
-        column = item.column()
-        row = item.row()
-
-        if column not in [0, 1]:  # Only validate and calculate for Porosity and Permeability columns
-            return
-
-        self.table.blockSignals(True)
-        try:
-            value = float(item.text())
-            item.setText(f"{value}")
-        except ValueError:
-            item.setText("")  # Clear invalid input without a prompt
-        finally:
-            self.table.blockSignals(False)
-
-        # Calculate derived columns if Porosity and Permeability are valid
-        try:
-            porosity = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
-            permeability = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
-
-            if porosity and permeability:
-                rqi = 0.0314 * (permeability / porosity) ** 0.5
-                phi_z = porosity / (1 - porosity)
-                fzi = rqi / phi_z
-
-                if not self.table.item(row, 2):
-                    self.table.setItem(row, 2, QTableWidgetItem())
-                self.table.item(row, 2).setText(f"{rqi:.5f}")
-
-                if not self.table.item(row, 3):
-                    self.table.setItem(row, 3, QTableWidgetItem())
-                self.table.item(row, 3).setText(f"{phi_z:.5f}")
-
-                if not self.table.item(row, 4):
-                    self.table.setItem(row, 4, QTableWidgetItem())
-                self.table.item(row, 4).setText(f"{fzi:.5f}")
-
-        except (ValueError, ZeroDivisionError):
-            # Clear calculated columns if any error occurs
-            if self.table.item(row, 2):
-                self.table.item(row, 2).setText("")
-            if self.table.item(row, 3):
-                self.table.item(row, 3).setText("")
-            if self.table.item(row, 4):
-                self.table.item(row, 4).setText("")
-        
-        # Update the plots whenever data is changed
-        self.update_plots()
-
+    
+    
     def update_plots(self):
         # Extract data from the table
         porosity = []
@@ -225,18 +176,40 @@ class MainApp(QMainWindow):
 
         for row in range(self.table.rowCount()):
             try:
-                p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
-                k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
-                r = float(self.table.item(row, 2).text()) if self.table.item(row, 2) else None
-                z = float(self.table.item(row, 3).text()) if self.table.item(row, 3) else None
+                # Fetch and validate porosity
+                if self.table.item(row, 0) and self.table.item(row, 0).text():
+                    p = float(self.table.item(row, 0).text())
+                else:
+                    p = None
 
+                # Fetch and validate permeability
+                if self.table.item(row, 1) and self.table.item(row, 1).text():
+                    k = float(self.table.item(row, 1).text())
+                else:
+                    k = None
+
+                # Fetch RQI and Phi_z if available
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+                    r = float(self.table.item(row, 2).text())
+                else:
+                    r = None
+
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+                    z = float(self.table.item(row, 3).text())
+                else:
+                    z = None
+
+                # Append valid data to the respective lists
                 if p is not None and k is not None:
                     porosity.append(p)
                     permeability.append(k)
+
                 if r is not None and z is not None:
                     rqi.append(r)
                     phi_z.append(z)
-            except ValueError:
+
+            except ValueError as e:
+                print(f"Error parsing row {row}: {e}")
                 continue
             
             # Debugging output
