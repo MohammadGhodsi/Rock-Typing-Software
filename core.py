@@ -68,6 +68,7 @@ class MainApp(QMainWindow):
         self.table.setStyleSheet("font-size: 18px; font-family: 'Times New Roman';")
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self.show_context_menu)
+        self.table.itemChanged.connect(self.validate_cell)
 
         # Add shortcut for pasting
         paste_shortcut = QShortcut(QKeySequence("Ctrl+V"), self)
@@ -128,6 +129,14 @@ class MainApp(QMainWindow):
         for column in range(selected[0].leftColumn(), selected[0].rightColumn() + 1):
             for row in range(self.table.rowCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
+
+    def validate_cell(self, item):
+        self.table.blockSignals(True)  # Prevent recursive signal triggering
+        try:
+            float(item.text())
+        except ValueError:
+            item.setText("")  # Clear invalid input without a prompt
+        self.table.blockSignals(False)
 
     def init_plots_tab(self):
         layout = QVBoxLayout()
