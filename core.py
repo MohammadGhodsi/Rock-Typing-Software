@@ -221,7 +221,30 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        self.plot_canvas = None  # Placeholder for the plot canvas
+        # Create a 2x2 grid of subplots
+        fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+        fig.tight_layout(pad=5.0)
+
+        # Subplot 1: Absolute Permeability (md) vs Porosity
+        axes[0, 0].set_title("Absolute Permeability (md) vs Porosity")
+        axes[0, 0].set_xlabel("Porosity")
+        axes[0, 0].set_ylabel("Absolute Permeability (md)")
+
+        # Subplot 2: log(RQI) vs log(Phi z)
+        axes[0, 1].set_title("log(RQI) vs log(Phi z)")
+        axes[0, 1].set_xlabel("log(Phi z)")
+        axes[0, 1].set_ylabel("log(RQI)")
+
+        # Subplots 3 and 4: Empty for now
+        axes[1, 0].set_title("Empty Plot 1")
+        axes[1, 0].axis('off')  # Hide axes
+
+        axes[1, 1].set_title("Empty Plot 2")
+        axes[1, 1].axis('off')  # Hide axes
+
+        # Add the figure to the plots tab
+        self.plot_canvas = FigureCanvas(fig)
+        layout.addWidget(self.plot_canvas)
 
         self.plots_tab.setLayout(layout)
 
