@@ -171,15 +171,13 @@ class MainApp(QMainWindow):
 
         try:
             # Debugging output to track changes
-            print(f"Cell ({item.row()}, {item.column()}) changed to: {item.text()}")
+            #print(f"Cell ({item.row()}, {item.column()}) changed to: {item.text()}")
 
             # Validate and format the changed value
             try:
                 value = float(item.text())
                 item.setText(f"{value}")
             except ValueError:
-                print(f"Invalid entry in cell ({item.row()}, {item.column()}). Clearing cell.")
-                item.setText("")
                 return
 
             # Perform calculations if Porosity (column 0) and Permeability (column 1) are valid
