@@ -278,11 +278,13 @@ class MainApp(QMainWindow):
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
 
-        # Connect hover events for both plots
+            # Connect hover events for both plots using a unified event handler
         self.tooltip = None  # To store the active tooltip
-        self.plot_canvas.mpl_connect('motion_notify_event', lambda event: self.show_tooltip(event, scatter1, porosity, permeability, axes[0]))
-        self.plot_canvas.mpl_connect('motion_notify_event', lambda event: self.show_tooltip(event, scatter2, log_phi_z, log_rqi, axes[1]))
+        self.plot_data = [
+            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
+            {"scatter": scatter2, "x_data": log_phi_z, "y_data": log_rqi, "axis": axes[1]},]
 
+        self.plot_canvas.mpl_connect('motion_notify_event', self.handle_hover_event)
         # Redraw the canvas
         self.plot_canvas.draw()
 
@@ -324,6 +326,46 @@ class MainApp(QMainWindow):
                 self.tooltip.remove()
                 self.tooltip = None
                 self.plot_canvas.draw_idle()
+
+    def handle_hover_event(self, event):
+        for plot in self.plot_data:
+            scatter = plot["scatter"]
+            x_data = plot["x_data"]
+            y_data = plot["y_data"]
+            axis = plot["axis"]
+
+            if event.inaxes == axis:
+                # Show tooltip for the active plot
+                cont, ind = scatter.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    x = x_data[index]
+                    y = y_data[index]
+                    tooltip_text = f"({x:.2f}, {y:.2f})"
+
+                    # Remove the old tooltip
+                    if self.tooltip:
+                        self.tooltip.remove()
+
+                    # Add a new tooltip at the hovered point
+                    self.tooltip = axis.annotate(
+                        tooltip_text,
+                        (x, y),
+                        textcoords="offset points",
+                        xytext=(10, 10),
+                        ha='center',
+                        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                        fontsize=10
+                    )
+                    self.plot_canvas.draw_idle()
+                    return  # Exit after handling the first matching plot
+
+        # Remove tooltip if the mouse is not hovering over any plot
+        if self.tooltip:
+            self.tooltip.remove()
+            self.tooltip = None
+            self.plot_canvas.draw_idle()
+
 
     def init_plots_tab(self):
         layout = QVBoxLayout()
