@@ -259,8 +259,8 @@ class MainApp(QMainWindow):
             except ValueError as e:
                 print(f"Error parsing row {row}: {e}")
                 continue
-            
-            # Debugging output
+
+        # Debugging output
         print(f"Porosity: {porosity}")
         print(f"Permeability: {permeability}")
         print(f"RQI: {rqi}")
@@ -269,36 +269,67 @@ class MainApp(QMainWindow):
         # Clear the existing figure
         self.plot_canvas.figure.clear()
 
-        # Create a new set of subplots
-        axes = self.plot_canvas.figure.subplots(2, 2)  # No figsize here
+        # Create a new set of subplots (only 1 row and 2 columns)
+        axes = self.plot_canvas.figure.subplots(1, 2)  # <== Modified: Only 2 plots
         self.plot_canvas.figure.tight_layout(pad=5.0)
 
         # Subplot 1: Absolute Permeability (md) vs Porosity
-        axes[0, 0].set_title("Absolute Permeability (md) vs Porosity")
-        axes[0, 0].set_xlabel("Porosity")
-        axes[0, 0].set_ylabel("Absolute Permeability (md)")
+        axes[0].set_title("Absolute Permeability (md) vs Porosity")
+        axes[0].set_xlabel("Porosity")
+        axes[0].set_ylabel("Absolute Permeability (md)")
         if porosity and permeability:
-            axes[0, 0].scatter(porosity, permeability, color='blue')
+            axes[0].scatter(porosity, permeability, color='blue')
 
         # Subplot 2: log(RQI) vs log(Phi z)
-        axes[0, 1].set_title("log(RQI) vs log(Phi z)")
-        axes[0, 1].set_xlabel("log(Phi z)")
-        axes[0, 1].set_ylabel("log(RQI)")
+        axes[1].set_title("log(RQI) vs log(Phi z)")
+        axes[1].set_xlabel("log(Phi z)")
+        axes[1].set_ylabel("log(RQI)")
         if rqi and phi_z:
             import numpy as np
             log_rqi = np.log(rqi)
             log_phi_z = np.log(phi_z)
-            axes[0, 1].scatter(log_phi_z, log_rqi, color='red')
-
-        # Subplots 3 and 4: Empty for now
-        axes[1, 0].set_title("Empty Plot 1")
-        axes[1, 0].axis('off')
-
-        axes[1, 1].set_title("Empty Plot 2")
-        axes[1, 1].axis('off')
+            axes[1].scatter(log_phi_z, log_rqi, color='red')
 
         # Redraw the canvas
-        self.plot_canvas.draw()  
+        self.plot_canvas.draw()
+
+    def init_plots_tab(self):
+        layout = QVBoxLayout()
+
+        header_label = QLabel("Plots")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+
+        # Create a 1x2 grid of subplots (two plots)
+        fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # <== Modified: 1 row, 2 columns
+        fig.tight_layout(pad=5.0)
+
+        # Add the figure to the plots tab
+        self.plot_canvas = FigureCanvas(fig)
+        layout.addWidget(self.plot_canvas)
+
+        # Add a "Plot Data" button
+        plot_button = QPushButton("Plot Data")
+        plot_button.clicked.connect(self.update_plots)
+        plot_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0078d7;
+                color: white;
+                font-size: 18px;
+                border-radius: 8px;
+                font-family: 'Times New Roman';
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+            """
+        )
+        layout.addWidget(plot_button)
+
+        self.plots_tab.setLayout(layout)  
 
 
     def init_plots_tab(self):
