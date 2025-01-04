@@ -1,5 +1,8 @@
 import sys
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,
@@ -444,32 +447,6 @@ class MainApp(QMainWindow):
             """
         )
 
-    def generate_elbow_plot(self):
-        if self.data is None:
-            QMessageBox.warning(self, "Warning", "Please load a dataset first.")
-            return
-
-        try:
-            features = self.data[['Porosity', 'Absolute Permeability (md)']]
-            wcss = []
-            for k in range(1, 11):
-                kmeans = KMeans(n_clusters=k, random_state=42)
-                kmeans.fit(features)
-                wcss.append(kmeans.inertia_)
-
-            # Plot elbow method
-            fig, ax = plt.subplots(figsize=(8, 6))
-            ax.plot(range(1, 11), wcss, marker='o')
-            ax.set_title('Elbow Method')
-            ax.set_xlabel('Number of clusters (k)')
-            ax.set_ylabel('WCSS')
-            ax.grid()
-
-            self.show_plot(fig)
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to generate elbow plot: {e}")
-
     def perform_clustering(self):
         if self.data is None:
             QMessageBox.warning(self, "Warning", "Please load a dataset first.")
@@ -594,56 +571,54 @@ class MainApp(QMainWindow):
         self.clustering_tab.setLayout(layout)
 
     def generate_elbow_plot(self):
-        # Check if the dataset is loaded
-        if self.data is None:
-            QMessageBox.warning(self, "Warning", "Please input data into the table first.")
+        # Extract data from the first two columns of the table
+        porosity = []
+        permeability = []
+
+        for row in range(self.table.rowCount()):
+            try:
+                if self.table.item(row, 0) and self.table.item(row, 0).text():
+                    porosity.append(float(self.table.item(row, 0).text()))
+                if self.table.item(row, 1) and self.table.item(row, 1).text():
+                    permeability.append(float(self.table.item(row, 1).text()))
+            except ValueError:
+                QMessageBox.warning(self, "Invalid Input", f"Non-numeric value in row {row + 1}. Skipping.")
+                continue
+
+        if not porosity or not permeability:
+            QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in both columns before generating the Elbow Plot.")
             return
 
-        try:
-            # Extract features: Porosity and Absolute Permeability
-            porosity = []
-            permeability = []
+        # Combine porosity and permeability into a single array
+        X = np.array(list(zip(porosity, permeability)))
 
-            for row in range(self.table.rowCount()):
-                try:
-                    p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
-                    k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
-                    if p is not None and k is not None:
-                        porosity.append(p)
-                        permeability.append(k)
-                except ValueError:
-                    continue
+        # Perform the Elbow Method
+        wcss = []
+        for k in range(1, 11):  # Try k values from 1 to 10
+            kmeans = KMeans(n_clusters=k, random_state=42)
+            kmeans.fit(X)
+            wcss.append(kmeans.inertia_)
 
-            if not porosity or not permeability:
-                QMessageBox.warning(self, "Warning", "Insufficient data for Elbow Plot.")
-                return
-
-            # Combine features into a single array
-            import numpy as np
-            X = np.array(list(zip(porosity, permeability)))
-
-            # Calculate WCSS for k values from 1 to 10
-            from sklearn.cluster import KMeans
-            wcss = []
-            for k in range(1, 11):
-                kmeans = KMeans(n_clusters=k, random_state=42)
-                kmeans.fit(X)
-                wcss.append(kmeans.inertia_)
-
-            # Plot the Elbow Curve
-            fig, ax = plt.subplots(figsize=(8, 6))
-            ax.plot(range(1, 11), wcss, marker='o', color='blue')
-            ax.set_title('Elbow Method')
-            ax.set_xlabel('Number of Clusters (k)')
-            ax.set_ylabel('WCSS')
-            ax.grid()
-
-            # Display the plot
-            plt.show()
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to generate elbow plot: {e}")
-
+            # Create the plot
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
+        ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Number of Clusters (k)', fontsize=12)
+        ax.set_ylabel('WCSS', fontsize=12)
+        ax.grid(True)
+        
+            # Embed the plot in the Clustering tab
+        if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
+            # Remove the existing plot if present
+            self.clustering_tab.layout().removeWidget(self.elbow_canvas)
+            self.elbow_canvas.deleteLater()
+            self.elbow_canvas = None
+            
+        self.elbow_canvas = FigureCanvas(fig)
+        self.clustering_tab.layout().addWidget(self.elbow_canvas)
+        self.elbow_canvas.draw()
+    
+    
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_app = MainApp()
