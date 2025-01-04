@@ -366,7 +366,6 @@ class MainApp(QMainWindow):
             self.tooltip = None
             self.plot_canvas.draw_idle()
 
-
     def init_plots_tab(self):
         layout = QVBoxLayout()
 
@@ -411,23 +410,6 @@ class MainApp(QMainWindow):
         layout.addWidget(plot_button)
 
         self.plots_tab.setLayout(layout)  
-
-
-   
-    def init_clustering_tab(self):
-        layout = QVBoxLayout()
-
-        header_label = QLabel("Clustering")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-        header_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(header_label)
-
-        self.cluster_button = QPushButton("Perform Clustering")
-        self.cluster_button.clicked.connect(self.perform_clustering)
-        self.style_button(self.cluster_button)
-        layout.addWidget(self.cluster_button)
-
-        self.clustering_tab.setLayout(layout)
 
     def init_ml_tab(self):
         layout = QVBoxLayout()
@@ -578,6 +560,89 @@ class MainApp(QMainWindow):
 
             self.plot_canvas = FigureCanvas(fig)
             self.plots_tab.layout().addWidget(self.plot_canvas)
+
+    def init_clustering_tab(self):
+        layout = QVBoxLayout()
+
+        header_label = QLabel("Clustering")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+
+        # Add the Elbow Method button
+        self.elbow_button = QPushButton("Generate Elbow Plot")
+        self.elbow_button.clicked.connect(self.generate_elbow_plot)
+        self.style_button(self.elbow_button)
+        layout.addWidget(self.elbow_button)
+        
+        self.elbow_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0078d7;
+                color: white;
+                font-size: 18px;
+                border-radius: 8px;
+                font-family: 'Times New Roman';
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+            """
+        )
+
+        self.clustering_tab.setLayout(layout)
+
+    def generate_elbow_plot(self):
+        # Check if the dataset is loaded
+        if self.data is None:
+            QMessageBox.warning(self, "Warning", "Please input data into the table first.")
+            return
+
+        try:
+            # Extract features: Porosity and Absolute Permeability
+            porosity = []
+            permeability = []
+
+            for row in range(self.table.rowCount()):
+                try:
+                    p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
+                    k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
+                    if p is not None and k is not None:
+                        porosity.append(p)
+                        permeability.append(k)
+                except ValueError:
+                    continue
+
+            if not porosity or not permeability:
+                QMessageBox.warning(self, "Warning", "Insufficient data for Elbow Plot.")
+                return
+
+            # Combine features into a single array
+            import numpy as np
+            X = np.array(list(zip(porosity, permeability)))
+
+            # Calculate WCSS for k values from 1 to 10
+            from sklearn.cluster import KMeans
+            wcss = []
+            for k in range(1, 11):
+                kmeans = KMeans(n_clusters=k, random_state=42)
+                kmeans.fit(X)
+                wcss.append(kmeans.inertia_)
+
+            # Plot the Elbow Curve
+            fig, ax = plt.subplots(figsize=(8, 6))
+            ax.plot(range(1, 11), wcss, marker='o', color='blue')
+            ax.set_title('Elbow Method')
+            ax.set_xlabel('Number of Clusters (k)')
+            ax.set_ylabel('WCSS')
+            ax.grid()
+
+            # Display the plot
+            plt.show()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to generate elbow plot: {e}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
