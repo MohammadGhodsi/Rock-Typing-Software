@@ -224,19 +224,16 @@ class MainApp(QMainWindow):
 
         for row in range(self.table.rowCount()):
             try:
-                # Fetch and validate porosity
                 if self.table.item(row, 0) and self.table.item(row, 0).text():
                     p = float(self.table.item(row, 0).text())
                 else:
                     p = None
 
-                # Fetch and validate permeability
                 if self.table.item(row, 1) and self.table.item(row, 1).text():
                     k = float(self.table.item(row, 1).text())
                 else:
                     k = None
 
-                # Fetch RQI and Phi_z if available
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
                     r = float(self.table.item(row, 2).text())
                 else:
@@ -247,7 +244,6 @@ class MainApp(QMainWindow):
                 else:
                     z = None
 
-                # Append valid data to the respective lists
                 if p is not None and k is not None:
                     porosity.append(p)
                     permeability.append(k)
@@ -260,38 +256,74 @@ class MainApp(QMainWindow):
                 print(f"Error parsing row {row}: {e}")
                 continue
 
-        # Debugging output
-        print(f"Porosity: {porosity}")
-        print(f"Permeability: {permeability}")
-        print(f"RQI: {rqi}")
-        print(f"Phi_z: {phi_z}")
-
         # Clear the existing figure
         self.plot_canvas.figure.clear()
 
-        # Create a new set of subplots (only 1 row and 2 columns)
-        axes = self.plot_canvas.figure.subplots(1, 2)  # <== Modified: Only 2 plots
+        # Create a 1x2 grid for two plots
+        axes = self.plot_canvas.figure.subplots(1, 2)
         self.plot_canvas.figure.tight_layout(pad=5.0)
 
-        # Subplot 1: Absolute Permeability (md) vs Porosity
+        # Plot 1: Absolute Permeability vs Porosity
+        scatter1 = axes[0].scatter(porosity, permeability, color='blue', picker=True)
         axes[0].set_title("Absolute Permeability (md) vs Porosity")
         axes[0].set_xlabel("Porosity")
         axes[0].set_ylabel("Absolute Permeability (md)")
-        if porosity and permeability:
-            axes[0].scatter(porosity, permeability, color='blue')
 
-        # Subplot 2: log(RQI) vs log(Phi z)
+        # Plot 2: log(RQI) vs log(Phi z)
+        import numpy as np
+        log_rqi = np.log(rqi) if rqi else []
+        log_phi_z = np.log(phi_z) if phi_z else []
+        scatter2 = axes[1].scatter(log_phi_z, log_rqi, color='red', picker=True)
         axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
-        if rqi and phi_z:
-            import numpy as np
-            log_rqi = np.log(rqi)
-            log_phi_z = np.log(phi_z)
-            axes[1].scatter(log_phi_z, log_rqi, color='red')
+
+        # Connect hover events for both plots
+        self.tooltip = None  # To store the active tooltip
+        self.plot_canvas.mpl_connect('motion_notify_event', lambda event: self.show_tooltip(event, scatter1, porosity, permeability, axes[0]))
+        self.plot_canvas.mpl_connect('motion_notify_event', lambda event: self.show_tooltip(event, scatter2, log_phi_z, log_rqi, axes[1]))
 
         # Redraw the canvas
         self.plot_canvas.draw()
+
+    def show_tooltip(self, event, scatter, x_data, y_data, axis):
+        if event.inaxes != axis:
+            # Remove tooltip if the mouse moves outside the plot
+            if self.tooltip:
+                self.tooltip.remove()
+                self.tooltip = None
+                self.plot_canvas.draw_idle()
+            return
+
+        # Check if hovering over a point
+        cont, ind = scatter.contains(event)
+        if cont:
+            index = ind["ind"][0]
+            x = x_data[index]
+            y = y_data[index]
+            tooltip_text = f"({x:.2f}, {y:.2f})"
+
+            # Remove the old tooltip
+            if self.tooltip:
+                self.tooltip.remove()
+
+            # Add a new tooltip at the hovered point
+            self.tooltip = axis.annotate(
+                tooltip_text, 
+                (x, y), 
+                textcoords="offset points", 
+                xytext=(10, 10), 
+                ha='center',
+                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                fontsize=10
+            )
+            self.plot_canvas.draw_idle()
+        else:
+            # Remove the tooltip if not hovering over any point
+            if self.tooltip:
+                self.tooltip.remove()
+                self.tooltip = None
+                self.plot_canvas.draw_idle()
 
     def init_plots_tab(self):
         layout = QVBoxLayout()
