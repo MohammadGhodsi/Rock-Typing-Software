@@ -302,8 +302,15 @@ class MainApp(QMainWindow):
         layout.addWidget(header_label)
 
         # Create a 1x2 grid of subplots (two plots)
-        fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # <== Modified: 1 row, 2 columns
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))  # <== Modified: 1 row, 2 columns
         fig.tight_layout(pad=5.0)
+        
+        # Set titles for empty plots
+        axes[0].set_title("Empty Plot 1")  # Empty placeholder
+        axes[0].axis('off')               # Turn off axes for clarity
+
+        axes[1].set_title("Empty Plot 2")  # Empty placeholder
+        axes[1].axis('off')               # Turn off axes for clarity
 
         # Add the figure to the plots tab
         self.plot_canvas = FigureCanvas(fig)
@@ -332,44 +339,7 @@ class MainApp(QMainWindow):
         self.plots_tab.setLayout(layout)  
 
 
-    def init_plots_tab(self):
-        layout = QVBoxLayout()
-
-        header_label = QLabel("Plots")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-        header_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(header_label)
-
-        # Create a 2x2 grid of subplots
-        fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-        fig.tight_layout(pad=5.0)
-
-        # Add the figure to the plots tab
-        self.plot_canvas = FigureCanvas(fig)
-        layout.addWidget(self.plot_canvas)
-
-        # Add a "Plot Data" button
-        plot_button = QPushButton("Plot Data")
-        plot_button.clicked.connect(self.update_plots)
-        plot_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #0078d7;
-                color: white;
-                font-size: 18px;
-                border-radius: 8px;
-                font-family: 'Times New Roman';
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-            """
-        )
-        layout.addWidget(plot_button)
-
-        self.plots_tab.setLayout(layout)
-        
+   
     def init_clustering_tab(self):
         layout = QVBoxLayout()
 
