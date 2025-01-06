@@ -604,38 +604,16 @@ class MainApp(QMainWindow):
             kmeans.fit(X)
             wcss.append(kmeans.inertia_)
 
-        # Determine the optimal number of clusters (simple example)
-        optimal_k = 3  # Replace this with a more advanced method if needed
+        # Example optimal k value
+        optimal_k = 3
 
-        # Create the figure with a 2x2 grid of subplots
-        fig, axes = plt.subplots(2, 2, figsize=(10, 8))
-        fig.tight_layout(pad=5.0)
-
-        # Elbow Plot in the second subplot (top-right)
-        ax2 = axes[0, 1]
-        ax2.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
-        ax2.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
-        ax2.set_xlabel('Number of Clusters (k)', fontsize=12)
-        ax2.set_ylabel('WCSS', fontsize=12)
-        ax2.grid(True)
-
-        # Button and TextBox in the first subplot (top-left)
-        ax1 = axes[0, 0]
-        ax1.axis('off')  # Hide axes for a clean look
-
-        # Add button in the first subplot
-        button_ax = fig.add_axes([0.1, 0.75, 0.2, 0.075])  # [left, bottom, width, height]
-        assign_button = Button(button_ax, 'Assign Cluster')
-
-        # Add text box in the first subplot
-        textbox_ax = fig.add_axes([0.4, 0.75, 0.2, 0.075])  # [left, bottom, width, height]
-        cluster_textbox = TextBox(textbox_ax, 'Optimal k:', initial=str(optimal_k))
-
-        # Connect the button to an action
-        def on_assign(event):
-            QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_textbox.text} assigned.")
-
-        assign_button.on_clicked(on_assign)
+        # Create the figure
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
+        ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
+        ax.set_xlabel('Number of Clusters (k)', fontsize=12)
+        ax.set_ylabel('WCSS', fontsize=12)
+        ax.grid(True)
 
         # Embed the figure in the Clustering tab
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
@@ -645,8 +623,51 @@ class MainApp(QMainWindow):
 
         self.elbow_canvas = FigureCanvas(fig)
         self.clustering_tab.layout().addWidget(self.elbow_canvas)
+
+        # Create a container widget to overlay the button and textbox
+        container = QWidget()
+        container_layout = QHBoxLayout()
+
+        # Create a text box (QLineEdit) for cluster input
+        cluster_textbox = QLineEdit()
+        cluster_textbox.setPlaceholderText("Optimal k")
+        cluster_textbox.setText(str(optimal_k))
+        cluster_textbox.setValidator(QIntValidator(1, 10))  # Accept only numbers between 1 and 10
+        cluster_textbox.setStyleSheet(
+            "font-size: 14px; padding: 5px; border: 1px solid gray; border-radius: 5px;"
+        )
+        container_layout.addWidget(cluster_textbox)
+
+        # Create a button (QPushButton) to assign the cluster
+        assign_button = QPushButton("Assign Cluster")
+        assign_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0078d7;
+                color: white;
+                font-size: 14px;
+                border-radius: 5px;
+                padding: 5px 10px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+            """
+        )
+
+        # Connect the button to an action
+        def on_assign():
+            QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_textbox.text()} assigned.")
+
+        assign_button.clicked.connect(on_assign)
+        container_layout.addWidget(assign_button)
+
+        # Add the container to the layout
+        container.setLayout(container_layout)
+        self.clustering_tab.layout().addWidget(container)
+
         self.elbow_canvas.draw()
-   
+    
     def add_button_and_textbox(self, optimal_k):
         # Create a button and text box overlay
         if not hasattr(self, 'assign_cluster_button'):
@@ -669,8 +690,7 @@ class MainApp(QMainWindow):
         # Handle the assignment of the cluster number from the text box
         cluster_number = int(self.cluster_input.text())
         QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
-   
-   
+    
     def assign_cluster_number(self):
         # Handle the assignment of the cluster number from the text box
         cluster_number = int(self.cluster_input.text())
