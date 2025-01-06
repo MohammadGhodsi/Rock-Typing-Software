@@ -607,8 +607,12 @@ class MainApp(QMainWindow):
         # Example optimal k value
         optimal_k = 3
 
-        # Create the figure
-        fig, ax = plt.subplots(figsize=(8, 6))
+        # Create the figure and position the subplot using gridspec
+        fig = plt.figure(figsize=(10, 8))  # Adjust size as needed
+        gs = fig.add_gridspec(2, 2)  # Create a 2x2 grid layout
+        ax = fig.add_subplot(gs[0, 1])  # Use the top-right quadrant (50% width and height)
+
+        # Plot the elbow method
         ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
@@ -624,21 +628,21 @@ class MainApp(QMainWindow):
         self.elbow_canvas = FigureCanvas(fig)
         self.clustering_tab.layout().addWidget(self.elbow_canvas)
 
-        # Create a container widget to overlay the button and textbox
+        # Create a container for the button and textbox
         container = QWidget()
         container_layout = QHBoxLayout()
 
-        # Create a text box (QLineEdit) for cluster input
+        # Create a textbox for cluster input
         cluster_textbox = QLineEdit()
         cluster_textbox.setPlaceholderText("Optimal k")
         cluster_textbox.setText(str(optimal_k))
-        cluster_textbox.setValidator(QIntValidator(1, 10))  # Accept only numbers between 1 and 10
+        cluster_textbox.setValidator(QIntValidator(1, 10))  # Allow only numbers between 1 and 10
         cluster_textbox.setStyleSheet(
             "font-size: 14px; padding: 5px; border: 1px solid gray; border-radius: 5px;"
         )
         container_layout.addWidget(cluster_textbox)
 
-        # Create a button (QPushButton) to assign the cluster
+        # Create a button to assign the cluster
         assign_button = QPushButton("Assign Cluster")
         assign_button.setStyleSheet(
             """
@@ -662,12 +666,12 @@ class MainApp(QMainWindow):
         assign_button.clicked.connect(on_assign)
         container_layout.addWidget(assign_button)
 
-        # Add the container to the layout
+        # Add the container to the clustering tab
         container.setLayout(container_layout)
         self.clustering_tab.layout().addWidget(container)
 
         self.elbow_canvas.draw()
-    
+  
     def add_button_and_textbox(self, optimal_k):
         # Create a button and text box overlay
         if not hasattr(self, 'assign_cluster_button'):
