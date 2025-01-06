@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,
-    QVBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu
+    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
@@ -26,30 +26,47 @@ class MainApp(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        # Tab widget
-        self.tabs = QTabWidget()
-        self.setCentralWidget(self.tabs)
+        # Main layout
+        main_layout = QVBoxLayout()
 
-        # Tabs
-        self.dataset_tab = QWidget()
-        self.plots_tab = QWidget()
-        self.clustering_tab = QWidget()
-        self.ml_tab = QWidget()
+        # Horizontal layout for header and plot
+        top_layout = QHBoxLayout()
 
-        # Add tabs to QTabWidget
-        self.tabs.addTab(self.dataset_tab, "Dataset")
-        self.tabs.addTab(self.plots_tab, "Plots")
-        self.tabs.addTab(self.clustering_tab, "Clustering")
-        self.tabs.addTab(self.ml_tab, "Machine Learning")
+        # Header Label
+        header_label = QLabel("Main Application")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignLeft)
+        top_layout.addWidget(header_label)
 
-        # Setup tabs
-        self.init_dataset_tab()
-        self.init_plots_tab()
-        self.init_clustering_tab()
-        self.init_ml_tab()
+        # Create Elbow Plot Canvas
+        fig, ax = plt.subplots(figsize=(5, 4))  # Adjust figure size as needed
+        ax.set_title("Elbow Method")
+        ax.set_xlabel("Number of Clusters (k)")
+        ax.set_ylabel("WCSS")
+        ax.grid()
 
-        # Set default tab
-        self.tabs.setCurrentIndex(0)
+        # Generate the Elbow Plot
+        porosity = np.random.rand(10) * 30 + 10
+        permeability = np.random.rand(10) * 100 + 20
+        X = np.array(list(zip(porosity, permeability)))
+        wcss = [KMeans(n_clusters=k, random_state=42).fit(X).inertia_ for k in range(1, 11)]
+
+        ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
+        self.elbow_plot_canvas = FigureCanvas(fig)
+
+        # Add canvas to top layout
+        top_layout.addWidget(self.elbow_plot_canvas)
+
+        # Add top layout to the main layout
+        main_layout.addLayout(top_layout)
+
+        # Add Tabs to the main layout
+        main_layout.addWidget(self.tabs)
+
+        # Set central widget layout
+        central_widget = QWidget()
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
 
     def init_dataset_tab(self):
         layout = QVBoxLayout()
@@ -604,7 +621,7 @@ class MainApp(QMainWindow):
         ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
-        ax.set_ylabel('WCSS', fontsize=12)
+        ax.set_ylabel('WCSS', fontsize=12)  
         ax.grid(True)
         
             # Embed the plot in the Clustering tab
