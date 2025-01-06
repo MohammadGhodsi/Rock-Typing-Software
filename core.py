@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
+from matplotlib.widgets import Button, TextBox
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,
     QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit
@@ -619,9 +619,23 @@ class MainApp(QMainWindow):
         ax2.set_ylabel('WCSS', fontsize=12)
         ax2.grid(True)
 
-        # Hide axes for the first subplot (top-left)
+        # Button and TextBox in the first subplot (top-left)
         ax1 = axes[0, 0]
-        ax1.axis('off')
+        ax1.axis('off')  # Hide axes for a clean look
+
+        # Add button in the first subplot
+        button_ax = fig.add_axes([0.1, 0.75, 0.2, 0.075])  # [left, bottom, width, height]
+        assign_button = Button(button_ax, 'Assign Cluster')
+
+        # Add text box in the first subplot
+        textbox_ax = fig.add_axes([0.4, 0.75, 0.2, 0.075])  # [left, bottom, width, height]
+        cluster_textbox = TextBox(textbox_ax, 'Optimal k:', initial=str(optimal_k))
+
+        # Connect the button to an action
+        def on_assign(event):
+            QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_textbox.text} assigned.")
+
+        assign_button.on_clicked(on_assign)
 
         # Embed the figure in the Clustering tab
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
@@ -632,9 +646,6 @@ class MainApp(QMainWindow):
         self.elbow_canvas = FigureCanvas(fig)
         self.clustering_tab.layout().addWidget(self.elbow_canvas)
         self.elbow_canvas.draw()
-
-        # Add button and text box in the top-left subplot area
-        self.add_button_and_textbox(optimal_k)
    
     def add_button_and_textbox(self, optimal_k):
         # Create a button and text box overlay
