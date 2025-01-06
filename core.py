@@ -6,10 +6,10 @@ from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,
-    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu
+    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence , QIntValidator
 from PyQt5.QtWidgets import QShortcut
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas
@@ -29,7 +29,7 @@ class MainApp(QMainWindow):
         # Main layout
         main_layout = QVBoxLayout()
 
-        # Horizontal layout for header and plot
+        # Horizontal layout for header
         top_layout = QHBoxLayout()
 
         # Header Label
@@ -37,25 +37,6 @@ class MainApp(QMainWindow):
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignLeft)
         top_layout.addWidget(header_label)
-
-        # Create Elbow Plot Canvas
-        fig, ax = plt.subplots(figsize=(5, 4))  # Adjust figure size as needed
-        ax.set_title("Elbow Method")
-        ax.set_xlabel("Number of Clusters (k)")
-        ax.set_ylabel("WCSS")
-        ax.grid()
-
-        # Generate the Elbow Plot
-        porosity = np.random.rand(10) * 30 + 10
-        permeability = np.random.rand(10) * 100 + 20
-        X = np.array(list(zip(porosity, permeability)))
-        wcss = [KMeans(n_clusters=k, random_state=42).fit(X).inertia_ for k in range(1, 11)]
-
-        ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
-        self.elbow_plot_canvas = FigureCanvas(fig)
-
-        # Add canvas to top layout
-        top_layout.addWidget(self.elbow_plot_canvas)
 
         # Add top layout to the main layout
         main_layout.addLayout(top_layout)
@@ -85,7 +66,7 @@ class MainApp(QMainWindow):
         self.init_plots_tab()
         self.init_clustering_tab()
         self.init_ml_tab()
-        
+    
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -586,25 +567,13 @@ class MainApp(QMainWindow):
         self.elbow_button.clicked.connect(self.generate_elbow_plot)
         self.style_button(self.elbow_button)
         layout.addWidget(self.elbow_button)
-        
-        self.elbow_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #0078d7;
-                color: white;
-                font-size: 18px;
-                border-radius: 8px;
-                font-family: 'Times New Roman';
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-            """
-        )
 
+        # Placeholder for cluster number input and button layout
+        self.cluster_layout = None
+
+        # Set layout for the clustering tab
         self.clustering_tab.setLayout(layout)
-
+   
     def generate_elbow_plot(self):
         # Extract data from the first two columns of the table
         porosity = []
@@ -634,25 +603,62 @@ class MainApp(QMainWindow):
             kmeans.fit(X)
             wcss.append(kmeans.inertia_)
 
-            # Create the plot
-        fig, ax = plt.subplots(figsize=(8, 6))
+        # Determine the optimal number of clusters (simple example)
+        optimal_k = 3  # Replace this with a more advanced method if needed
+
+        # Create the figure with a 2x2 grid of subplots
+        fig, axes = plt.subplots(2, 2, figsize=(10, 8))
+        fig.tight_layout(pad=5.0)
+
+        # Elbow Plot in the second subplot (top-right)
+        ax = axes[0, 1]
         ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
-        ax.set_ylabel('WCSS', fontsize=12)  
+        ax.set_ylabel('WCSS', fontsize=12)
         ax.grid(True)
-        
-            # Embed the plot in the Clustering tab
+
+        # Clear the remaining subplots
+        for i, row in enumerate(axes):
+            for j, ax in enumerate(row):
+                if (i, j) != (0, 1):  # Skip the second plot
+                    ax.axis('off')  # Turn off axes
+
+        # Embed the figure in the Clustering tab
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
-            # Remove the existing plot if present
             self.clustering_tab.layout().removeWidget(self.elbow_canvas)
             self.elbow_canvas.deleteLater()
             self.elbow_canvas = None
-            
+
         self.elbow_canvas = FigureCanvas(fig)
         self.clustering_tab.layout().addWidget(self.elbow_canvas)
+
+        # Add text box and button in the top-left (1st subplot) area
+        if not hasattr(self, 'cluster_input') and not hasattr(self, 'assign_cluster_button'):
+            # Create a horizontal layout for the button and text box
+            cluster_layout = QHBoxLayout()
+
+            # Button for assigning cluster number
+            self.assign_cluster_button = QPushButton("Assign Cluster Number")
+            self.assign_cluster_button.clicked.connect(self.assign_cluster_number)
+            self.style_button(self.assign_cluster_button)
+            cluster_layout.addWidget(self.assign_cluster_button)
+
+            # Text box for cluster number
+            self.cluster_input = QLineEdit()
+            self.cluster_input.setText(str(optimal_k))  # Set initial value to the optimal number of clusters
+            self.cluster_input.setValidator(QIntValidator(1, 10))  # Allow only numbers between 1 and 10
+            cluster_layout.addWidget(self.cluster_input)
+
+            # Add the layout to the Clustering tab
+            self.clustering_tab.layout().addLayout(cluster_layout)
+
         self.elbow_canvas.draw()
     
+    def assign_cluster_number(self):
+        # Handle the assignment of the cluster number from the text box
+        cluster_number = int(self.cluster_input.text())
+        QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
