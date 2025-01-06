@@ -60,6 +60,18 @@ class MainApp(QMainWindow):
         # Add top layout to the main layout
         main_layout.addLayout(top_layout)
 
+        # Initialize tabs
+        self.tabs = QTabWidget()  # Initialize QTabWidget
+        self.dataset_tab = QWidget()
+        self.plots_tab = QWidget()
+        self.clustering_tab = QWidget()
+        self.ml_tab = QWidget()
+
+        self.tabs.addTab(self.dataset_tab, "Dataset")
+        self.tabs.addTab(self.plots_tab, "Plots")
+        self.tabs.addTab(self.clustering_tab, "Clustering")
+        self.tabs.addTab(self.ml_tab, "Machine Learning")
+
         # Add Tabs to the main layout
         main_layout.addWidget(self.tabs)
 
@@ -68,6 +80,12 @@ class MainApp(QMainWindow):
         central_widget.setLayout(main_layout)
         self.setCentralWidget(central_widget)
 
+        # Initialize individual tabs
+        self.init_dataset_tab()
+        self.init_plots_tab()
+        self.init_clustering_tab()
+        self.init_ml_tab()
+        
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
