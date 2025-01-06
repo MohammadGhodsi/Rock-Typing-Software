@@ -611,7 +611,7 @@ class MainApp(QMainWindow):
         fig = plt.figure(figsize=(10, 8))  # Adjust size as needed
         gs = fig.add_gridspec(2, 2)  # Create a 2x2 grid layout
         ax = fig.add_subplot(gs[0, 1])  # Use the top-right quadrant (50% width and height)
-
+        
         # Plot the elbow method
         ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
