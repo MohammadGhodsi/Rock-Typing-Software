@@ -664,18 +664,32 @@ class MainApp(QMainWindow):
         QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {recommended_k}")
     
     def find_recommended_k(self, wcss):
-        # A basic way to find the "elbow" point:
+        """
+        A more sophisticated method to find the "elbow" point using the Kneedle algorithm.
+
+        Parameters:
+        - wcss: List of WCSS values for different k values.
+
+        Returns:
+        - Recommended number of clusters (k) based on the elbow method.
+        """
         if len(wcss) < 2:
             return 1  # if there's not enough data, default to 1 cluster
 
-        # Taking the difference between successive points
-        # This could be improved with a more sophisticated method if needed
-        diffs = np.diff(wcss)
-        # The lower the difference, the closer we are to the elbow
-        recommended_k = np.argmin(diffs) + 1  # Plus one because np.argmin returns zero-based index
+        # Calculate the first derivative (how much WCSS is dropping)
+        first_derivative = np.diff(wcss)
         
-        return min(recommended_k, len(wcss))  # Ensure the recommended k is within the range
-    
+        # Calculate second derivative (acceleration)
+        second_derivative = np.diff(first_derivative)
+
+        # Find the index of the maximum value of the first derivative (indicating the elbow)
+        elbow_index = np.argmax(first_derivative)  # This locates the point of maximum drop
+
+        # Find the best k - this is the index of the elbow point + 1 due to np.diff reducing length by 1
+        recommended_k = elbow_index + 1
+
+        # Ensure the recommended k is within the range of available k values
+        return min(recommended_k, len(wcss))  
     
     def custom_clustering(self):
         # Handling custom clustering with user-defined K
