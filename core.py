@@ -579,28 +579,6 @@ class MainApp(QMainWindow):
         
         self.max_clusters_layout.addWidget(self.max_clusters_textbox)
 
-        # Create a button to assign the cluster
-        self.assign_button = QPushButton("Perform Clustering")
-        self.assign_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #0078d7;
-                color: white;
-                font-size: 14px;
-                border-radius: 5px;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-            """
-        )
-        
-        # Define action for the assign button
-        self.assign_button.clicked.connect(self.perform_clustering)
-
-        self.max_clusters_layout.addWidget(self.assign_button)
-
         # Add the layout to the clustering tab
         layout.addLayout(self.max_clusters_layout)
 
