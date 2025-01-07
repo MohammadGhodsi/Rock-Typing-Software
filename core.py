@@ -660,6 +660,8 @@ class MainApp(QMainWindow):
         recommended_k = self.find_recommended_k(wcss)
         self.recommended_k_textbox.setText(str(recommended_k))  # Set the recommended k in the textbox
 
+        # Show pop-up with optimum number of clusters
+        QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {recommended_k}")
     
     def find_recommended_k(self, wcss):
         # A basic way to find the "elbow" point:
