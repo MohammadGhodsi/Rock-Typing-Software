@@ -570,11 +570,42 @@ class MainApp(QMainWindow):
         layout.addWidget(self.elbow_button)
 
         # Placeholder for cluster number input and button layout
-        self.cluster_layout = None
+        self.max_clusters_layout = QHBoxLayout()
 
-        # Set layout for the clustering tab
+        # Create a textbox for maximum cluster input
+        self.max_clusters_textbox = QLineEdit()
+        self.max_clusters_textbox.setPlaceholderText("Max Clusters (e.g., 10)")
+        self.max_clusters_textbox.setValidator(QIntValidator(1, 50))  # Limit input to a reasonable range
+        
+        self.max_clusters_layout.addWidget(self.max_clusters_textbox)
+
+        # Create a button to assign the cluster
+        self.assign_button = QPushButton("Perform Clustering")
+        self.assign_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0078d7;
+                color: white;
+                font-size: 14px;
+                border-radius: 5px;
+                padding: 5px 10px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+            """
+        )
+        
+        # Define action for the assign button
+        self.assign_button.clicked.connect(self.perform_clustering)
+
+        self.max_clusters_layout.addWidget(self.assign_button)
+
+        # Add the layout to the clustering tab
+        layout.addLayout(self.max_clusters_layout)
+
         self.clustering_tab.setLayout(layout)
-    
+
     def generate_elbow_plot(self):
         # Extract data from the first two columns of the table
         porosity = []
@@ -597,29 +628,33 @@ class MainApp(QMainWindow):
         # Combine porosity and permeability into a single array
         X = np.array(list(zip(porosity, permeability)))
 
+        # Get the maximum clusters value from the textbox
+        max_clusters_text = self.max_clusters_textbox.text()
+        if not max_clusters_text:
+            QMessageBox.warning(self, "Invalid Input", "Please enter a maximum number of clusters.")
+            return
+
+        allocated_k = int(max_clusters_text)
+
         # Perform the Elbow Method
         wcss = []
-        for k in range(1, 11):  # Try k values from 1 to 10
+        for k in range(1, allocated_k + 1):  # Use user-provided range for k
             kmeans = KMeans(n_clusters=k, random_state=42)
             kmeans.fit(X)
             wcss.append(kmeans.inertia_)
 
-        # Example optimal k value
-        optimal_k = 3
+        # Create the figure to plot the elbow method
+        fig = plt.figure(figsize=(10, 8))  
+        ax = fig.add_subplot(111)  
 
-        # Create the figure and position the subplot using gridspec
-        fig = plt.figure(figsize=(10, 8))  # Adjust size as needed
-        gs = fig.add_gridspec(2, 2)  # Create a 2x2 grid layout
-        ax = fig.add_subplot(gs[0, 1])  # Use the top-right quadrant (50% width and height)
-        
         # Plot the elbow method
-        ax.plot(range(1, 11), wcss, marker='o', linestyle='-', color='blue')
+        ax.plot(range(1, allocated_k + 1), wcss, marker='o', linestyle='-', color='blue')
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('WCSS', fontsize=12)
         ax.grid(True)
 
-        # Embed the figure in the Clustering tab
+        # Remove previous elbow canvas if it exists
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
             self.clustering_tab.layout().removeWidget(self.elbow_canvas)
             self.elbow_canvas.deleteLater()
@@ -628,50 +663,36 @@ class MainApp(QMainWindow):
         self.elbow_canvas = FigureCanvas(fig)
         self.clustering_tab.layout().addWidget(self.elbow_canvas)
 
-        # Create a container for the button and textbox
-        container = QWidget()
-        container_layout = QHBoxLayout()
+        # Draw the elbow plot
+        self.elbow_canvas.draw() 
+   
+   
+    def perform_clustering(self, optimal_k):
+        if self.data is None:
+            QMessageBox.warning(self, "Warning", "Please load a dataset first.")
+            return
 
-        # Create a textbox for cluster input
-        cluster_textbox = QLineEdit()
-        cluster_textbox.setPlaceholderText("Optimal k")
-        cluster_textbox.setText(str(optimal_k))
-        cluster_textbox.setValidator(QIntValidator(1, 10))  # Allow only numbers between 1 and 10
-        cluster_textbox.setStyleSheet(
-            "font-size: 14px; padding: 5px; border: 1px solid gray; border-radius: 5px;"
-        )
-        container_layout.addWidget(cluster_textbox)
+        try:
+            features = self.data[['Porosity', 'Absolute Permeability (md)']]
+            kmeans = KMeans(n_clusters=optimal_k, random_state=42)
+            self.data['Cluster'] = kmeans.fit_predict(features)
 
-        # Create a button to assign the cluster
-        assign_button = QPushButton("Assign Cluster")
-        assign_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #0078d7;
-                color: white;
-                font-size: 14px;
-                border-radius: 5px;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-            """
-        )
+            # Plot the clusters
+            fig, ax = plt.subplots(figsize=(8, 6))
+            scatter = ax.scatter(features['Porosity'], features['Absolute Permeability (md)'], 
+                                c=self.data['Cluster'], cmap='viridis', marker='o')
+            ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300, c='red', marker='X')
+            ax.set_title(f'KMeans Clustering (k={optimal_k})')
+            ax.set_xlabel('Porosity')
+            ax.set_ylabel('Absolute Permeability (md)')
+            fig.colorbar(scatter, label='Cluster')
+            ax.grid()
 
-        # Connect the button to an action
-        def on_assign():
-            QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_textbox.text()} assigned.")
+            self.show_plot(fig)
 
-        assign_button.clicked.connect(on_assign)
-        container_layout.addWidget(assign_button)
-
-        # Add the container to the clustering tab
-        container.setLayout(container_layout)
-        self.clustering_tab.layout().addWidget(container)
-
-        self.elbow_canvas.draw()
-  
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to perform clustering: {e}")
+    
     def add_button_and_textbox(self, optimal_k):
         # Create a button and text box overlay
         if not hasattr(self, 'assign_cluster_button'):
@@ -694,11 +715,7 @@ class MainApp(QMainWindow):
         # Handle the assignment of the cluster number from the text box
         cluster_number = int(self.cluster_input.text())
         QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
-    
-    def assign_cluster_number(self):
-        # Handle the assignment of the cluster number from the text box
-        cluster_number = int(self.cluster_input.text())
-        QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
+
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
