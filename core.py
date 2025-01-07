@@ -771,32 +771,7 @@ class MainApp(QMainWindow):
         optimal_k = int(user_k)
         self.perform_clustering(optimal_k)
     
-    def perform_clustering(self, optimal_k):
-        if self.data is None:
-            QMessageBox.warning(self, "Warning", "Please load a dataset first.")
-            return
-
-        try:
-            features = self.data[['Porosity', 'Absolute Permeability (md)']]
-            kmeans = KMeans(n_clusters=optimal_k, random_state=42)
-            self.data['Cluster'] = kmeans.fit_predict(features)
-
-            # Plot the clusters
-            fig, ax = plt.subplots(figsize=(8, 6))
-            scatter = ax.scatter(features['Porosity'], features['Absolute Permeability (md)'], 
-                                c=self.data['Cluster'], cmap='viridis', marker='o')
-            ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300, c='red', marker='X')
-            ax.set_title(f'KMeans Clustering (k={optimal_k})')
-            ax.set_xlabel('Porosity')
-            ax.set_ylabel('Absolute Permeability (md)')
-            fig.colorbar(scatter, label='Cluster')
-            ax.grid()
-
-            self.show_plot(fig)
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to perform clustering: {e}")
-    
+  
     def add_button_and_textbox(self, optimal_k):
         # Create a button and text box overlay
         if not hasattr(self, 'assign_cluster_button'):
