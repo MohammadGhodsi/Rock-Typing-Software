@@ -627,6 +627,10 @@ class MainApp(QMainWindow):
         self.style_button(self.elbow_button)
         layout.addWidget(self.elbow_button)
 
+        # Placeholder for elbow plot layout
+        self.elbow_plot_layout = QVBoxLayout()  # Initialize the elbow plot layout
+        layout.addLayout(self.elbow_plot_layout)  # Add it to the main layout
+
         # Placeholder for cluster number input and button layout
         self.max_clusters_layout = QHBoxLayout()
 
@@ -704,9 +708,9 @@ class MainApp(QMainWindow):
             wcss.append(kmeans.inertia_)
 
         # Create the figure to plot the elbow method
-        fig = plt.figure(figsize=(10, 8))
+        fig = plt.figure(figsize=(8, 6))  # Adjust the figure size as necessary
         ax = fig.add_subplot(111)
-
+        
         # Plot the elbow method
         ax.plot(range(1, allocated_k + 1), wcss, marker='o', linestyle='-', color='blue')
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
@@ -716,17 +720,17 @@ class MainApp(QMainWindow):
 
         # Remove previous elbow canvas if it exists
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
-            self.clustering_tab.layout().removeWidget(self.elbow_canvas)
+            self.elbow_plot_layout.removeWidget(self.elbow_canvas)
             self.elbow_canvas.deleteLater()
             self.elbow_canvas = None
 
         self.elbow_canvas = FigureCanvas(fig)
-        self.clustering_tab.layout().addWidget(self.elbow_canvas)
+        self.elbow_plot_layout.addWidget(self.elbow_canvas)  # Add the elbow canvas to the elbow plot layout
 
         # Draw the elbow plot
         self.elbow_canvas.draw()
 
-        # Recommend K (add your logic for detecting the elbow point)
+        # Recommend K
         recommended_k = self.find_recommended_k(wcss)
         self.recommended_k_textbox.setText(str(recommended_k))  # Set the recommended k in the textbox
 
@@ -771,7 +775,6 @@ class MainApp(QMainWindow):
         optimal_k = int(user_k)
         self.perform_clustering(optimal_k)
     
-  
     def add_button_and_textbox(self, optimal_k):
         # Create a button and text box overlay
         if not hasattr(self, 'assign_cluster_button'):
