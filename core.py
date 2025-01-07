@@ -581,8 +581,8 @@ class MainApp(QMainWindow):
 
         # Textbox for recommended cluster K
         self.recommended_k_textbox = QLineEdit()
-        self.recommended_k_textbox.setReadOnly(True)  # Make it read-only
-        self.recommended_k_textbox.setPlaceholderText("Recommended K")
+        #self.recommended_k_textbox.setReadOnly(True)  # Make it read-only
+        self.recommended_k_textbox.setPlaceholderText("Chosen K")
         self.max_clusters_layout.addWidget(self.recommended_k_textbox)
 
         # Add the layout to the clustering tab
