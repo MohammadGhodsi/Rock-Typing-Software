@@ -16,6 +16,11 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas , NavigationToolbar2QT as NavigationToolbar
 )
 
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+
 class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -445,7 +450,60 @@ class MainApp(QMainWindow):
         layout.addWidget(self.svm_button)
 
         self.ml_tab.setLayout(layout)
+    
+    def train_evaluate_svm(self):
+        # Ensure there is data in the table before proceeding
+        if self.table.rowCount() == 0:
+            QMessageBox.warning(self, "Warning", "No data available. Please enter data first.")
+            return
 
+        # Extracting features and target from the table
+        features = []
+        target = []
+
+        for row in range(self.table.rowCount()):
+            try:
+                porosity = float(self.table.item(row, 0).text())
+                permeability = float(self.table.item(row, 1).text())
+                rock_type = self.table.item(row, 2).text()  # Assuming 'Rock Type' is in the 3rd column (index 2)
+                
+                # Append to lists
+                features.append([porosity, permeability])
+                target.append(rock_type)
+            except (ValueError, IndexError):
+                continue  # Ignore rows with non-numeric values
+
+        if len(features) == 0 or len(target) == 0:
+            QMessageBox.warning(self, "Warning", "Insufficient data for SVM training.")
+            return
+
+        # Convert lists to numpy arrays for sklearn
+        features = np.array(features)
+        target = np.array(target)
+
+        # Standardizing the features
+        scaler = StandardScaler()
+        features_scaled = scaler.fit_transform(features)
+
+        # Train-Test Split
+        X_train, X_test, y_train, y_test = train_test_split(features_scaled, target, test_size=0.2, random_state=42)
+
+        # Train SVM Classifier
+        svm_classifier = SVC(kernel='linear', random_state=42)
+        svm_classifier.fit(X_train, y_train)
+
+        # Make predictions and evaluate
+        y_pred = svm_classifier.predict(X_test)
+
+        # Display results
+        confusion = confusion_matrix(y_test, y_pred)
+        report = classification_report(y_test, y_pred)
+
+        print("Confusion Matrix:\n", confusion)
+        print("Classification Report:\n", report)
+
+        QMessageBox.information(self, "SVM Results", f"Classification Report:\n{report}")
+    
     def style_button(self, button):
         button.setFixedSize(200, 50)
         button.setStyleSheet(
@@ -607,7 +665,6 @@ class MainApp(QMainWindow):
         layout.addWidget(self.perform_clustering_button)
 
         self.clustering_tab.setLayout(layout)
-   
    
     def generate_elbow_plot(self):
         # Extract data from the first two columns of the table
