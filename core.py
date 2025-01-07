@@ -572,20 +572,32 @@ class MainApp(QMainWindow):
         # Placeholder for cluster number input and button layout
         self.max_clusters_layout = QHBoxLayout()
 
-        # Create a textbox for maximum cluster input
+        # Create a button and textbox for maximum cluster input
+        self.max_clusters_button = QPushButton("Set Max Clusters")
+        self.max_clusters_button.setFixedWidth(150)  # Set button width if desired
+        self.max_clusters_button.clicked.connect(lambda: QMessageBox.information(self, "Max Clusters", "Set the maximum number of clusters here."))  # Replace with appropriate functionality
+        self.max_clusters_layout.addWidget(self.max_clusters_button)
+
         self.max_clusters_textbox = QLineEdit()
         self.max_clusters_textbox.setPlaceholderText("Max Clusters (e.g., 10)")
         self.max_clusters_textbox.setValidator(QIntValidator(1, 50))  # Limit input to a reasonable range
-        
         self.max_clusters_layout.addWidget(self.max_clusters_textbox)
 
-        # Textbox for recommended cluster K
+        # Add this layout to the clustering tab
+        layout.addLayout(self.max_clusters_layout)
+
+        # --- Repeat for the recommended K textbox and button ---
+        self.recommended_k_button = QPushButton("Recommended K")
+        self.recommended_k_button.setFixedWidth(150)  # Set button width if desired
+        self.recommended_k_button.clicked.connect(lambda: QMessageBox.information(self, "Recommended K", "Displays recommended K based on data."))  # Replace with appropriate functionality
+        self.max_clusters_layout = QHBoxLayout()  # Create new layout for recommended K
+
+        self.max_clusters_layout.addWidget(self.recommended_k_button)
+
         self.recommended_k_textbox = QLineEdit()
-        #self.recommended_k_textbox.setReadOnly(True)  # Make it read-only
         self.recommended_k_textbox.setPlaceholderText("Chosen K")
         self.max_clusters_layout.addWidget(self.recommended_k_textbox)
 
-        # Add the layout to the clustering tab
         layout.addLayout(self.max_clusters_layout)
 
         # Button to perform clustering with user-defined K
@@ -595,6 +607,7 @@ class MainApp(QMainWindow):
         layout.addWidget(self.perform_clustering_button)
 
         self.clustering_tab.setLayout(layout)
+   
    
     def generate_elbow_plot(self):
         # Extract data from the first two columns of the table
