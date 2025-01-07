@@ -579,11 +579,23 @@ class MainApp(QMainWindow):
         
         self.max_clusters_layout.addWidget(self.max_clusters_textbox)
 
+        # Textbox for recommended cluster K
+        self.recommended_k_textbox = QLineEdit()
+        self.recommended_k_textbox.setReadOnly(True)  # Make it read-only
+        self.recommended_k_textbox.setPlaceholderText("Recommended K")
+        self.max_clusters_layout.addWidget(self.recommended_k_textbox)
+
         # Add the layout to the clustering tab
         layout.addLayout(self.max_clusters_layout)
 
-        self.clustering_tab.setLayout(layout)
+        # Button to perform clustering with user-defined K
+        self.perform_clustering_button = QPushButton("Perform Clustering with Custom K")
+        self.perform_clustering_button.clicked.connect(self.custom_clustering)
+        self.style_button(self.perform_clustering_button)
+        layout.addWidget(self.perform_clustering_button)
 
+        self.clustering_tab.setLayout(layout)
+   
     def generate_elbow_plot(self):
         # Extract data from the first two columns of the table
         porosity = []
@@ -622,8 +634,8 @@ class MainApp(QMainWindow):
             wcss.append(kmeans.inertia_)
 
         # Create the figure to plot the elbow method
-        fig = plt.figure(figsize=(10, 8))  
-        ax = fig.add_subplot(111)  
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111)
 
         # Plot the elbow method
         ax.plot(range(1, allocated_k + 1), wcss, marker='o', linestyle='-', color='blue')
@@ -642,9 +654,37 @@ class MainApp(QMainWindow):
         self.clustering_tab.layout().addWidget(self.elbow_canvas)
 
         # Draw the elbow plot
-        self.elbow_canvas.draw() 
-   
-   
+        self.elbow_canvas.draw()
+
+        # Recommend K (add your logic for detecting the elbow point)
+        recommended_k = self.find_recommended_k(wcss)
+        self.recommended_k_textbox.setText(str(recommended_k))  # Set the recommended k in the textbox
+
+    
+    def find_recommended_k(self, wcss):
+        # A basic way to find the "elbow" point:
+        if len(wcss) < 2:
+            return 1  # if there's not enough data, default to 1 cluster
+
+        # Taking the difference between successive points
+        # This could be improved with a more sophisticated method if needed
+        diffs = np.diff(wcss)
+        # The lower the difference, the closer we are to the elbow
+        recommended_k = np.argmin(diffs) + 1  # Plus one because np.argmin returns zero-based index
+        
+        return min(recommended_k, len(wcss))  # Ensure the recommended k is within the range
+    
+    
+    def custom_clustering(self):
+        # Handling custom clustering with user-defined K
+        user_k = self.max_clusters_textbox.text()
+        if not user_k:
+            QMessageBox.warning(self, "Warning", "Please enter a valid number for K.")
+            return
+
+        optimal_k = int(user_k)
+        self.perform_clustering(optimal_k)
+    
     def perform_clustering(self, optimal_k):
         if self.data is None:
             QMessageBox.warning(self, "Warning", "Please load a dataset first.")
