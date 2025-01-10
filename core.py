@@ -628,31 +628,29 @@ class MainApp(QMainWindow):
         layout.addWidget(self.elbow_button)
 
         # Placeholder for elbow plot layout
-        self.elbow_plot_layout = QVBoxLayout()  # Initialize the elbow plot layout
-        layout.addLayout(self.elbow_plot_layout)  # Add it to the main layout
+        self.elbow_plot_layout = QVBoxLayout()
+        layout.addLayout(self.elbow_plot_layout)
 
         # Placeholder for cluster number input and button layout
         self.max_clusters_layout = QHBoxLayout()
 
-        # Create a button and textbox for maximum cluster input
         self.max_clusters_button = QPushButton("Set Max Clusters")
-        self.max_clusters_button.setFixedWidth(150)  # Set button width if desired
-        self.max_clusters_button.clicked.connect(lambda: QMessageBox.information(self, "Max Clusters", "Set the maximum number of clusters here."))  # Replace with appropriate functionality
+        self.max_clusters_button.setFixedWidth(150)
+        self.max_clusters_button.clicked.connect(lambda: QMessageBox.information(self, "Max Clusters", "Set the maximum number of clusters here."))
         self.max_clusters_layout.addWidget(self.max_clusters_button)
 
         self.max_clusters_textbox = QLineEdit()
         self.max_clusters_textbox.setPlaceholderText("Max Clusters (e.g., 10)")
-        self.max_clusters_textbox.setValidator(QIntValidator(1, 50))  # Limit input to a reasonable range
+        self.max_clusters_textbox.setValidator(QIntValidator(1, 50))
         self.max_clusters_layout.addWidget(self.max_clusters_textbox)
 
-        # Add this layout to the clustering tab
         layout.addLayout(self.max_clusters_layout)
 
         # --- Repeat for the recommended K textbox and button ---
         self.recommended_k_button = QPushButton("Recommended K")
-        self.recommended_k_button.setFixedWidth(150)  # Set button width if desired
-        self.recommended_k_button.clicked.connect(lambda: QMessageBox.information(self, "Recommended K", "Displays recommended K based on data."))  # Replace with appropriate functionality
-        self.max_clusters_layout = QHBoxLayout()  # Create new layout for recommended K
+        self.recommended_k_button.setFixedWidth(150)
+        self.recommended_k_button.clicked.connect(lambda: QMessageBox.information(self, "Recommended K", "Displays recommended K based on data."))
+        self.max_clusters_layout = QHBoxLayout()
 
         self.max_clusters_layout.addWidget(self.recommended_k_button)
 
@@ -661,12 +659,6 @@ class MainApp(QMainWindow):
         self.max_clusters_layout.addWidget(self.recommended_k_textbox)
 
         layout.addLayout(self.max_clusters_layout)
-
-        # Button to perform clustering with user-defined K
-        self.perform_clustering_button = QPushButton("Perform Clustering with Custom K")
-        self.perform_clustering_button.clicked.connect(self.custom_clustering)
-        self.style_button(self.perform_clustering_button)
-        layout.addWidget(self.perform_clustering_button)
 
         self.clustering_tab.setLayout(layout)
    
@@ -797,6 +789,7 @@ class MainApp(QMainWindow):
         # Handle the assignment of the cluster number from the text box
         cluster_number = int(self.cluster_input.text())
         QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
+
 
     
 if __name__ == "__main__":
