@@ -29,6 +29,7 @@ class MainApp(QMainWindow):
         self.setStyleSheet("background-color: #f0f0f0;")
         self.batch_processing = False  # Flag to control batch updates
         self.data = None
+        self.tooltip = None  # Initialize tooltip
         self.initUI()
 
     def initUI(self):
@@ -360,7 +361,6 @@ class MainApp(QMainWindow):
             axis = plot["axis"]
 
             if event.inaxes == axis:
-                # Show tooltip for the active plot
                 cont, ind = scatter.contains(event)
                 if cont:
                     index = ind["ind"][0]
@@ -368,11 +368,9 @@ class MainApp(QMainWindow):
                     y = y_data[index]
                     tooltip_text = f"({x:.2f}, {y:.2f})"
 
-                    # Remove the old tooltip
                     if self.tooltip:
                         self.tooltip.remove()
 
-                    # Add a new tooltip at the hovered point
                     self.tooltip = axis.annotate(
                         tooltip_text,
                         (x, y),
@@ -382,15 +380,14 @@ class MainApp(QMainWindow):
                         bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
                         fontsize=10
                     )
-                    self.plot_canvas.draw_idle()
-                    return  # Exit after handling the first matching plot
+                    self.elbow_canvas.draw_idle()
+                    return
 
-        # Remove tooltip if the mouse is not hovering over any plot
         if self.tooltip:
             self.tooltip.remove()
             self.tooltip = None
-            self.plot_canvas.draw_idle()
-
+            self.elbow_canvas.draw_idle()
+    
     def init_plots_tab(self):
         layout = QVBoxLayout()
 
@@ -663,7 +660,6 @@ class MainApp(QMainWindow):
         self.clustering_tab.setLayout(layout)
    
     def generate_elbow_plot(self):
-        # Extract data from the first two columns of the table
         porosity = []
         permeability = []
 
@@ -681,54 +677,45 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in both columns before generating the Elbow Plot.")
             return
 
-        # Combine porosity and permeability into a single array
         X = np.array(list(zip(porosity, permeability)))
 
-        # Get the maximum clusters value from the textbox
         max_clusters_text = self.max_clusters_textbox.text()
         if not max_clusters_text:
             QMessageBox.warning(self, "Invalid Input", "Please enter a maximum number of clusters.")
             return
 
         allocated_k = int(max_clusters_text)
-
-        # Perform the Elbow Method
         wcss = []
-        for k in range(1, allocated_k + 1):  # Use user-provided range for k
+
+        for k in range(1, allocated_k + 1):
             kmeans = KMeans(n_clusters=k, random_state=42)
             kmeans.fit(X)
             wcss.append(kmeans.inertia_)
 
-        # Create the figure to plot the elbow method
-        fig = plt.figure(figsize=(8, 6))  # Adjust the figure size as necessary
-        ax = fig.add_subplot(111)
-        
-        # Plot the elbow method
-        ax.plot(range(1, allocated_k + 1), wcss, marker='o', linestyle='-', color='blue')
+        fig, ax = plt.subplots(figsize=(8, 6))
+
+        scatter = ax.scatter(range(1, allocated_k + 1), wcss, color='blue', picker=True)
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('WCSS', fontsize=12)
         ax.grid(True)
 
-        # Remove previous elbow canvas if it exists
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
             self.elbow_plot_layout.removeWidget(self.elbow_canvas)
             self.elbow_canvas.deleteLater()
             self.elbow_canvas = None
 
         self.elbow_canvas = FigureCanvas(fig)
-        self.elbow_plot_layout.addWidget(self.elbow_canvas)  # Add the elbow canvas to the elbow plot layout
-
-        # Draw the elbow plot
+        self.elbow_plot_layout.addWidget(self.elbow_canvas)
         self.elbow_canvas.draw()
 
-        # Recommend K
-        recommended_k = self.find_recommended_k(wcss)
-        self.recommended_k_textbox.setText(str(recommended_k))  # Set the recommended k in the textbox
+        self.plot_data = [{"scatter": scatter, "x_data": list(range(1, allocated_k + 1)), "y_data": wcss, "axis": ax}]
+        self.elbow_canvas.mpl_connect('motion_notify_event', self.handle_hover_event)
 
-        # Show pop-up with optimum number of clusters
+        recommended_k = self.find_recommended_k(wcss)
+        self.recommended_k_textbox.setText(str(recommended_k))
         QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {recommended_k}")
-    
+   
     def find_recommended_k(self, wcss):
         """
         A more sophisticated method to find the "elbow" point using the Kneedle algorithm.
