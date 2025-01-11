@@ -787,7 +787,10 @@ class MainApp(QMainWindow):
                         highlighted_point.set_offsets([[x, y]])
 
                     # Change cursor
-                    fig.canvas.set_cursor(2)  # 1 is the hand cursor
+                    if cont:
+                        fig.canvas.set_cursor(2)  # 1 is the hand cursor
+                    else :
+                        fig.canvas.set_cursor(0)
                     fig.canvas.draw_idle()
                     return
             # Reset if not hovering
