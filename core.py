@@ -701,7 +701,7 @@ class MainApp(QMainWindow):
         layout.addLayout(self.max_clusters_layout)
 
         self.clustering_tab.setLayout(layout)
-
+        
     def generate_elbow_plot(self):
         porosity = []
         permeability = []
