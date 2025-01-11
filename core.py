@@ -687,16 +687,16 @@ class MainApp(QMainWindow):
         layout.addLayout(self.max_clusters_layout)
 
         # --- Repeat for the recommended K textbox and button ---
-        self.recommended_k_button = QPushButton("Recommended K")
-        self.recommended_k_button.setFixedWidth(150)
-        self.recommended_k_button.clicked.connect(lambda: QMessageBox.information(self, "Recommended K", "Displays recommended K based on data."))
+        self.selected_K_button = QPushButton("Recommended K")
+        self.selected_K_button.setFixedWidth(150)
+        self.selected_K_button.clicked.connect(lambda: QMessageBox.information(self, "Recommended K", "Displays recommended K based on data."))
         self.max_clusters_layout = QHBoxLayout()
 
-        self.max_clusters_layout.addWidget(self.recommended_k_button)
+        self.max_clusters_layout.addWidget(self.selected_K_button)
 
-        self.recommended_k_textbox = QLineEdit()
-        self.recommended_k_textbox.setPlaceholderText("Chosen K")
-        self.max_clusters_layout.addWidget(self.recommended_k_textbox)
+        self.selected_K_textbox = QLineEdit()
+        self.selected_K_textbox.setPlaceholderText("Chosen K")
+        self.max_clusters_layout.addWidget(self.selected_K_textbox)
 
         layout.addLayout(self.max_clusters_layout)
 
@@ -742,10 +742,10 @@ class MainApp(QMainWindow):
         scatter_points = ax.scatter(range(1, allocated_k + 1), wcss, color='blue', s=100)
 
         # Highlight the recommended k
-        recommended_k = self.find_recommended_k(wcss)
+        selected_K = self.find_selected_K(wcss)
         ax.scatter(
-            recommended_k,
-            wcss[recommended_k - 1],
+            selected_K,
+            wcss[selected_K - 1],
             color='red',
             edgecolor='red',
             s=500,
@@ -803,7 +803,7 @@ class MainApp(QMainWindow):
                 if cont:
                     index = ind["ind"][0]
                     chosen_k = index + 1  # k starts at 1
-                    self.recommended_k_textbox.setText(str(chosen_k))
+                    self.selected_K_textbox.setText(str(chosen_k))
 
         fig.canvas.mpl_connect("motion_notify_event", on_hover)
         fig.canvas.mpl_connect("button_press_event", on_click)
@@ -817,9 +817,9 @@ class MainApp(QMainWindow):
         self.elbow_plot_layout.addWidget(self.elbow_canvas)
         self.elbow_canvas.draw()
 
-        QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {recommended_k}")
+        QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {selected_K}")
     
-    def find_recommended_k(self, wcss):
+    def find_selected_K(self, wcss):
         """
         A more sophisticated method to find the "elbow" point using the Kneedle algorithm.
 
@@ -842,10 +842,10 @@ class MainApp(QMainWindow):
         elbow_index = np.argmax(first_derivative)  # This locates the point of maximum drop
 
         # Find the best k - this is the index of the elbow point + 1 due to np.diff reducing length by 1
-        recommended_k = elbow_index + 1
+        selected_K = elbow_index + 1
 
         # Ensure the recommended k is within the range of available k values
-        return min(recommended_k, len(wcss))  
+        return min(selected_K, len(wcss))  
     
     def custom_clustering(self):
         # Handling custom clustering with user-defined K
