@@ -701,7 +701,7 @@ class MainApp(QMainWindow):
         layout.addLayout(self.max_clusters_layout)
 
         self.clustering_tab.setLayout(layout)
-   
+
     def generate_elbow_plot(self):
         porosity = []
         permeability = []
@@ -737,12 +737,13 @@ class MainApp(QMainWindow):
 
         fig, ax = plt.subplots(figsize=(5, 5))
 
-        # Plot elbow points
-        scatter = ax.scatter(range(1, allocated_k + 1), wcss, color='blue', picker=True)
+        # Create line plot and scatter plot for interactivity
+        line, = ax.plot(range(1, allocated_k + 1), wcss, color='blue', marker='o', linestyle='-', label="WCSS")
+        scatter_points = ax.scatter(range(1, allocated_k + 1), wcss, color='blue', s=100)
 
         # Highlight the recommended k
         recommended_k = self.find_recommended_k(wcss)
-        circle = ax.scatter(
+        ax.scatter(
             recommended_k,
             wcss[recommended_k - 1],
             color='red',
@@ -758,60 +759,55 @@ class MainApp(QMainWindow):
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('WCSS', fontsize=12)
         ax.grid(True)
-        ax.legend()
 
-        # Connect click event
-        def on_click(event):
-            if event.inaxes == ax:
-                cont, ind = scatter.contains(event)
-                if cont:
-                    index = ind["ind"][0]
-                    chosen_k = index + 1  # k starts at 1
-                    self.recommended_k_textbox.setText(str(chosen_k))
+        # Configure legend with larger size box
+        ax.legend(
+            loc='best', 
+            fontsize=12, 
+            markerscale=1.5, 
+            frameon=True, 
+            fancybox=True, 
+            framealpha=1, 
+            borderpad=1.5, 
+            labelspacing=1.2
+        )
 
-        # Hover and click states
         highlighted_point = None
-        
-        
-        
+
         def on_hover(event):
             nonlocal highlighted_point
             if event.inaxes == ax:
-                cont, ind = scatter.contains(event)
+                cont, ind = scatter_points.contains(event)
                 if cont:
                     index = ind["ind"][0]
                     x, y = range(1, allocated_k + 1)[index], wcss[index]
 
-                    # Highlight point
                     if highlighted_point is None:
                         highlighted_point = ax.scatter([x], [y], color='red', s=150, zorder=5)
                     else:
                         highlighted_point.set_offsets([[x, y]])
 
-                    # Change cursor to hand
                     fig.canvas.set_cursor(cursors.HAND)
                     fig.canvas.draw_idle()
                     return
-                    
-            # Reset if not hovering
+
             if highlighted_point is not None:
                 highlighted_point.remove()
                 highlighted_point = None
                 fig.canvas.draw_idle()
-            fig.canvas.set_cursor(cursors.POINTER)  # Reset to default arrow cursor
-            
+            fig.canvas.set_cursor(cursors.POINTER)
+
         def on_click(event):
             if event.inaxes == ax:
-                cont, ind = scatter.contains(event)
+                cont, ind = scatter_points.contains(event)
                 if cont:
                     index = ind["ind"][0]
                     chosen_k = index + 1  # k starts at 1
                     self.recommended_k_textbox.setText(str(chosen_k))
-        
+
         fig.canvas.mpl_connect("motion_notify_event", on_hover)
         fig.canvas.mpl_connect("button_press_event", on_click)
-        
-        # Add the figure to the layout
+
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
             self.elbow_plot_layout.removeWidget(self.elbow_canvas)
             self.elbow_canvas.deleteLater()
@@ -822,7 +818,7 @@ class MainApp(QMainWindow):
         self.elbow_canvas.draw()
 
         QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {recommended_k}")
-   
+    
     def find_recommended_k(self, wcss):
         """
         A more sophisticated method to find the "elbow" point using the Kneedle algorithm.
