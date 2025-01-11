@@ -714,7 +714,7 @@ class MainApp(QMainWindow):
             kmeans.fit(X)
             wcss.append(kmeans.inertia_)
 
-        fig, ax = plt.subplots(figsize=(8, 6))
+        fig, ax = plt.subplots(figsize=(5, 10))
 
         scatter = ax.scatter(range(1, allocated_k + 1), wcss, color='blue', picker=True)
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
@@ -728,6 +728,7 @@ class MainApp(QMainWindow):
             self.elbow_canvas = None
 
         self.elbow_canvas = FigureCanvas(fig)
+        
         self.elbow_plot_layout.addWidget(self.elbow_canvas)
         self.elbow_canvas.draw()
 
@@ -736,7 +737,7 @@ class MainApp(QMainWindow):
         self.recommended_k_textbox.setText(str(recommended_k))
 
         # Highlight the recommended k point with a red circle
-        ax.scatter(recommended_k, wcss[recommended_k - 1], color='red', edgecolor='black', s=200, facecolors='none', linewidth=2, label='Recommended k')
+        ax.scatter(recommended_k, wcss[recommended_k - 1], color='red', edgecolor='red', s=200, facecolors='none', linewidth=2, label='Recommended k')
 
         # Add legend to indicate the recommended k
         ax.legend()
