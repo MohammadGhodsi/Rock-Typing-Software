@@ -726,9 +726,6 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
             return
 
-
-        
-
         allocated_k = int(max_clusters_text)
         wcss = []
 
@@ -762,12 +759,47 @@ class MainApp(QMainWindow):
         ax.grid(True)
         ax.legend()
 
-        # Save both plots for hover functionality
-        self.plot_data = [
-            {"scatter": scatter, "x_data": range(1, allocated_k + 1), "y_data": wcss, "axis": ax},
-            {"scatter": circle, "x_data": [recommended_k], "y_data": [wcss[recommended_k - 1]], "axis": ax}
-        ]
+        # Connect click event
+        def on_click(event):
+            if event.inaxes == ax:
+                cont, ind = scatter.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    chosen_k = index + 1  # k starts at 1
+                    self.recommended_k_textbox.setText(str(chosen_k))
 
+
+        # Hover and click states
+        highlighted_point = None
+        
+        def on_hover(event):
+            nonlocal highlighted_point
+            if event.inaxes == ax:
+                cont, ind = scatter.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    x, y = range(1, allocated_k + 1)[index], wcss[index]
+
+                    # Highlight point
+                    if highlighted_point is None:
+                        highlighted_point = ax.scatter([x], [y], color='red', s=150, zorder=5)
+                    else:
+                        highlighted_point.set_offsets([[x, y]])
+
+                    # Change cursor
+                    fig.canvas.set_cursor(1)  # 1 is the hand cursor
+                    fig.canvas.draw_idle()
+                    return
+            # Reset if not hovering
+            if highlighted_point is not None:
+                highlighted_point.remove()
+                highlighted_point = None
+                fig.canvas.draw_idle()
+            fig.canvas.set_cursor(0)  # Default cursor
+        
+        fig.canvas.mpl_connect("motion_notify_event", on_hover)
+        fig.canvas.mpl_connect("button_press_event", on_click)
+        
         # Add the figure to the layout
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
             self.elbow_plot_layout.removeWidget(self.elbow_canvas)
