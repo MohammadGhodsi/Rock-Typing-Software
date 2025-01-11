@@ -6,7 +6,7 @@ from sklearn.cluster import KMeans
 from matplotlib.widgets import Button, TextBox
 from matplotlib.backend_bases import cursors
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QLabel,
+    QApplication, QMainWindow, QPushButton, QLabel,QFileDialog,
     QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit
 )
 from PyQt5.QtCore import Qt
@@ -158,12 +158,38 @@ class MainApp(QMainWindow):
         paste_action = menu.addAction("Paste from Clipboard")
         delete_action = menu.addAction("Delete")
         delete_all_action = menu.addAction("Delete All")
+        export_action = menu.addAction("Export as CSV")  # New action for exporting CSV
 
         paste_action.triggered.connect(self.handle_paste)
         delete_action.triggered.connect(self.handle_delete)
         delete_all_action.triggered.connect(self.handle_delete_all)
+        export_action.triggered.connect(self.export_to_csv)  # Connect to export function
 
         menu.exec_(self.table.viewport().mapToGlobal(position))
+
+    def export_to_csv(self):
+        # Open a file dialog to get the file path
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
+
+        if file_path:  # If a valid file path is selected
+            try:
+                # Prepare data for CSV export
+                data = []
+                for row in range(self.table.rowCount()):
+                    row_data = []
+                    for column in range(self.table.columnCount()):
+                        item = self.table.item(row, column)
+                        row_data.append(item.text() if item else '')  # Get text from table item
+                    data.append(row_data)
+
+                # Write data to CSV file
+                df = pd.DataFrame(data)
+                df.to_csv(file_path, index=False, header=[self.table.horizontalHeaderItem(i).text() for i in range(self.table.columnCount())])
+
+                QMessageBox.information(self, "Success", "Data has been exported successfully.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
 
     def handle_paste(self):
         clipboard = QApplication.clipboard()
