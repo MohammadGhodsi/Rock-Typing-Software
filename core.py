@@ -661,15 +661,15 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Add the Elbow Method button
+        # Placeholder for elbow plot layout (Moved to be added directly after header)
+        self.elbow_plot_layout = QVBoxLayout()
+        layout.addLayout(self.elbow_plot_layout)
+
+        # Add the Elbow Method button (Now comes after the elbow plot placeholder)
         self.elbow_button = QPushButton("Generate Elbow Plot")
         self.elbow_button.clicked.connect(self.generate_elbow_plot)
         self.style_button(self.elbow_button)
         layout.addWidget(self.elbow_button)
-
-        # Placeholder for elbow plot layout
-        self.elbow_plot_layout = QVBoxLayout()
-        layout.addLayout(self.elbow_plot_layout)
 
         # Placeholder for cluster number input and button layout
         self.max_clusters_layout = QHBoxLayout()
@@ -686,7 +686,7 @@ class MainApp(QMainWindow):
 
         layout.addLayout(self.max_clusters_layout)
 
-        # --- Repeat for the recommended K textbox and button ---
+        # --- Repeat for the recommended K textbox and button layout ---
         self.selected_K_button = QPushButton("Recommended K")
         self.selected_K_button.setFixedWidth(150)
         self.selected_K_button.clicked.connect(lambda: QMessageBox.information(self, "Recommended K", "Displays recommended K based on data."))
@@ -701,7 +701,7 @@ class MainApp(QMainWindow):
         layout.addLayout(self.max_clusters_layout)
 
         self.clustering_tab.setLayout(layout)
-        
+
     def generate_elbow_plot(self):
         porosity = []
         permeability = []
@@ -735,7 +735,7 @@ class MainApp(QMainWindow):
             kmeans.fit(X)
             wcss.append(kmeans.inertia_)
 
-        fig, ax = plt.subplots(figsize=(5, 5))
+        fig, ax = plt.subplots(figsize=(5, 10))
 
         # Create line plot and scatter plot for interactivity
         line, = ax.plot(range(1, allocated_k + 1), wcss, color='blue', marker='o', linestyle='-', label="WCSS")
