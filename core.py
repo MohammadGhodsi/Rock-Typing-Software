@@ -709,11 +709,18 @@ class MainApp(QMainWindow):
         self.elbow_plot_layout.addWidget(self.elbow_canvas)
         self.elbow_canvas.draw()
 
-        self.plot_data = [{"scatter": scatter, "x_data": list(range(1, allocated_k + 1)), "y_data": wcss, "axis": ax}]
-        self.elbow_canvas.mpl_connect('motion_notify_event', self.handle_hover_event)
-
+        # Find and highlight the recommended k
         recommended_k = self.find_recommended_k(wcss)
         self.recommended_k_textbox.setText(str(recommended_k))
+
+        # Highlight the recommended k point with a red circle
+        ax.scatter(recommended_k, wcss[recommended_k - 1], color='red', edgecolor='black', s=200, facecolors='none', linewidth=2, label='Recommended k')
+
+        # Add legend to indicate the recommended k
+        ax.legend()
+
+        self.elbow_canvas.draw()
+
         QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {recommended_k}")
    
     def find_recommended_k(self, wcss):
