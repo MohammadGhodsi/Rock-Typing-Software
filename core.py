@@ -768,7 +768,6 @@ class MainApp(QMainWindow):
                     chosen_k = index + 1  # k starts at 1
                     self.recommended_k_textbox.setText(str(chosen_k))
 
-
         # Hover and click states
         highlighted_point = None
         
