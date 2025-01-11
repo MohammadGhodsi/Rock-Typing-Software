@@ -54,10 +54,12 @@ class MainApp(QMainWindow):
         self.plots_tab = QWidget()
         self.clustering_tab = QWidget()
         self.ml_tab = QWidget()
+        self.rock_type_tab = QWidget()
 
         self.tabs.addTab(self.dataset_tab, "Dataset")
         self.tabs.addTab(self.plots_tab, "Plots")
         self.tabs.addTab(self.clustering_tab, "Clustering")
+        self.tabs.addTab(self.rock_type_tab, "Rock Type")
         self.tabs.addTab(self.ml_tab, "Machine Learning")
 
         # Add Tabs to the main layout
@@ -73,6 +75,24 @@ class MainApp(QMainWindow):
         self.init_plots_tab()
         self.init_clustering_tab()
         self.init_ml_tab()
+        self.init_rock_type_tab()
+   
+    def init_rock_type_tab(self):
+        layout = QVBoxLayout()
+
+        header_label = QLabel("Rock Type Selection")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+
+        # Add a table or other widget for rock type selection
+        self.rock_type_table = QTableWidget(5, 2)  # Example table with 5 rows and 2 columns
+        self.rock_type_table.setHorizontalHeaderLabels(["Rock Type", "Description"])
+        self.rock_type_table.setStyleSheet("font-size: 18px; font-family: 'Times New Roman';")
+
+        layout.addWidget(self.rock_type_table)
+
+        self.rock_type_tab.setLayout(layout)
     
     def init_dataset_tab(self):
         layout = QVBoxLayout()
