@@ -366,12 +366,7 @@ class MainApp(QMainWindow):
                     index = ind["ind"][0]
                     x = x_data[index]
                     y = y_data[index]
-
-                    # Tooltip for main points or red circle
-                    if len(x_data) == 1:  # Red circle
-                        tooltip_text = f"Recommended k: ({x}, {y:.2f})"
-                    else:  # Main elbow points
-                        tooltip_text = f"({x}, {y:.2f})"
+                    tooltip_text = f"({x:.2f}, {y:.2f})"
 
                     if self.tooltip:
                         self.tooltip.remove()
@@ -385,14 +380,36 @@ class MainApp(QMainWindow):
                         bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
                         fontsize=10
                     )
-                    self.elbow_canvas.draw_idle()
+                    self.plot_canvas.draw_idle()
                     return
+
+        # Check if hovering over the red circle
+        if event.inaxes == axis:
+            for circle in axis.collections:
+                cont, ind = circle.contains(event)
+                if cont:
+                    tooltip_text = "Recommended k"
+                    if self.tooltip:
+                        self.tooltip.remove()
+
+                    self.tooltip = axis.annotate(
+                        tooltip_text,
+                        event,
+                        textcoords="offset points",
+                        xytext=(10, 10),
+                        ha='center',
+                        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                        fontsize=10
+                    )
+                    self.plot_canvas.draw_idle()
+                    return
+
         # Remove tooltip if not hovering over any point
         if self.tooltip:
             self.tooltip.remove()
             self.tooltip = None
-            self.elbow_canvas.draw_idle()
-
+            self.plot_canvas.draw_idle()
+    
     def init_plots_tab(self):
         layout = QVBoxLayout()
 
@@ -702,20 +719,31 @@ class MainApp(QMainWindow):
         # Plot elbow points
         scatter = ax.scatter(range(1, allocated_k + 1), wcss, color='blue', picker=True)
 
-        # Save reference to dots for click and hover events
-        self.plot_data = {
-            "scatter": scatter,
-            "x_data": range(1, allocated_k + 1),
-            "y_data": wcss,
-            "axis": ax,
-            "selected_index": None  # Track the selected point
-        }
+        # Highlight the recommended k
+        recommended_k = self.find_recommended_k(wcss)
+        circle = ax.scatter(
+            recommended_k,
+            wcss[recommended_k - 1],
+            color='red',
+            edgecolor='red',
+            s=500,
+            facecolors='none',
+            linewidth=2,
+            label='Recommended k'
+        )
 
         # Configure plot
         ax.set_title('Elbow Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('WCSS', fontsize=12)
         ax.grid(True)
+        ax.legend()
+
+        # Save both plots for hover functionality
+        self.plot_data = [
+            {"scatter": scatter, "x_data": range(1, allocated_k + 1), "y_data": wcss, "axis": ax},
+            {"scatter": circle, "x_data": [recommended_k], "y_data": [wcss[recommended_k - 1]], "axis": ax}
+        ]
 
         # Add the figure to the layout
         if hasattr(self, 'elbow_canvas') and self.elbow_canvas:
@@ -725,12 +753,9 @@ class MainApp(QMainWindow):
 
         self.elbow_canvas = FigureCanvas(fig)
         self.elbow_plot_layout.addWidget(self.elbow_canvas)
-        
-        # Connect events
-        self.elbow_canvas.mpl_connect('pick_event', self.handle_pick_event)
-        self.elbow_canvas.mpl_connect('motion_notify_event', self.handle_hover_event)
-
         self.elbow_canvas.draw()
+
+        QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {recommended_k}")
    
     def find_recommended_k(self, wcss):
         """
@@ -793,32 +818,7 @@ class MainApp(QMainWindow):
         cluster_number = int(self.cluster_input.text())
         QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
 
-    def handle_pick_event(self, event):
-        scatter = self.plot_data["scatter"]
-        x_data = list(self.plot_data["x_data"])
-        y_data = list(self.plot_data["y_data"])
-        selected_index = self.plot_data["selected_index"]
 
-        # Get the index of the clicked point
-        ind = event.ind[0]
-        clicked_x = x_data[ind]
-        clicked_y = y_data[ind]
-
-        # Deselect previous point if any
-        if selected_index is not None:
-            scatter._facecolor3d[selected_index] = (0, 0, 1, 1)  # Blue
-            scatter._edgecolor3d[selected_index] = (0, 0, 1, 1)
-
-        # Select the new point
-        scatter._facecolor3d[ind] = (1, 0, 0, 1)  # Red
-        scatter._edgecolor3d[ind] = (1, 0, 0, 1)
-        self.plot_data["selected_index"] = ind
-
-        # Update the Recommended K textbox
-        self.recommended_k_textbox.setText(str(clicked_x))
-
-        # Redraw the canvas
-        self.elbow_canvas.draw_idle()
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
