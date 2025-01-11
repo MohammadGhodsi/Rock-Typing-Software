@@ -722,9 +722,12 @@ class MainApp(QMainWindow):
         X = np.array(list(zip(porosity, permeability)))
 
         max_clusters_text = self.max_clusters_textbox.text()
-        if not max_clusters_text:
-            QMessageBox.warning(self, "Invalid Input", "Please enter a maximum number of clusters.")
+        if not max_clusters_text.isdigit() or int(max_clusters_text) <= 0:
+            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
             return
+
+
+
 
         allocated_k = int(max_clusters_text)
         wcss = []
