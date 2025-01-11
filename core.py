@@ -787,7 +787,7 @@ class MainApp(QMainWindow):
                         highlighted_point.set_offsets([[x, y]])
 
                     # Change cursor
-                    fig.canvas.set_cursor(1)  # 1 is the hand cursor
+                    fig.canvas.set_cursor(2)  # 1 is the hand cursor
                     fig.canvas.draw_idle()
                     return
             # Reset if not hovering
@@ -796,6 +796,14 @@ class MainApp(QMainWindow):
                 highlighted_point = None
                 fig.canvas.draw_idle()
             fig.canvas.set_cursor(0)  # Default cursor
+            
+        def on_click(event):
+            if event.inaxes == ax:
+                cont, ind = scatter.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    chosen_k = index + 1  # k starts at 1
+                    self.recommended_k_textbox.setText(str(chosen_k))
         
         fig.canvas.mpl_connect("motion_notify_event", on_hover)
         fig.canvas.mpl_connect("button_press_event", on_click)
