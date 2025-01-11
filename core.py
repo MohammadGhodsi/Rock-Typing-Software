@@ -380,13 +380,35 @@ class MainApp(QMainWindow):
                         bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
                         fontsize=10
                     )
-                    self.elbow_canvas.draw_idle()
+                    self.plot_canvas.draw_idle()
                     return
 
+        # Check if hovering over the red circle
+        if event.inaxes == axis:
+            for circle in axis.collections:
+                cont, ind = circle.contains(event)
+                if cont:
+                    tooltip_text = "Recommended k"
+                    if self.tooltip:
+                        self.tooltip.remove()
+
+                    self.tooltip = axis.annotate(
+                        tooltip_text,
+                        event,
+                        textcoords="offset points",
+                        xytext=(10, 10),
+                        ha='center',
+                        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                        fontsize=10
+                    )
+                    self.plot_canvas.draw_idle()
+                    return
+
+        # Remove tooltip if not hovering over any point
         if self.tooltip:
             self.tooltip.remove()
             self.tooltip = None
-            self.elbow_canvas.draw_idle()
+            self.plot_canvas.draw_idle()
     
     def init_plots_tab(self):
         layout = QVBoxLayout()
