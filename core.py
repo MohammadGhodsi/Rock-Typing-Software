@@ -727,7 +727,7 @@ class MainApp(QMainWindow):
             return
 
 
-
+        
 
         allocated_k = int(max_clusters_text)
         wcss = []
