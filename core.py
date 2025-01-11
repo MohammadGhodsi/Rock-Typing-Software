@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from matplotlib.widgets import Button, TextBox
+from matplotlib.backend_bases import cursors
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,
     QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit
@@ -771,6 +772,8 @@ class MainApp(QMainWindow):
         # Hover and click states
         highlighted_point = None
         
+        
+        
         def on_hover(event):
             nonlocal highlighted_point
             if event.inaxes == ax:
@@ -785,19 +788,17 @@ class MainApp(QMainWindow):
                     else:
                         highlighted_point.set_offsets([[x, y]])
 
-                    # Change cursor
-                    if cont:
-                        fig.canvas.set_cursor(2)  # 1 is the hand cursor
-                    else :
-                        fig.canvas.set_cursor(0)
+                    # Change cursor to hand
+                    fig.canvas.set_cursor(cursors.HAND)
                     fig.canvas.draw_idle()
                     return
+                    
             # Reset if not hovering
             if highlighted_point is not None:
                 highlighted_point.remove()
                 highlighted_point = None
                 fig.canvas.draw_idle()
-            fig.canvas.set_cursor(0)  # Default cursor
+            fig.canvas.set_cursor(cursors.POINTER)  # Reset to default arrow cursor
             
         def on_click(event):
             if event.inaxes == ax:
