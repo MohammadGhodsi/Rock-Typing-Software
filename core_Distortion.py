@@ -892,8 +892,10 @@ class MainApp(QMainWindow):
 
         # Create the plot
         fig, ax = plt.subplots(figsize=(5, 10))
+        scatter_points = ax.scatter(
+            range(1, max_clusters + 1), distortions, color='blue', s=100, label='Distortion Points'
+        )
         ax.plot(range(1, max_clusters + 1), distortions, marker='o', color='blue', linestyle='-', label='Distortion Curve')
-        scatter_points = ax.scatter(range(1, max_clusters + 1), distortions, color='blue', s=100, label='Distortion Points')
 
         # Highlight optimal K with a red circle
         optimal_k = self.find_optimal_k(distortions)
@@ -912,7 +914,19 @@ class MainApp(QMainWindow):
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('Distortion', fontsize=12)
         ax.grid(True)
-        ax.legend(loc='best', fontsize=12, frameon=True)
+        ax.legend(loc='best', fontsize=12)
+
+        # Event handling for click interaction
+        def on_click(event):
+            if event.inaxes == ax:
+                cont, ind = scatter_points.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    chosen_k = index + 1  # Add 1 because cluster range starts from 1
+                    self.selected_K_textbox.setText(str(chosen_k))
+                    QMessageBox.information(self, "Chosen K", f"You have selected K = {chosen_k}")
+
+        fig.canvas.mpl_connect("button_press_event", on_click)
 
         # Replace or update the canvas
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
