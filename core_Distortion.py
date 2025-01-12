@@ -135,6 +135,29 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
 
+        # Ensure a valid number of clusters is entered
+        try:
+            n_clusters = int(self.selected_K_textbox.text())
+            if n_clusters <= 0:
+                raise ValueError
+        except ValueError:
+            QMessageBox.warning(self, "Warning", "Please enter a valid positive number for clusters.")
+            return
+
+        # Prepare data for clustering
+        X = np.array(list(zip(porosity, permeability)))
+
+        # Perform KMeans clustering
+        try:
+            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+            clusters = kmeans.fit_predict(X)
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
+            return
+
+        # Assign cluster labels for coloring
+        cluster_colors = plt.cm.tab10.colors  # Use a colormap with distinct colors
+
         # Clear the previous plots
         self.rock_type_canvas.figure.clear()
 
@@ -142,25 +165,41 @@ class MainApp(QMainWindow):
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
-        # Plot 1: Absolute Permeability vs Porosity
-        axes[0].scatter(porosity, permeability, color='blue', picker=True)
+        # Plot 1: Absolute Permeability vs Porosity with clusters
+        for cluster in range(n_clusters):
+            cluster_data = X[clusters == cluster]
+            axes[0].scatter(
+                cluster_data[:, 0], cluster_data[:, 1],
+                color=cluster_colors[cluster % len(cluster_colors)],
+                label=f"Cluster {cluster + 1}",
+                alpha=0.7
+            )
         axes[0].set_title("Absolute Permeability (md) vs Porosity")
         axes[0].set_xlabel("Porosity")
         axes[0].set_ylabel("Absolute Permeability (md)")
+        axes[0].legend()
         axes[0].grid(True)
 
-        # Plot 2: log(RQI) vs log(Phi z)
+        # Plot 2: log(RQI) vs log(Phi z) with clusters
         log_rqi = np.log(rqi)
         log_phi_z = np.log(phi_z)
-        axes[1].scatter(log_phi_z, log_rqi, color='red', picker=True)
+        for cluster in range(n_clusters):
+            cluster_indices = np.where(clusters == cluster)[0]
+            axes[1].scatter(
+                log_phi_z[cluster_indices], log_rqi[cluster_indices],
+                color=cluster_colors[cluster % len(cluster_colors)],
+                label=f"Cluster {cluster + 1}",
+                alpha=0.7
+            )
         axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
+        axes[1].legend()
         axes[1].grid(True)
 
         # Update the canvas
         self.rock_type_canvas.draw()
-        
+    
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
