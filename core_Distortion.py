@@ -838,9 +838,21 @@ class MainApp(QMainWindow):
         self.distortion_canvas.draw()
     
     def find_optimal_k(self, distortions):
+        if len(distortions) == 2:
+            # If distortions length is less than 3, we can't calculate a second derivative properly
+            return max(2, len(distortions))  # Return at least 2 or the number of data points
+        if len(distortions) == 1:
+            # If distortions length is less than 2, we can't calculate a second derivative properly
+            return max(1, len(distortions))  # Return at least 2 or the number of data points
+
         diff = np.diff(distortions)
         second_diff = np.diff(diff)
-        optimal_k = np.argmax(second_diff) + 2
+
+        # Add a check to ensure second_diff has enough elements for argmax
+        if len(second_diff) < 1:
+            return 2  # Default to 2 clusters if we can't compute a meaningful second derivative
+
+        optimal_k = np.argmax(second_diff) + 2  # +2 because np.diff reduces the length twice
         return optimal_k
     
     def on_hover_distortion_plot(self, event, scatter_points, distortions):
