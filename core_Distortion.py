@@ -112,72 +112,55 @@ class MainApp(QMainWindow):
         self.rock_type_tab.setLayout(layout)
    
     def update_rock_type_tab(self):
-        # Extract data from the table to self.data
-        self.extract_table_data()
-        
-        if self.data is None or self.data.empty:
-            QMessageBox.warning(self, "Warning", "No data available to visualize. Please load a dataset.")
+        # Extract data from the table
+        porosity = []
+        permeability = []
+        rqi = []
+        phi_z = []
+
+        for row in range(self.table.rowCount()):
+            try:
+                if self.table.item(row, 0) and self.table.item(row, 0).text():
+                    porosity.append(float(self.table.item(row, 0).text()))
+                if self.table.item(row, 1) and self.table.item(row, 1).text():
+                    permeability.append(float(self.table.item(row, 1).text()))
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+                    rqi.append(float(self.table.item(row, 2).text()))
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+                    phi_z.append(float(self.table.item(row, 3).text()))
+            except ValueError:
+                continue  # Skip rows with invalid or missing data
+
+        if not porosity or not permeability or not rqi or not phi_z:
+            QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
 
-        # Ensure clustering results are present
-        if 'Cluster' not in self.data.columns or self.data['Cluster'].isnull().all():
-            QMessageBox.warning(self, "Warning", "Clustering results not available. Please perform clustering first.")
-            return
-
-        # Get number of clusters
-        try:
-            n_clusters = int(self.max_clusters_textbox.text())
-        except ValueError:
-            QMessageBox.warning(self, "Warning", "Please specify a valid number of clusters.")
-            return
-
-        # Clear previous plots
+        # Clear the previous plots
         self.rock_type_canvas.figure.clear()
 
-        # Create subplots
+        # Create a 1x2 grid for the subplots
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
-        # Use distinct colors for each cluster
-        colors = plt.cm.tab10.colors
-
-        for cluster in range(n_clusters):
-            cluster_data = self.data[self.data['Cluster'] == cluster]
-
-            # First subplot: Porosity vs Absolute Permeability
-            axes[0].scatter(
-                cluster_data['Porosity'],
-                cluster_data['Absolute Permeability (md)'],
-                color=colors[cluster % len(colors)],
-                label=f"Cluster {cluster + 1}",
-                alpha=0.7,
-            )
-
-            # Second subplot: log(Phi z) vs log(RQI)
-            axes[1].scatter(
-                np.log(cluster_data['Phi z']),
-                np.log(cluster_data['RQI']),
-                color=colors[cluster % len(colors)],
-                label=f"Cluster {cluster + 1}",
-                alpha=0.7,
-            )
-
-        # Add titles, labels, and legends
-        axes[0].set_title("Porosity vs Absolute Permeability")
+        # Plot 1: Absolute Permeability vs Porosity
+        axes[0].scatter(porosity, permeability, color='blue', picker=True)
+        axes[0].set_title("Absolute Permeability (md) vs Porosity")
         axes[0].set_xlabel("Porosity")
         axes[0].set_ylabel("Absolute Permeability (md)")
+        axes[0].grid(True)
 
-        axes[1].set_title("log(Phi z) vs log(RQI)")
+        # Plot 2: log(RQI) vs log(Phi z)
+        log_rqi = np.log(rqi)
+        log_phi_z = np.log(phi_z)
+        axes[1].scatter(log_phi_z, log_rqi, color='red', picker=True)
+        axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
-
-        for ax in axes:
-            ax.legend()
-            ax.grid(True)
+        axes[1].grid(True)
 
         # Update the canvas
         self.rock_type_canvas.draw()
-    
+        
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
