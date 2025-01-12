@@ -763,20 +763,56 @@ class MainApp(QMainWindow):
             distortions.append(distortion)
 
         fig, ax = plt.subplots(figsize=(5, 10))
-        scatter_points = ax.scatter(range(1, allocated_k + 1), distortions, color='blue', s=100, picker=True)
+
+        line, = ax.plot(range(1, allocated_k + 1), distortions, color='blue', marker='o', linestyle='-', label="Distortion")
+        scatter_points = ax.scatter(range(1, allocated_k + 1), distortions, color='blue', s=100)
+
+        optimal_k = self.find_optimal_k(distortions)
+        ax.scatter(optimal_k, distortions[optimal_k - 1], color='red', edgecolor='red', s=500, facecolors='none', linewidth=2, label='Recommended k')
+
         ax.set_title('Distortion Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('Distortion', fontsize=12)
         ax.grid(True)
 
-        # Automatically find and highlight optimal k
-        optimal_k = self.find_optimal_k(distortions)
-        ax.scatter(optimal_k, distortions[optimal_k - 1], color='red', s=200, edgecolor='red', facecolors='none', linewidth=2)
-        self.selected_K_textbox.setText(str(optimal_k))
+        ax.legend(loc='best', fontsize=12, markerscale=1.5, frameon=True, fancybox=True, framealpha=1, borderpad=1.5, labelspacing=1.2)
 
-        # Connect hover and click events
-        fig.canvas.mpl_connect("motion_notify_event", lambda event: self.on_hover_distortion_plot(event, scatter_points, distortions))
-        fig.canvas.mpl_connect("button_press_event", lambda event: self.on_click_distortion_plot(event, distortions))
+        highlighted_point = None
+
+        def on_hover(event):
+            nonlocal highlighted_point
+            if event.inaxes == ax:
+                cont, ind = scatter_points.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    x, y = range(1, allocated_k + 1)[index], distortions[index]
+
+                    if highlighted_point is None:
+                        highlighted_point = ax.scatter([x], [y], color='red', s=150, zorder=5)
+                    else:
+                        highlighted_point.set_offsets([[x, y]])
+
+                    fig.canvas.set_cursor(cursors.HAND)
+                    fig.canvas.draw_idle()
+                    return
+
+            if highlighted_point is not None:
+                highlighted_point.remove()
+                highlighted_point = None
+                fig.canvas.draw_idle()
+            fig.canvas.set_cursor(cursors.POINTER)
+
+        def on_click(event):
+            if event.inaxes == ax:
+                cont, ind = scatter_points.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    chosen_k = index + 1
+                    self.selected_K_textbox.setText(str(chosen_k))
+                    QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
+
+        fig.canvas.mpl_connect("motion_notify_event", on_hover)
+        fig.canvas.mpl_connect("button_press_event", on_click)
 
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
             self.distortion_plot_layout.removeWidget(self.distortion_canvas)
@@ -786,6 +822,8 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
+
+        QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {optimal_k}")
     
     def find_optimal_k(self, distortions):
         diff = np.diff(distortions)
