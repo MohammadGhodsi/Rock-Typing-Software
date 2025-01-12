@@ -595,7 +595,7 @@ class MainApp(QMainWindow):
 
         try:
             features = self.data[['Porosity', 'Absolute Permeability (md)']]
-            optimal_k = 3  # Based on elbow plot analysis
+            optimal_k = 3  # Based on distortion plot analysis
             kmeans = KMeans(n_clusters=optimal_k, random_state=42)
             self.data['Cluster'] = kmeans.fit_predict(features)
 
@@ -687,15 +687,15 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Placeholder for elbow plot layout (Moved to be added directly after header)
-        self.elbow_plot_layout = QVBoxLayout()
-        layout.addLayout(self.elbow_plot_layout)
+        # Placeholder for distortion plot layout (Moved to be added directly after header)
+        self.distortion_plot_layout = QVBoxLayout()
+        layout.addLayout(self.distortion_plot_layout)
 
-        # Add the Elbow Method button (Now comes after the elbow plot placeholder)
-        self.elbow_button = QPushButton("Generate Elbow Plot")
-        self.elbow_button.clicked.connect(self.generate_distortion_plot)
-        self.style_button(self.elbow_button)
-        layout.addWidget(self.elbow_button)
+        # Add the distortion Method button (Now comes after the distortion plot placeholder)
+        self.distortion_button = QPushButton("Generate distortion Plot")
+        self.distortion_button.clicked.connect(self.generate_distortion_plot)
+        self.style_button(self.distortion_button)
+        layout.addWidget(self.distortion_button)
 
         # Placeholder for cluster number input and button layout
         self.max_clusters_layout = QHBoxLayout()
@@ -771,25 +771,25 @@ class MainApp(QMainWindow):
         ax.legend()
 
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
-            self.elbow_plot_layout.removeWidget(self.distortion_canvas)
+            self.distortion_plot_layout.removeWidget(self.distortion_canvas)
             self.distortion_canvas.deleteLater()
             self.distortion_canvas = None
 
         self.distortion_canvas = FigureCanvas(fig)
-        self.elbow_plot_layout.addWidget(self.distortion_canvas)
+        self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
 
         QMessageBox.information(self, "Optimal Clusters", "Check the plot to find the optimal number of clusters.")
     
     def find_selected_K(self, wcss):
         """
-        A more sophisticated method to find the "elbow" point using the Kneedle algorithm.
+        A more sophisticated method to find the "distortion" point using the Kneedle algorithm.
 
         Parameters:
         - wcss: List of WCSS values for different k values.
 
         Returns:
-        - Recommended number of clusters (k) based on the elbow method.
+        - Recommended number of clusters (k) based on the distortion method.
         """
         if len(wcss) < 2:
             return 1  # if there's not enough data, default to 1 cluster
@@ -800,11 +800,11 @@ class MainApp(QMainWindow):
         # Calculate second derivative (acceleration)
         second_derivative = np.diff(first_derivative)
 
-        # Find the index of the maximum value of the first derivative (indicating the elbow)
-        elbow_index = np.argmax(first_derivative)  # This locates the point of maximum drop
+        # Find the index of the maximum value of the first derivative (indicating the distortion)
+        distortion_index = np.argmax(first_derivative)  # This locates the point of maximum drop
 
-        # Find the best k - this is the index of the elbow point + 1 due to np.diff reducing length by 1
-        selected_K = elbow_index + 1
+        # Find the best k - this is the index of the distortion point + 1 due to np.diff reducing length by 1
+        selected_K = distortion_index + 1
 
         # Ensure the recommended k is within the range of available k values
         return min(selected_K, len(wcss))  
