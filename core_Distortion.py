@@ -7,7 +7,8 @@ from matplotlib.widgets import Button, TextBox
 from matplotlib.backend_bases import cursors
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,QFileDialog,
-    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit
+    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit ,
+    QSizePolicy
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence , QIntValidator
@@ -81,36 +82,40 @@ class MainApp(QMainWindow):
     def init_rock_type_tab(self):
         layout = QVBoxLayout()
 
-        # Header Label
+        # Header
         header_label = QLabel("Rock Type Visualization")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Create a figure with 1x2 subplots, same size as in the "Plots" tab
+        # Create a figure with subplots
         fig, axes = plt.subplots(1, 2, figsize=(10, 10))
         fig.tight_layout(pad=5.0)
 
-        # Set placeholders for axes titles
+        # Placeholders for axes
         axes[0].set_title("Empty Plot 1")
-        axes[0].axis('off')  # Turn off axes for empty placeholder
-
+        axes[0].axis('off')
         axes[1].set_title("Empty Plot 2")
-        axes[1].axis('off')  # Turn off axes for empty placeholder
+        axes[1].axis('off')
 
-        # Add the figure to the rock type tab
+        # Add canvas to layout
         self.rock_type_canvas = FigureCanvas(fig)
         layout.addWidget(self.rock_type_canvas)
 
-        # Add a button to generate plots
+        # Spacer for alignment
+        layout.addStretch()
+
+        # Button for plotting, placed at the bottom
+        button_layout = QHBoxLayout()
         plot_button = QPushButton("Plot Rock Type Data")
         plot_button.clicked.connect(self.update_rock_type_tab)
-        self.style_button(plot_button)  # Reuse the styling function from the "Plots" tab
-        layout.addWidget(plot_button)
+        self.style_button(plot_button)  # Reuse button styling
+        button_layout.addWidget(plot_button)
 
-        # Set the layout for the tab
+        layout.addLayout(button_layout)
+
         self.rock_type_tab.setLayout(layout)
-   
+    
     def update_rock_type_tab(self):
         # Extract data from the table
         porosity = []
@@ -676,23 +681,23 @@ class MainApp(QMainWindow):
         QMessageBox.information(self, "SVM Results", f"Classification Report:\n{report}")
     
     def style_button(self, button):
-        button.setFixedSize(200, 50)
         button.setStyleSheet(
             """
             QPushButton {
-                background-color: #00b8b8;
-                color: black;
-                font-size: 20px;
-                border-radius: 10px;
+                background-color: #0078d7;
+                color: white;
+                font-size: 18px;
+                border-radius: 8px;
                 font-family: 'Times New Roman';
+                padding: 10px;
             }
             QPushButton:hover {
-                background-color: #00008B;
-                color: white;
+                background-color: #005a9e;
             }
             """
         )
-
+        button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)  # Make it full width
+    
     def perform_clustering(self):
         # Extract data from the table to self.data
         self.extract_table_data()
@@ -792,52 +797,47 @@ class MainApp(QMainWindow):
     def init_clustering_tab(self):
         layout = QVBoxLayout()
 
+        # Header
         header_label = QLabel("Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Placeholder for distortion plot layout (Moved to be added directly after header)
+        # Distortion Plot Layout
         self.distortion_plot_layout = QVBoxLayout()
         layout.addLayout(self.distortion_plot_layout)
 
-        # Add the distortion Method button (Now comes after the distortion plot placeholder)
-        self.distortion_button = QPushButton("Generate distortion Plot")
-        self.distortion_button.clicked.connect(self.generate_distortion_plot)
-        self.style_button(self.distortion_button)
-        layout.addWidget(self.distortion_button)
-
-        # Placeholder for cluster number input and button layout
-        self.max_clusters_layout = QHBoxLayout()
-
-        self.max_clusters_button = QPushButton("Set Max Clusters")
-        self.max_clusters_button.setFixedWidth(150)
-        self.max_clusters_button.clicked.connect(lambda: QMessageBox.information(self, "Max Clusters", "Set the maximum number of clusters here."))
-        self.max_clusters_layout.addWidget(self.max_clusters_button)
-
+        # Add inputs for max clusters
+        max_clusters_layout = QHBoxLayout()
         self.max_clusters_textbox = QLineEdit()
         self.max_clusters_textbox.setPlaceholderText("Max Clusters (e.g., 10)")
         self.max_clusters_textbox.setValidator(QIntValidator(1, 50))
-        self.max_clusters_layout.addWidget(self.max_clusters_textbox)
+        max_clusters_layout.addWidget(QLabel("Max Clusters:"))
+        max_clusters_layout.addWidget(self.max_clusters_textbox)
+        layout.addLayout(max_clusters_layout)
 
-        layout.addLayout(self.max_clusters_layout)
-
-        # --- Repeat for the recommended K textbox and button layout ---
-        self.selected_K_button = QPushButton("Recommended K")
-        self.selected_K_button.setFixedWidth(150)
-        self.selected_K_button.clicked.connect(lambda: QMessageBox.information(self, "Recommended K", "Displays recommended K based on data."))
-        self.max_clusters_layout = QHBoxLayout()
-
-        self.max_clusters_layout.addWidget(self.selected_K_button)
-
+        # Add Recommended K inputs
+        recommended_k_layout = QHBoxLayout()
         self.selected_K_textbox = QLineEdit()
-        self.selected_K_textbox.setPlaceholderText("Chosen K")
-        self.max_clusters_layout.addWidget(self.selected_K_textbox)
+        self.selected_K_textbox.setPlaceholderText("Recommended K")
+        recommended_k_layout.addWidget(QLabel("Recommended K:"))
+        recommended_k_layout.addWidget(self.selected_K_textbox)
+        layout.addLayout(recommended_k_layout)
 
-        layout.addLayout(self.max_clusters_layout)
+        # Spacer for alignment
+        layout.addStretch()
+
+        # Button for clustering, placed at the bottom
+        button_layout = QHBoxLayout()
+        cluster_button = QPushButton("Generate Distortion Plot")
+        cluster_button.clicked.connect(self.generate_distortion_plot)
+        self.style_button(cluster_button)  # Reuse button styling
+        button_layout.addWidget(cluster_button)
+
+        layout.addLayout(button_layout)
 
         self.clustering_tab.setLayout(layout)
-
+    
     def generate_distortion_plot(self):
         porosity = []
         permeability = []
