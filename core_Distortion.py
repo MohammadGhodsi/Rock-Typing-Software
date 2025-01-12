@@ -25,7 +25,7 @@ from scipy.spatial.distance import cdist
 class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("KMeans and SVM Classifier")
+        self.setWindowTitle("Rock Typing Application")
         self.setGeometry(100, 100, 1200, 900)
         self.setStyleSheet("background-color: #f0f0f0;")
         self.batch_processing = False  # Flag to control batch updates
@@ -41,7 +41,7 @@ class MainApp(QMainWindow):
         top_layout = QHBoxLayout()
 
         # Header Label
-        header_label = QLabel("Main Application")
+        header_label = QLabel("Rock Typing Application")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignLeft)
         top_layout.addWidget(header_label)
