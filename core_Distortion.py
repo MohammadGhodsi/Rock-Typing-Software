@@ -890,16 +890,31 @@ class MainApp(QMainWindow):
             distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
             distortions.append(distortion)
 
-        # Plot distortion
+        # Create the plot
         fig, ax = plt.subplots(figsize=(5, 10))
-        ax.plot(range(1, max_clusters + 1), distortions, marker='o', color='blue', label='Distortion')
+        ax.plot(range(1, max_clusters + 1), distortions, marker='o', color='blue', linestyle='-', label='Distortion Curve')
+        scatter_points = ax.scatter(range(1, max_clusters + 1), distortions, color='blue', s=100, label='Distortion Points')
+
+        # Highlight optimal K with a red circle
+        optimal_k = self.find_optimal_k(distortions)
+        ax.scatter(
+            optimal_k,
+            distortions[optimal_k - 1],
+            facecolors='none',
+            edgecolors='red',
+            s=500,
+            linewidth=2,
+            label='Recommended k'
+        )
+
+        # Style the plot
         ax.set_title('Distortion Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('Distortion', fontsize=12)
         ax.grid(True)
-        ax.legend()
+        ax.legend(loc='best', fontsize=12, frameon=True)
 
-        # Update the canvas
+        # Replace or update the canvas
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
             self.distortion_plot_layout.removeWidget(self.distortion_canvas)
             self.distortion_canvas.deleteLater()
