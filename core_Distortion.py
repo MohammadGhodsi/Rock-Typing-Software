@@ -81,19 +81,95 @@ class MainApp(QMainWindow):
     def init_rock_type_tab(self):
         layout = QVBoxLayout()
 
-        header_label = QLabel("Rock Type Selection")
+        # Header Label
+        header_label = QLabel("Rock Type Visualization")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Add a table or other widget for rock type selection
-        self.rock_type_table = QTableWidget(5, 2)  # Example table with 5 rows and 2 columns
-        self.rock_type_table.setHorizontalHeaderLabels(["Rock Type", "Description"])
-        self.rock_type_table.setStyleSheet("font-size: 18px; font-family: 'Times New Roman';")
+        # Create a figure with 1x2 subplots
+        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+        fig.tight_layout(pad=5.0)
 
-        layout.addWidget(self.rock_type_table)
+        # Set placeholders for axes titles
+        axes[0].set_title("Empty Plot 1")
+        axes[0].axis('off')  # Turn off axes for empty placeholder
 
+        axes[1].set_title("Empty Plot 2")
+        axes[1].axis('off')  # Turn off axes for empty placeholder
+
+        # Add the figure to the rock type tab
+        self.rock_type_canvas = FigureCanvas(fig)
+        layout.addWidget(self.rock_type_canvas)
+
+        # Add a button to generate plots
+        plot_button = QPushButton("Plot Rock Type Data")
+        plot_button.clicked.connect(self.update_rock_type_tab)
+        self.style_button(plot_button)  # Reuse the styling function from the "Plots" tab
+        layout.addWidget(plot_button)
+
+        # Set the layout for the tab
         self.rock_type_tab.setLayout(layout)
+
+    
+    def update_rock_type_tab(self):
+        try:
+            # Get the number of clusters from the Clustering tab textbox
+            n_clusters = int(self.max_clusters_textbox.text())
+        except ValueError:
+            QMessageBox.warning(self, "Warning", "Please specify a valid number of clusters.")
+            return
+
+        if not hasattr(self, 'data') or self.data is None:
+            QMessageBox.warning(self, "Warning", "No data available to visualize.")
+            return
+
+        # Clear previous plots
+        self.rock_type_canvas.figure.clear()
+
+        # Generate new plots
+        axes = self.rock_type_canvas.figure.subplots(1, 2)
+        self.rock_type_canvas.figure.tight_layout(pad=5.0)
+
+        # Assuming data includes a 'Cluster' column
+        if 'Cluster' not in self.data.columns:
+            QMessageBox.warning(self, "Warning", "Clustering results not available.")
+            return
+
+        for cluster in range(n_clusters):
+            cluster_data = self.data[self.data['Cluster'] == cluster]
+            color = plt.cm.tab10(cluster)  # Use a distinct color for each cluster
+
+            # Plot on both subplots
+            axes[0].scatter(
+                cluster_data['Porosity'],
+                cluster_data['Absolute Permeability (md)'],
+                color=color,
+                label=f"Cluster {cluster + 1}",
+                alpha=0.7,
+            )
+            axes[1].scatter(
+                cluster_data['Phi z'],
+                cluster_data['RQI'],
+                color=color,
+                label=f"Cluster {cluster + 1}",
+                alpha=0.7,
+            )
+
+        # Add titles, labels, and legends
+        axes[0].set_title("Porosity vs Permeability")
+        axes[0].set_xlabel("Porosity")
+        axes[0].set_ylabel("Permeability (md)")
+
+        axes[1].set_title("Phi z vs RQI")
+        axes[1].set_xlabel("Phi z")
+        axes[1].set_ylabel("RQI")
+
+        for ax in axes:
+            ax.legend()
+            ax.grid(True)
+
+        self.rock_type_canvas.draw()
     
     def init_dataset_tab(self):
         layout = QVBoxLayout()
