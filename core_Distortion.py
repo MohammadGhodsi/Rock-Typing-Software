@@ -112,21 +112,15 @@ class MainApp(QMainWindow):
         self.rock_type_tab.setLayout(layout)
  
     def update_rock_type_tab(self):
-        # Extract data from the table and update self.data
-        data = []
-        for row in range(self.table.rowCount()):
-            row_data = []
-            for col in range(self.table.columnCount()):
-                item = self.table.item(row, col)
-                row_data.append(float(item.text()) if item and item.text() else None)
-            data.append(row_data)
+        # Extract data from the table to self.data
+        self.extract_table_data()
+        
+        if self.data is None or self.data.empty:
+            QMessageBox.warning(self, "Warning", "No data available to visualize. Please load a dataset.")
+            return
 
-        # Convert data to DataFrame
-        columns = ["Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"]
-        self.data = pd.DataFrame(data, columns=columns)
-
-        # Check if clustering results exist
-        if 'Cluster' not in self.data.columns or self.data['Cluster'].isnull().any():
+        # Ensure clustering results are present
+        if 'Cluster' not in self.data.columns or self.data['Cluster'].isnull().all():
             QMessageBox.warning(self, "Warning", "Clustering results not available. Please perform clustering first.")
             return
 
@@ -145,7 +139,7 @@ class MainApp(QMainWindow):
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
         # Use distinct colors for each cluster
-        colors = plt.cm.tab10.colors  # Colormap with up to 10 distinct colors
+        colors = plt.cm.tab10.colors
 
         for cluster in range(n_clusters):
             cluster_data = self.data[self.data['Cluster'] == cluster]
@@ -678,7 +672,10 @@ class MainApp(QMainWindow):
         )
 
     def perform_clustering(self):
-        if self.data is None:
+        # Extract data from the table to self.data
+        self.extract_table_data()
+    
+        if self.data is None or self.data.empty:
             QMessageBox.warning(self, "Warning", "Please load a dataset first.")
             return
 
@@ -698,7 +695,7 @@ class MainApp(QMainWindow):
             kmeans = KMeans(n_clusters=n_clusters, random_state=42)
             clusters = kmeans.fit_predict(X)
 
-            # Assign cluster labels to the data
+            # Assign cluster labels to the original DataFrame
             self.data['Cluster'] = np.nan  # Initialize with NaN
             self.data.loc[features.index, 'Cluster'] = clusters
 
@@ -1019,6 +1016,17 @@ class MainApp(QMainWindow):
         cluster_number = int(self.cluster_input.text())
         QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
 
+    def extract_table_data(self):
+        data = []
+        for row in range(self.table.rowCount()):
+            row_data = []
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                row_data.append(float(item.text()) if item and item.text() else None)
+            data.append(row_data)
+
+        columns = ["Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"]
+        self.data = pd.DataFrame(data, columns=columns)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
