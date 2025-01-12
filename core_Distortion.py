@@ -87,8 +87,8 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Create a figure with 1x2 subplots
-        fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+        # Create a figure with 1x2 subplots, same size as in the "Plots" tab
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
         fig.tight_layout(pad=5.0)
 
         # Set placeholders for axes titles
@@ -110,7 +110,7 @@ class MainApp(QMainWindow):
 
         # Set the layout for the tab
         self.rock_type_tab.setLayout(layout)
- 
+   
     def update_rock_type_tab(self):
         # Extract data from the table to self.data
         self.extract_table_data()
