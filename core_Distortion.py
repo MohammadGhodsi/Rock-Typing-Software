@@ -595,16 +595,31 @@ class MainApp(QMainWindow):
 
         try:
             features = self.data[['Porosity', 'Absolute Permeability (md)']]
-            optimal_k = 3  # Based on distortion plot analysis
+            X = features.values
+
+            # Determine distortions for different k values
+            allocated_k = 10  # Or use a suitable range
+            distortions = []
+
+            for k in range(1, allocated_k + 1):
+                kmeans = KMeans(n_clusters=k, random_state=42)
+                kmeans.fit(X)
+                distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
+                distortions.append(distortion)
+
+            # Find the optimal k
+            optimal_k = self.find_optimal_k(distortions)
+
+            # Perform clustering with optimal k
             kmeans = KMeans(n_clusters=optimal_k, random_state=42)
             self.data['Cluster'] = kmeans.fit_predict(features)
 
             # Plot clusters
             fig, ax = plt.subplots(figsize=(8, 6))
-            scatter = ax.scatter(features['Porosity'], features['Absolute Permeability (md)'], 
-                                  c=self.data['Cluster'], cmap='viridis', marker='o')
+            scatter = ax.scatter(features['Porosity'], features['Absolute Permeability (md)'],
+                                c=self.data['Cluster'], cmap='viridis', marker='o')
             ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300, c='red', marker='X')
-            ax.set_title('KMeans Clustering')
+            ax.set_title(f'KMeans Clustering with k={optimal_k}')
             ax.set_xlabel('Porosity')
             ax.set_ylabel('Absolute Permeability (md)')
             fig.colorbar(scatter, label='Cluster')
@@ -614,7 +629,7 @@ class MainApp(QMainWindow):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to perform clustering: {e}")
-
+    
     def train_evaluate_svm(self):
         if self.data is None:
             QMessageBox.warning(self, "Warning", "Please load a dataset first.")
