@@ -110,65 +110,78 @@ class MainApp(QMainWindow):
 
         # Set the layout for the tab
         self.rock_type_tab.setLayout(layout)
-
-    
+ 
     def update_rock_type_tab(self):
+        # Extract data from the table and update self.data
+        data = []
+        for row in range(self.table.rowCount()):
+            row_data = []
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                row_data.append(float(item.text()) if item and item.text() else None)
+            data.append(row_data)
+
+        # Convert data to DataFrame
+        columns = ["Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"]
+        self.data = pd.DataFrame(data, columns=columns)
+
+        # Check if clustering results exist
+        if 'Cluster' not in self.data.columns or self.data['Cluster'].isnull().any():
+            QMessageBox.warning(self, "Warning", "Clustering results not available. Please perform clustering first.")
+            return
+
+        # Get number of clusters
         try:
-            # Get the number of clusters from the Clustering tab textbox
             n_clusters = int(self.max_clusters_textbox.text())
         except ValueError:
             QMessageBox.warning(self, "Warning", "Please specify a valid number of clusters.")
             return
 
-        if not hasattr(self, 'data') or self.data is None:
-            QMessageBox.warning(self, "Warning", "No data available to visualize.")
-            return
-
         # Clear previous plots
         self.rock_type_canvas.figure.clear()
 
-        # Generate new plots
+        # Create subplots
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
-        # Assuming data includes a 'Cluster' column
-        if 'Cluster' not in self.data.columns:
-            QMessageBox.warning(self, "Warning", "Clustering results not available.")
-            return
+        # Use distinct colors for each cluster
+        colors = plt.cm.tab10.colors  # Colormap with up to 10 distinct colors
 
         for cluster in range(n_clusters):
             cluster_data = self.data[self.data['Cluster'] == cluster]
-            color = plt.cm.tab10(cluster)  # Use a distinct color for each cluster
 
-            # Plot on both subplots
+            # First subplot: Porosity vs Absolute Permeability
             axes[0].scatter(
                 cluster_data['Porosity'],
                 cluster_data['Absolute Permeability (md)'],
-                color=color,
+                color=colors[cluster % len(colors)],
                 label=f"Cluster {cluster + 1}",
                 alpha=0.7,
             )
+
+            # Second subplot: log(Phi z) vs log(RQI)
             axes[1].scatter(
-                cluster_data['Phi z'],
-                cluster_data['RQI'],
-                color=color,
+                np.log(cluster_data['Phi z']),
+                np.log(cluster_data['RQI']),
+                color=colors[cluster % len(colors)],
                 label=f"Cluster {cluster + 1}",
                 alpha=0.7,
             )
 
         # Add titles, labels, and legends
-        axes[0].set_title("Porosity vs Permeability")
+        axes[0].set_title("Porosity vs Absolute Permeability")
         axes[0].set_xlabel("Porosity")
-        axes[0].set_ylabel("Permeability (md)")
+        axes[0].set_ylabel("Absolute Permeability (md)")
 
-        axes[1].set_title("Phi z vs RQI")
-        axes[1].set_xlabel("Phi z")
-        axes[1].set_ylabel("RQI")
+        axes[1].set_title("log(Phi z) vs log(RQI)")
+        axes[1].set_xlabel("log(Phi z)")
+        axes[1].set_ylabel("log(RQI)")
 
         for ax in axes:
             ax.legend()
             ax.grid(True)
 
+        # Update the canvas
         self.rock_type_canvas.draw()
     
     def init_dataset_tab(self):
@@ -670,41 +683,28 @@ class MainApp(QMainWindow):
             return
 
         try:
-            features = self.data[['Porosity', 'Absolute Permeability (md)']]
+            # Extract features for clustering
+            features = self.data[['Porosity', 'Absolute Permeability (md)']].dropna()
             X = features.values
 
-            # Determine distortions for different k values
-            allocated_k = 10  # Or use a suitable range
-            distortions = []
+            # Get the number of clusters from the textbox
+            try:
+                n_clusters = int(self.max_clusters_textbox.text())
+            except ValueError:
+                QMessageBox.warning(self, "Warning", "Please specify a valid number of clusters.")
+                return
 
-            for k in range(1, allocated_k + 1):
-                kmeans = KMeans(n_clusters=k, random_state=42)
-                kmeans.fit(X)
-                distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
-                distortions.append(distortion)
+            # Perform KMeans clustering
+            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+            clusters = kmeans.fit_predict(X)
 
-            # Find the optimal k
-            optimal_k = self.find_optimal_k(distortions)
+            # Assign cluster labels to the data
+            self.data['Cluster'] = np.nan  # Initialize with NaN
+            self.data.loc[features.index, 'Cluster'] = clusters
 
-            # Perform clustering with optimal k
-            kmeans = KMeans(n_clusters=optimal_k, random_state=42)
-            self.data['Cluster'] = kmeans.fit_predict(features)
-
-            # Plot clusters
-            fig, ax = plt.subplots(figsize=(8, 6))
-            scatter = ax.scatter(features['Porosity'], features['Absolute Permeability (md)'],
-                                c=self.data['Cluster'], cmap='viridis', marker='o')
-            ax.scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1], s=300, c='red', marker='X')
-            ax.set_title(f'KMeans Clustering with k={optimal_k}')
-            ax.set_xlabel('Porosity')
-            ax.set_ylabel('Absolute Permeability (md)')
-            fig.colorbar(scatter, label='Cluster')
-            ax.grid()
-
-            self.show_plot(fig)
-
+            QMessageBox.information(self, "Success", f"Clustering performed with {n_clusters} clusters.")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to perform clustering: {e}")
+            QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
     
     def train_evaluate_svm(self):
         if self.data is None:
