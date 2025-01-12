@@ -907,7 +907,6 @@ class MainApp(QMainWindow):
         QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
 
 
-    
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_app = MainApp()
