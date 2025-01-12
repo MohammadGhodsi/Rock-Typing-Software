@@ -809,7 +809,6 @@ class MainApp(QMainWindow):
                     index = ind["ind"][0]
                     chosen_k = index + 1
                     self.selected_K_textbox.setText(str(chosen_k))
-                    QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
 
         fig.canvas.mpl_connect("motion_notify_event", on_hover)
         fig.canvas.mpl_connect("button_press_event", on_click)
@@ -822,8 +821,6 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
-
-        QMessageBox.information(self, "Optimal Clusters", f"The recommended number of clusters is: {optimal_k}")
     
     def find_optimal_k(self, distortions):
         diff = np.diff(distortions)
