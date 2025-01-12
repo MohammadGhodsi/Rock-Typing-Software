@@ -763,12 +763,20 @@ class MainApp(QMainWindow):
             distortions.append(distortion)
 
         fig, ax = plt.subplots(figsize=(5, 10))
-        ax.plot(range(1, allocated_k + 1), distortions, color='blue', marker='o', linestyle='-', label="Distortion")
+        scatter_points = ax.scatter(range(1, allocated_k + 1), distortions, color='blue', s=100, picker=True)
         ax.set_title('Distortion Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('Distortion', fontsize=12)
         ax.grid(True)
-        ax.legend()
+
+        # Automatically find and highlight optimal k
+        optimal_k = self.find_optimal_k(distortions)
+        ax.scatter(optimal_k, distortions[optimal_k - 1], color='red', s=200, edgecolor='red', facecolors='none', linewidth=2)
+        self.selected_K_textbox.setText(str(optimal_k))
+
+        # Connect hover and click events
+        fig.canvas.mpl_connect("motion_notify_event", lambda event: self.on_hover_distortion_plot(event, scatter_points, distortions))
+        fig.canvas.mpl_connect("button_press_event", lambda event: self.on_click_distortion_plot(event, distortions))
 
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
             self.distortion_plot_layout.removeWidget(self.distortion_canvas)
@@ -778,8 +786,39 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
-
-        QMessageBox.information(self, "Optimal Clusters", "Check the plot to find the optimal number of clusters.")
+    
+    def find_optimal_k(self, distortions):
+        diff = np.diff(distortions)
+        second_diff = np.diff(diff)
+        optimal_k = np.argmax(second_diff) + 2
+        return optimal_k
+    
+    def on_hover_distortion_plot(self, event, scatter_points, distortions):
+        cont, ind = scatter_points.contains(event)
+        if cont:
+            index = ind["ind"][0]
+            x = index + 1
+            y = distortions[index]
+            tooltip_text = f"({x}, {y:.2f})"
+            if self.tooltip:
+                self.tooltip.remove()
+            self.tooltip = event.inaxes.annotate(tooltip_text, (x, y), textcoords="offset points", xytext=(10, 10),
+                                                ha='center', bbox=dict(boxstyle="round,pad=0.3", edgecolor="black",
+                                                                        facecolor="lightyellow"), fontsize=10)
+            event.canvas.draw_idle()
+        else:
+            if self.tooltip:
+                self.tooltip.remove()
+                self.tooltip = None
+                event.canvas.draw_idle()
+    
+    def on_click_distortion_plot(self, event, distortions):
+        cont, ind = event.inaxes.collections[0].contains(event)
+        if cont:
+            index = ind["ind"][0]
+            chosen_k = index + 1
+            self.selected_K_textbox.setText(str(chosen_k))
+            QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
     
     def find_selected_K(self, wcss):
         """
