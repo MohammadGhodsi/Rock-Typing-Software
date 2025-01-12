@@ -117,7 +117,7 @@ class MainApp(QMainWindow):
         self.rock_type_tab.setLayout(layout)
     
     def update_rock_type_tab(self):
-        # Extract data from the table
+       # Extract data from the table
         porosity = []
         permeability = []
         rqi = []
@@ -152,6 +152,11 @@ class MainApp(QMainWindow):
         # Prepare data for clustering
         X = np.array(list(zip(porosity, permeability)))
 
+        # Validate the number of clusters
+        if n_clusters > len(X):
+            QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X)}). Please reduce the number of clusters.")
+            return
+
         # Perform KMeans clustering
         try:
             kmeans = KMeans(n_clusters=n_clusters, random_state=42)
@@ -159,6 +164,10 @@ class MainApp(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
             return
+
+        # Filter data for logarithmic plots
+        log_rqi = np.log(np.array(rqi)[np.array(rqi) > 0])
+        log_phi_z = np.log(np.array(phi_z)[np.array(phi_z) > 0])
 
         # Assign cluster labels for coloring
         cluster_colors = plt.cm.tab10.colors  # Use a colormap with distinct colors
@@ -186,8 +195,6 @@ class MainApp(QMainWindow):
         axes[0].grid(True)
 
         # Plot 2: log(RQI) vs log(Phi z) with clusters
-        log_rqi = np.log(rqi)
-        log_phi_z = np.log(phi_z)
         for cluster in range(n_clusters):
             cluster_indices = np.where(clusters == cluster)[0]
             axes[1].scatter(
@@ -203,7 +210,7 @@ class MainApp(QMainWindow):
         axes[1].grid(True)
 
         # Update the canvas
-        self.rock_type_canvas.draw()
+        self.rock_type_canvas.draw() 
     
     def init_dataset_tab(self):
         layout = QVBoxLayout()
@@ -842,6 +849,7 @@ class MainApp(QMainWindow):
         porosity = []
         permeability = []
 
+        # Extract data from the table
         for row in range(self.table.rowCount()):
             try:
                 if self.table.item(row, 0) and self.table.item(row, 0).text():
@@ -856,73 +864,42 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in both columns before generating the Distortion Plot.")
             return
 
+        # Prepare data for clustering
         X = np.array(list(zip(porosity, permeability)))
 
+        # Get the maximum number of clusters
         max_clusters_text = self.max_clusters_textbox.text()
-        if not max_clusters_text.isdigit() or int(max_clusters_text) <= 0:
+        try:
+            max_clusters = int(max_clusters_text)
+            if max_clusters <= 0:
+                raise ValueError
+        except ValueError:
             QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
             return
 
-        allocated_k = int(max_clusters_text)
-        distortions = []
+        # Validate the number of clusters
+        if max_clusters > len(X):
+            QMessageBox.warning(self, "Error", f"Number of clusters ({max_clusters}) exceeds the number of samples ({len(X)}). Please reduce the number of clusters.")
+            return
 
-        for k in range(1, allocated_k + 1):
+        # Generate distortion plot
+        distortions = []
+        for k in range(1, max_clusters + 1):
             kmeans = KMeans(n_clusters=k, random_state=42)
             kmeans.fit(X)
             distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
             distortions.append(distortion)
 
+        # Plot distortion
         fig, ax = plt.subplots(figsize=(5, 10))
-
-        line, = ax.plot(range(1, allocated_k + 1), distortions, color='blue', marker='o', linestyle='-', label="Distortion")
-        scatter_points = ax.scatter(range(1, allocated_k + 1), distortions, color='blue', s=100)
-
-        optimal_k = self.find_optimal_k(distortions)
-        ax.scatter(optimal_k, distortions[optimal_k - 1], color='red', edgecolor='red', s=500, facecolors='none', linewidth=2, label='Recommended k')
-
+        ax.plot(range(1, max_clusters + 1), distortions, marker='o', color='blue', label='Distortion')
         ax.set_title('Distortion Method for Optimal k', fontsize=14, fontweight='bold')
         ax.set_xlabel('Number of Clusters (k)', fontsize=12)
         ax.set_ylabel('Distortion', fontsize=12)
         ax.grid(True)
+        ax.legend()
 
-        ax.legend(loc='best', fontsize=12, markerscale=1.5, frameon=True, fancybox=True, framealpha=1, borderpad=1.5, labelspacing=1.2)
-
-        highlighted_point = None
-
-        def on_hover(event):
-            nonlocal highlighted_point
-            if event.inaxes == ax:
-                cont, ind = scatter_points.contains(event)
-                if cont:
-                    index = ind["ind"][0]
-                    x, y = range(1, allocated_k + 1)[index], distortions[index]
-
-                    if highlighted_point is None:
-                        highlighted_point = ax.scatter([x], [y], color='red', s=150, zorder=5)
-                    else:
-                        highlighted_point.set_offsets([[x, y]])
-
-                    fig.canvas.set_cursor(cursors.HAND)
-                    fig.canvas.draw_idle()
-                    return
-
-            if highlighted_point is not None:
-                highlighted_point.remove()
-                highlighted_point = None
-                fig.canvas.draw_idle()
-            fig.canvas.set_cursor(cursors.POINTER)
-
-        def on_click(event):
-            if event.inaxes == ax:
-                cont, ind = scatter_points.contains(event)
-                if cont:
-                    index = ind["ind"][0]
-                    chosen_k = index + 1
-                    self.selected_K_textbox.setText(str(chosen_k))
-
-        fig.canvas.mpl_connect("motion_notify_event", on_hover)
-        fig.canvas.mpl_connect("button_press_event", on_click)
-
+        # Update the canvas
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
             self.distortion_plot_layout.removeWidget(self.distortion_canvas)
             self.distortion_canvas.deleteLater()
