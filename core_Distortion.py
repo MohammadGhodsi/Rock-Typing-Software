@@ -215,7 +215,6 @@ class MainApp(QMainWindow):
         # Update the canvas
         self.rock_type_canvas.draw()
 
-    
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
