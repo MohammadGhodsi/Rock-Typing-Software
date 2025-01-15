@@ -680,19 +680,16 @@ class MainApp(QMainWindow):
 
         for row in range(self.table.rowCount()):
             try:
-                # Only extract porosity and permeability for features
-                porosity = float(self.table.item(row, 0).text())
-                permeability = float(self.table.item(row, 1).text())
-
-                # Assuming rock types are integers, you should adapt this line depending on how you define rock types
-                # Here I am assuming you have a way to label rock types based on some existing criterion
-                # You can change this line for whatever your target variable logic is
-                # For example, you might need a separate method to determine rock type from your data
-                rock_type = row % 3  # Placeholder logic for rock types based on the index, replace with actual logic
+                # Extract porosity and permeability as features
+                porosity = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
+                permeability = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
                 
-                features.append([porosity, permeability])
-                target.append(rock_type)
-            except (ValueError, IndexError):
+                if porosity and permeability:
+                    features.append([np.log(porosity), np.log(permeability)])  # Use log transformation
+                    # Assuming rock types are integers (you may want to replace this logic):
+                    rock_type = self.determine_rock_type(porosity, permeability)  # Replace with your own logic
+                    target.append(rock_type)
+            except ValueError:
                 continue
 
         if not features or not target:
@@ -716,12 +713,21 @@ class MainApp(QMainWindow):
         # Predictions
         y_pred = svm_classifier.predict(X_test)
 
-        # Evaluate and display results
+        # Display classification report
         report = classification_report(y_test, y_pred)
         QMessageBox.information(self, "SVM Results", f"Classification Report:\n{report}")
 
         # Plot results
         self.plot_svm_results(svm_classifier, scaler, features_scaled, target)
+    
+    def determine_rock_type(self, porosity, permeability):
+        # Replace this with the actual logic to determine rock type based on porosity and permeability
+        if porosity < 0.15:
+            return 0  # For example, clay
+        elif 0.15 <= porosity < 0.25:
+            return 1  # For example, sand
+        else:
+            return 2  # For example, limestone
     
     def style_button(self, button):
         button.setStyleSheet(
@@ -788,12 +794,10 @@ class MainApp(QMainWindow):
         ax.contourf(xx, yy, Z, alpha=0.8, cmap=plt.cm.coolwarm)
 
         # Plot data points
-        scatter = ax.scatter(
-            features[:, 0], features[:, 1], c=target, edgecolors='k', cmap=plt.cm.coolwarm
-        )
+        scatter = ax.scatter(features[:, 0], features[:, 1], c=target, edgecolors='k', cmap=plt.cm.coolwarm)
         ax.set_title("SVM Classification of Rock Types")
-        ax.set_xlabel("Porosity (scaled)")
-        ax.set_ylabel("Absolute Permeability (scaled)")
+        ax.set_xlabel("Log(Porosity) (scaled)")
+        ax.set_ylabel("Log(Permeability) (scaled)")
         ax.legend(*scatter.legend_elements(), title="Rock Types")
 
         # Show plot in the ML tab
@@ -804,7 +808,7 @@ class MainApp(QMainWindow):
         self.ml_canvas = FigureCanvas(fig)
         self.ml_tab.layout().addWidget(self.ml_canvas)
         self.ml_canvas.draw()
- 
+    
     def show_plot(self, fig):
         if hasattr(self, 'canvas') and self.canvas:
             self.plots_tab.layout().removeWidget(self.canvas)
