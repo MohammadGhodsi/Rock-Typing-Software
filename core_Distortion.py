@@ -117,7 +117,7 @@ class MainApp(QMainWindow):
         self.rock_type_tab.setLayout(layout)
     
     def update_rock_type_tab(self):
-       # Extract data from the table
+        # Extract data from the table
         porosity = []
         permeability = []
         rqi = []
@@ -166,8 +166,11 @@ class MainApp(QMainWindow):
             return
 
         # Filter data for logarithmic plots
-        log_rqi = np.log(np.array(rqi)[np.array(rqi) > 0])
-        log_phi_z = np.log(np.array(phi_z)[np.array(phi_z) > 0])
+        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
+        log_rqi = np.log(np.array(rqi)[valid_indices])
+        log_phi_z = np.log(np.array(phi_z)[valid_indices])
+
+        filtered_clusters = clusters[valid_indices]
 
         # Assign cluster labels for coloring
         cluster_colors = plt.cm.tab10.colors  # Use a colormap with distinct colors
@@ -196,7 +199,7 @@ class MainApp(QMainWindow):
 
         # Plot 2: log(RQI) vs log(Phi z) with clusters
         for cluster in range(n_clusters):
-            cluster_indices = np.where(clusters == cluster)[0]
+            cluster_indices = np.where(filtered_clusters == cluster)[0]
             axes[1].scatter(
                 log_phi_z[cluster_indices], log_rqi[cluster_indices],
                 color=cluster_colors[cluster % len(cluster_colors)],
@@ -210,7 +213,8 @@ class MainApp(QMainWindow):
         axes[1].grid(True)
 
         # Update the canvas
-        self.rock_type_canvas.draw() 
+        self.rock_type_canvas.draw()
+
     
     def init_dataset_tab(self):
         layout = QVBoxLayout()
