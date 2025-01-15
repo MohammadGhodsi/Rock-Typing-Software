@@ -776,29 +776,7 @@ class MainApp(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
     
-    def train_evaluate_svm(self):
-        if self.data is None:
-            QMessageBox.warning(self, "Warning", "Please load a dataset first.")
-            return
-
-        try:
-            features = self.data[['Porosity', 'Absolute Permeability (md)']]
-            target = self.data['Target']
-
-            scaler = StandardScaler()
-            features_scaled = scaler.fit_transform(features)
-
-            X_train, X_test, y_train, y_test = train_test_split(features_scaled, target, test_size=0.2, random_state=42)
-
-            svm_classifier = SVC(kernel='linear', random_state=42)
-            svm_classifier.fit(X_train, y_train)
-
-            accuracy = svm_classifier.score(X_test, y_test)
-            QMessageBox.information(self, "SVM Results", f"SVM Accuracy: {accuracy:.2f}")
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to train and evaluate SVM: {e}")
-
+ 
     def show_plot(self, fig):
         if hasattr(self, 'canvas') and self.canvas:
             self.plots_tab.layout().removeWidget(self.canvas)
