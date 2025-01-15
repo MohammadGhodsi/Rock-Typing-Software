@@ -994,7 +994,7 @@ class MainApp(QMainWindow):
         ax.legend(loc='best', fontsize=12)
 
         # Attach context menu for export
-        fig.canvas.mpl_connect('button_press_event', lambda event: self.show_plot_context_menu(event, "distortion"))
+        fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_distortion_plot(event, distortions))
 
         # Replace or update the canvas
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
