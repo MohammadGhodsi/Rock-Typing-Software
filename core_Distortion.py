@@ -786,8 +786,10 @@ class MainApp(QMainWindow):
     def plot_svm_results(self, classifier, scaler, original_features, target):
         # Create a mesh grid for decision boundary visualization
         h = 0.02  # Step size in mesh
-        x_min, x_max = np.array(original_features)[:, 0].min() - 1, np.array(original_features)[:, 0].max() + 1
-        y_min, y_max = np.array(original_features)[:, 1].min() - 1, np.array(original_features)[:, 1].max() + 1
+        # Ensure that x_min and x_max do not go below 0
+        x_min, x_max = max(0, np.array(original_features)[:, 0].min() - 1), np.array(original_features)[:, 0].max() + 1
+        # Ensure that y_min and y_max do not go below 0
+        y_min, y_max = max(0, np.array(original_features)[:, 1].min() - 1), np.array(original_features)[:, 1].max() + 1
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
         # Predict on the grid points using the scaled features
