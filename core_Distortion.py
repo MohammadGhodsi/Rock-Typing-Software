@@ -805,8 +805,8 @@ class MainApp(QMainWindow):
 
         # Set titles and labels
         ax.set_title("SVM Classification of Rock Types")
-        ax.set_xlabel("Porosity (linear scale)")
-        ax.set_ylabel("Permeability (linear scale)")
+        ax.set_xlabel("Porosity")
+        ax.set_ylabel("Permeability")
         ax.legend(*scatter.legend_elements(), title="Rock Types")
 
         # Show plot in the ML tab
