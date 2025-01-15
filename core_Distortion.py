@@ -701,6 +701,9 @@ class MainApp(QMainWindow):
         # Plot results
         self.plot_svm_results(svm_classifier, scaler, original_features, target)  # Use original features for plotting
     
+         # Connect right-click event for saving
+        self.ml_canvas.mpl_connect('button_press_event', self.handle_plot_click)
+    
     def determine_rock_type(self, porosity, permeability):
         # Replace this with the actual logic to determine rock type based on porosity and permeability
         if porosity < 0.15:
