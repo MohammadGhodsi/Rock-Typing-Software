@@ -233,6 +233,16 @@ class MainApp(QMainWindow):
             "labels": filtered_clusters
         }
    
+        # Store extracted data for later CSV export
+        self.current_plot_data = {
+            "points": list(zip(log_phi_z, log_rqi)),
+            "labels": filtered_clusters,
+            "porosity": porosity,
+            "permeability": permeability,
+            "log_rqi": log_rqi.tolist(),
+            "log_phi_z": log_phi_z.tolist()
+        }
+   
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -640,7 +650,6 @@ class MainApp(QMainWindow):
         layout.addWidget(plot_button)
 
         self.plots_tab.setLayout(layout)  
-
     
     def init_ml_tab(self):
         layout = QVBoxLayout()
@@ -1219,9 +1228,17 @@ class MainApp(QMainWindow):
         if file_path:
             try:
                 # Extract data and legend classifications
-                data = []
-                for point, label in zip(self.current_plot_data["points"], self.current_plot_data["labels"]):
-                    data.append({"x": point[0], "y": point[1], "Classification": label})
+                data = [
+                {
+                    "Porosity": self.current_plot_data["porosity"][i],
+                    "Permeability": self.current_plot_data["permeability"][i],
+                    "Log(RQI)": self.current_plot_data["log_rqi"][i],
+                    "Log(Phi z)": self.current_plot_data["log_phi_z"][i],
+                    "Cluster": self.current_plot_data["labels"][i]
+                }
+                for i in range(len(self.current_plot_data["points"]))
+                        ]
+                
 
                 # Save to CSV using pandas
                 df = pd.DataFrame(data)
