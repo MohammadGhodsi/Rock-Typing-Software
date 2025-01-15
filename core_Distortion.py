@@ -227,6 +227,12 @@ class MainApp(QMainWindow):
         # Update the canvas
         self.rock_type_canvas.draw()
    
+        # Save plot data for export
+        self.current_plot_data = {
+            "points": list(zip(log_phi_z, log_rqi)),
+            "labels": filtered_clusters
+        }
+   
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -710,12 +716,11 @@ class MainApp(QMainWindow):
         # Predictions
         y_pred = svm_classifier.predict(X_test)
 
-        # Display classification report
+        # Generate the classification report (silent handling)
         report = classification_report(y_test, y_pred)
-        QMessageBox.information(self, "SVM Results", f"Classification Report:\n{report}")
 
         # Plot results
-        self.plot_svm_results(svm_classifier, scaler, original_features, target)  # Use original features for plotting
+        self.plot_svm_results(svm_classifier, scaler, original_features, target)
     
     def determine_rock_type(self, porosity, permeability):
         # Replace this with the actual logic to determine rock type based on porosity and permeability
@@ -787,18 +792,35 @@ class MainApp(QMainWindow):
         Z = classifier.predict(scaler.transform(np.c_[xx.ravel(), yy.ravel()]))
         Z = Z.reshape(xx.shape)
 
-        # Plot decision boundary
-        fig, ax = plt.subplots(figsize=(10, 8))
-        ax.contourf(xx, yy, Z, alpha=0.8, cmap=plt.cm.coolwarm)
-
         # Plot data points using original features
-        scatter = ax.scatter(np.array(original_features)[:, 0], np.array(original_features)[:, 1], c=target, edgecolors='k', cmap=plt.cm.coolwarm)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ax.contour(xx, yy, Z, levels=[0.5, 1.5], colors="black", linewidths=2, linestyles="dashed")
+
+        scatter = ax.scatter(
+            np.array(original_features)[:, 0],
+            np.array(original_features)[:, 1],
+            c=target,
+            cmap=plt.cm.coolwarm,
+            edgecolors="k",
+            s=100,
+            marker="o",
+        )
 
         # Set titles and labels
-        ax.set_title("SVM Classification of Rock Types")
+        ax.set_title("SVM Classification of Rock Types (with Decision Boundary Lines)")
         ax.set_xlabel("Porosity")
         ax.set_ylabel("Permeability")
-        ax.legend(*scatter.legend_elements(), title="Rock Types")
+        ax.legend(*scatter.legend_elements(), title="Rock Types", loc="upper right")
+
+        # Save plot data for CSV export
+        self.current_svm_data = {
+            "porosity": np.array(original_features)[:, 0],
+            "permeability": np.array(original_features)[:, 1],
+            "rock_type": target
+        }
+
+        # Attach context menu for export
+        fig.canvas.mpl_connect('button_press_event', self.show_svm_context_menu)
 
         # Check if a canvas already exists and remove it
         if hasattr(self, 'ml_canvas') and self.ml_canvas:
@@ -940,6 +962,11 @@ class MainApp(QMainWindow):
             distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
             distortions.append(distortion)
 
+        # Save data for export
+        self.current_clustering_data = {
+            "distortion": {"k": list(range(1, max_clusters + 1)), "values": distortions}
+        }
+
         # Create the plot
         fig, ax = plt.subplots(figsize=(5, 10))
         scatter_points = ax.scatter(
@@ -966,32 +993,8 @@ class MainApp(QMainWindow):
         ax.grid(True)
         ax.legend(loc='best', fontsize=12)
 
-        # Add interaction to toggle points
-        def on_hover(event):
-            cont, ind = scatter_points.contains(event)
-            if cont:
-                fig.canvas.set_cursor("hand")
-            else:
-                fig.canvas.set_cursor("arrow")
-
-        def on_click(event):
-            cont, ind = scatter_points.contains(event)
-            if cont:
-                index = ind['ind'][0]
-                k_value = index + 1
-
-                # Update Recommended K textbox
-                self.selected_K_textbox.setText(str(k_value))
-
-                # Clear previous selection
-                selected_circle.set_offsets((None, None))
-
-                # Highlight the new selected point
-                selected_circle.set_offsets((k_value, distortions[index]))
-                fig.canvas.draw_idle()
-
-        fig.canvas.mpl_connect('motion_notify_event', on_hover)
-        fig.canvas.mpl_connect('button_press_event', on_click)
+        # Attach context menu for export
+        fig.canvas.mpl_connect('button_press_event', lambda event: self.show_plot_context_menu(event, "distortion"))
 
         # Replace or update the canvas
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
@@ -1002,8 +1005,7 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
-        self.distortion_canvas.mpl_connect('button_press_event', self.handle_plot_click)
-
+    
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
@@ -1122,12 +1124,51 @@ class MainApp(QMainWindow):
         columns = ["Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"]
         self.data = pd.DataFrame(data, columns=columns)
 
-    def show_plot_context_menu(self, event):
-        menu = QMenu(self)
-        save_action = menu.addAction("Save Plot As...")
-        save_action.triggered.connect(lambda: self.save_plot(event))
-        menu.exec_(self.mapToGlobal(QPoint(event.globalX(), event.globalY())))
+    def show_plot_context_menu(self, event, plot_type):
+        if event.button == 3:  # Right-click
+            menu = QMenu(self)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #cccccc;
+                }
+                QMenu::item {
+                    padding: 8px 20px;
+                }
+                QMenu::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+            """)
 
+            if plot_type == "distortion" and "distortion" in self.current_clustering_data:
+                export_csv_action = menu.addAction("Export Distortion Data As CSV")
+                export_csv_action.triggered.connect(self.export_distortion_to_csv)
+
+            menu.exec_(QCursor.pos())
+    
+    def export_distortion_to_csv(self):
+        if "distortion" not in self.current_clustering_data:
+            QMessageBox.warning(self, "No Data", "No distortion data available for export.")
+            return
+
+        # Open a file dialog to save the CSV
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options
+        )
+
+        if file_path:
+            try:
+                # Extract distortion data
+                data = self.current_clustering_data["distortion"]
+                df = pd.DataFrame({"Number of Clusters (k)": data["k"], "Distortion": data["values"]})
+                df.to_csv(file_path, index=False)
+                QMessageBox.information(self, "Success", "Distortion data exported successfully.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
+    
     def save_plot(self, canvas):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(
@@ -1141,26 +1182,78 @@ class MainApp(QMainWindow):
             menu = QMenu(self)
             menu.setStyleSheet("""
                 QMenu {
-                    background-color: #ffffff;  /* Menu background color */
-                    color: #000000;  /* Default text color */
-                    border: 1px solid #cccccc;  /* Border color */
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #cccccc;
                 }
                 QMenu::item {
-                    padding: 8px 20px;  /* Padding around each menu item */
+                    padding: 8px 20px;
                 }
                 QMenu::item:selected {
-                    background-color: #0078d7;  /* Highlight color on hover */
-                    color: #ffffff;  /* Text color on hover */
+                    background-color: #0078d7;
+                    color: #ffffff;
                 }
             """)
 
-            save_action = menu.addAction("Save Plot As...")
-            save_action.triggered.connect(lambda: self.save_plot(event.canvas))
+            save_plot_action = menu.addAction("Save Plot As...")
+            save_plot_action.triggered.connect(lambda: self.save_plot(event.canvas))
+
+            if hasattr(self, "current_plot_data") and self.current_plot_data:
+                export_csv_action = menu.addAction("Export Data As CSV")
+                export_csv_action.triggered.connect(self.export_plot_data_to_csv)
 
             from PyQt5.QtGui import QCursor
             menu.exec_(QCursor.pos())
 
+    def export_plot_data_to_csv(self):
+        if not hasattr(self, "current_plot_data") or not self.current_plot_data:
+            QMessageBox.warning(self, "No Data", "No plot data available for export.")
+            return
 
+        # Open a file dialog to save the CSV
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options
+        )
+
+        if file_path:
+            try:
+                # Extract data and legend classifications
+                data = []
+                for point, label in zip(self.current_plot_data["points"], self.current_plot_data["labels"]):
+                    data.append({"x": point[0], "y": point[1], "Classification": label})
+
+                # Save to CSV using pandas
+                df = pd.DataFrame(data)
+                df.to_csv(file_path, index=False)
+                QMessageBox.information(self, "Success", "Plot data exported successfully.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
+
+    def export_svm_data_to_csv(self):
+        if not hasattr(self, "current_svm_data") or not self.current_svm_data:
+            QMessageBox.warning(self, "No Data", "No SVM data available for export.")
+            return
+
+        # Open a file dialog to save the CSV
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options
+        )
+
+        if file_path:
+            try:
+                # Extract SVM data
+                data = self.current_svm_data
+                df = pd.DataFrame({
+                    "Porosity": data["porosity"],
+                    "Permeability (md)": data["permeability"],
+                    "Rock Type": data["rock_type"]
+                })
+                df.to_csv(file_path, index=False)
+                QMessageBox.information(self, "Success", "SVM data exported successfully.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
