@@ -978,9 +978,9 @@ class MainApp(QMainWindow):
         def on_hover(event):
             cont, ind = scatter_points.contains(event)
             if cont:
-                fig.canvas.set_cursor(fig.canvas.get_cursor("hand"))
+                fig.canvas.set_cursor("hand")
             else:
-                fig.canvas.set_cursor(fig.canvas.get_cursor("arrow"))
+                fig.canvas.set_cursor("arrow")
 
         def on_click(event):
             cont, ind = scatter_points.contains(event)
