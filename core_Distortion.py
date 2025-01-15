@@ -638,16 +638,22 @@ class MainApp(QMainWindow):
     def init_ml_tab(self):
         layout = QVBoxLayout()
 
+        # Header at the top
         header_label = QLabel("Machine Learning")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
+        # Add a spacer to push the button to the bottom
+        layout.addStretch()
+
+        # Add the button at the bottom
         self.svm_button = QPushButton("Train and Evaluate SVM")
         self.svm_button.clicked.connect(self.train_evaluate_svm)
         self.style_button(self.svm_button)
         layout.addWidget(self.svm_button)
 
+        # Set layout for the tab
         self.ml_tab.setLayout(layout)
     
     def train_evaluate_svm(self):
