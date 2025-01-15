@@ -635,6 +635,7 @@ class MainApp(QMainWindow):
 
         self.plots_tab.setLayout(layout)  
 
+    
     def init_ml_tab(self):
         layout = QVBoxLayout()
 
@@ -644,16 +645,25 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
+        # Create a placeholder plot
+        fig, ax = plt.subplots()
+        ax.set_title("SVM Results Placeholder")
+        ax.axis('off')  # Placeholder, no axes visible
+
+        # Add the figure canvas
+        self.ml_canvas = FigureCanvas(fig)
+        layout.addWidget(self.ml_canvas)
+
         # Add a spacer to push the button to the bottom
         layout.addStretch()
 
         # Add the button at the bottom
         self.svm_button = QPushButton("Train and Evaluate SVM")
         self.svm_button.clicked.connect(self.train_evaluate_svm)
-        self.style_button(self.svm_button)
+        self.style_button(self.svm_button)  # Style the button
         layout.addWidget(self.svm_button)
 
-        # Set layout for the tab
+        # Set the layout for the ML tab
         self.ml_tab.setLayout(layout)
     
     def train_evaluate_svm(self):
@@ -667,7 +677,7 @@ class MainApp(QMainWindow):
                 # Extract porosity and permeability as features
                 porosity = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
                 permeability = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
-                
+
                 if porosity is not None and permeability is not None:
                     # Add condition to include only positive values
                     if porosity > 0 and permeability > 0:
@@ -706,9 +716,6 @@ class MainApp(QMainWindow):
 
         # Plot results
         self.plot_svm_results(svm_classifier, scaler, original_features, target)  # Use original features for plotting
-    
-         # Connect right-click event for saving
-        self.ml_canvas.mpl_connect('button_press_event', self.handle_plot_click)
     
     def determine_rock_type(self, porosity, permeability):
         # Replace this with the actual logic to determine rock type based on porosity and permeability
@@ -772,9 +779,7 @@ class MainApp(QMainWindow):
     def plot_svm_results(self, classifier, scaler, original_features, target):
         # Create a mesh grid for decision boundary visualization
         h = 0.02  # Step size in mesh
-        # Ensure that x_min and x_max do not go below 0
         x_min, x_max = max(0, np.array(original_features)[:, 0].min() - 1), np.array(original_features)[:, 0].max() + 1
-        # Ensure that y_min and y_max do not go below 0
         y_min, y_max = max(0, np.array(original_features)[:, 1].min() - 1), np.array(original_features)[:, 1].max() + 1
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
@@ -795,13 +800,14 @@ class MainApp(QMainWindow):
         ax.set_ylabel("Permeability")
         ax.legend(*scatter.legend_elements(), title="Rock Types")
 
-        # Show plot in the ML tab
+        # Check if a canvas already exists and remove it
         if hasattr(self, 'ml_canvas') and self.ml_canvas:
             self.ml_tab.layout().removeWidget(self.ml_canvas)
             self.ml_canvas.deleteLater()
 
+        # Add the new canvas to the layout
         self.ml_canvas = FigureCanvas(fig)
-        self.ml_tab.layout().addWidget(self.ml_canvas)
+        self.ml_tab.layout().insertWidget(1, self.ml_canvas)  # Insert just after the header label
         self.ml_canvas.draw()
     
     def show_plot(self, fig):
