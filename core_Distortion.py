@@ -902,7 +902,7 @@ class MainApp(QMainWindow):
 
         # Highlight optimal K with a red circle
         optimal_k = self.find_optimal_k(distortions)
-        red_circle = ax.scatter(
+        recommended_k_circle = ax.scatter(
             optimal_k,
             distortions[optimal_k - 1],
             facecolors='none',
@@ -928,11 +928,14 @@ class MainApp(QMainWindow):
                 y = distortions[index]
                 tooltip_text = f"({x}, {y:.2f})"
 
+                # Update Recommended K textbox
+                self.selected_K_textbox.setText(str(x))
+
                 # Remove old tooltip if present
                 if hasattr(self, 'tooltip') and self.tooltip:
                     self.tooltip.remove()
 
-                # Add a new tooltip and red circle
+                # Add a new tooltip
                 self.tooltip = ax.annotate(
                     tooltip_text,
                     (x, y),
@@ -942,14 +945,22 @@ class MainApp(QMainWindow):
                     bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
                     fontsize=10
                 )
-                red_circle.set_offsets([x, y])
+
+                # Highlight hovered point
+                hovered_point = ax.scatter(
+                    x, y, color='red', s=200, zorder=3
+                )
                 fig.canvas.draw_idle()
-            else:
-                if hasattr(self, 'tooltip') and self.tooltip:
-                    self.tooltip.remove()
-                    self.tooltip = None
-                    red_circle.set_offsets([None, None])  # Hide red circle
+
+                # Remove highlight after unhovering
+                def reset_hover(event):
+                    hovered_point.remove()
+                    if hasattr(self, 'tooltip') and self.tooltip:
+                        self.tooltip.remove()
+                        self.tooltip = None
                     fig.canvas.draw_idle()
+
+                fig.canvas.mpl_connect('motion_notify_event', reset_hover)
 
         fig.canvas.mpl_connect('motion_notify_event', on_hover)
 
