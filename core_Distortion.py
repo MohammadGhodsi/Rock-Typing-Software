@@ -820,7 +820,7 @@ class MainApp(QMainWindow):
         }
 
         # Attach context menu for export
-        fig.canvas.mpl_connect('button_press_event', self.show_svm_context_menu)
+        fig.canvas.mpl_connect('button_press_event', self.show_context_menu)
 
         # Check if a canvas already exists and remove it
         if hasattr(self, 'ml_canvas') and self.ml_canvas:
