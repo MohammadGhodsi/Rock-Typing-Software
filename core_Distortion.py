@@ -677,6 +677,7 @@ class MainApp(QMainWindow):
         # Extract features and target from the table
         features = []
         target = []
+        original_features = []  # To store original feature values
 
         for row in range(self.table.rowCount()):
             try:
@@ -684,11 +685,14 @@ class MainApp(QMainWindow):
                 porosity = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
                 permeability = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
                 
-                if porosity and permeability:
-                    features.append([np.log(porosity), np.log(permeability)])  # Use log transformation
-                    # Assuming rock types are integers (you may want to replace this logic):
-                    rock_type = self.determine_rock_type(porosity, permeability)  # Replace with your own logic
-                    target.append(rock_type)
+                if porosity is not None and permeability is not None:
+                    # Add condition to include only positive values
+                    if porosity > 0 and permeability > 0:
+                        features.append([porosity, permeability])  # Use raw values for original_features
+                        original_features.append([porosity, permeability])  # Keep original values
+                        # Assuming rock types are integers (you may want to replace this logic):
+                        rock_type = self.determine_rock_type(porosity, permeability)  # Replace with your own logic
+                        target.append(rock_type)
             except ValueError:
                 continue
 
@@ -718,7 +722,7 @@ class MainApp(QMainWindow):
         QMessageBox.information(self, "SVM Results", f"Classification Report:\n{report}")
 
         # Plot results
-        self.plot_svm_results(svm_classifier, scaler, features_scaled, target)
+        self.plot_svm_results(svm_classifier, scaler, original_features, target)  # Use original features for plotting
     
     def determine_rock_type(self, porosity, permeability):
         # Replace this with the actual logic to determine rock type based on porosity and permeability
@@ -779,25 +783,28 @@ class MainApp(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
     
-    def plot_svm_results(self, classifier, scaler, features, target):
+    def plot_svm_results(self, classifier, scaler, original_features, target):
         # Create a mesh grid for decision boundary visualization
         h = 0.02  # Step size in mesh
-        x_min, x_max = features[:, 0].min() - 1, features[:, 0].max() + 1
-        y_min, y_max = features[:, 1].min() - 1, features[:, 1].max() + 1
+        x_min, x_max = np.array(original_features)[:, 0].min() - 1, np.array(original_features)[:, 0].max() + 1
+        y_min, y_max = np.array(original_features)[:, 1].min() - 1, np.array(original_features)[:, 1].max() + 1
         xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
 
-        Z = classifier.predict(np.c_[xx.ravel(), yy.ravel()])
+        # Predict on the grid points using the scaled features
+        Z = classifier.predict(scaler.transform(np.c_[xx.ravel(), yy.ravel()]))
         Z = Z.reshape(xx.shape)
 
         # Plot decision boundary
         fig, ax = plt.subplots(figsize=(10, 8))
         ax.contourf(xx, yy, Z, alpha=0.8, cmap=plt.cm.coolwarm)
 
-        # Plot data points
-        scatter = ax.scatter(features[:, 0], features[:, 1], c=target, edgecolors='k', cmap=plt.cm.coolwarm)
+        # Plot data points using original features
+        scatter = ax.scatter(np.array(original_features)[:, 0], np.array(original_features)[:, 1], c=target, edgecolors='k', cmap=plt.cm.coolwarm)
+
+        # Set titles and labels
         ax.set_title("SVM Classification of Rock Types")
-        ax.set_xlabel("Log(Porosity) (scaled)")
-        ax.set_ylabel("Log(Permeability) (scaled)")
+        ax.set_xlabel("Porosity (linear scale)")
+        ax.set_ylabel("Permeability (linear scale)")
         ax.legend(*scatter.legend_elements(), title="Rock Types")
 
         # Show plot in the ML tab
