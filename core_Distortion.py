@@ -200,21 +200,58 @@ class MainApp(QMainWindow):
         # Plot 2: log(RQI) vs log(Phi z) with clusters
         for cluster in range(n_clusters):
             cluster_indices = np.where(filtered_clusters == cluster)[0]
-            axes[1].scatter(
+            scatter = axes[1].scatter(
                 log_phi_z[cluster_indices], log_rqi[cluster_indices],
                 color=cluster_colors[cluster % len(cluster_colors)],
                 label=f"Cluster {cluster + 1}",
                 alpha=0.7
             )
+
         axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
         axes[1].legend()
         axes[1].grid(True)
 
+        # Add hover functionality for tooltip
+        def on_hover(event):
+            for ax in [axes[0], axes[1]]:
+                for scatter in ax.collections:
+                    cont, ind = scatter.contains(event)
+                    if cont:
+                        index = ind["ind"][0]
+                        x, y = scatter.get_offsets()[index]
+                        tooltip_text = f"({x:.2f}, {y:.2f})"
+
+                        # Remove old tooltip if present
+                        if hasattr(self, 'tooltip') and self.tooltip:
+                            self.tooltip.remove()
+
+                        # Add a new tooltip
+                        self.tooltip = ax.annotate(
+                            tooltip_text,
+                            (x, y),
+                            textcoords="offset points",
+                            xytext=(10, 10),
+                            ha='center',
+                            bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                            fontsize=10
+                        )
+                        self.rock_type_canvas.draw_idle()
+                        return
+
+            # Remove tooltip when not hovering over any point
+            if hasattr(self, 'tooltip') and self.tooltip:
+                self.tooltip.remove()
+                self.tooltip = None
+                self.rock_type_canvas.draw_idle()
+
+        self.rock_type_canvas.mpl_connect('motion_notify_event', on_hover)
+
         # Update the canvas
         self.rock_type_canvas.draw()
 
+    
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -973,8 +1010,7 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
-
-    
+   
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
