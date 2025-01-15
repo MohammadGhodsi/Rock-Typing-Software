@@ -674,57 +674,54 @@ class MainApp(QMainWindow):
         self.ml_tab.setLayout(layout)
     
     def train_evaluate_svm(self):
-        # Ensure there is data in the table before proceeding
-        if self.table.rowCount() == 0:
-            QMessageBox.warning(self, "Warning", "No data available. Please enter data first.")
-            return
-
-        # Extracting features and target from the table
+        # Extract features and target from the table
         features = []
         target = []
 
         for row in range(self.table.rowCount()):
             try:
+                # Only extract porosity and permeability for features
                 porosity = float(self.table.item(row, 0).text())
                 permeability = float(self.table.item(row, 1).text())
-                rock_type = self.table.item(row, 2).text()  # Assuming 'Rock Type' is in the 3rd column (index 2)
+
+                # Assuming rock types are integers, you should adapt this line depending on how you define rock types
+                # Here I am assuming you have a way to label rock types based on some existing criterion
+                # You can change this line for whatever your target variable logic is
+                # For example, you might need a separate method to determine rock type from your data
+                rock_type = row % 3  # Placeholder logic for rock types based on the index, replace with actual logic
                 
-                # Append to lists
                 features.append([porosity, permeability])
                 target.append(rock_type)
             except (ValueError, IndexError):
-                continue  # Ignore rows with non-numeric values
+                continue
 
-        if len(features) == 0 or len(target) == 0:
+        if not features or not target:
             QMessageBox.warning(self, "Warning", "Insufficient data for SVM training.")
             return
 
-        # Convert lists to numpy arrays for sklearn
         features = np.array(features)
         target = np.array(target)
 
-        # Standardizing the features
+        # Standardize the features
         scaler = StandardScaler()
         features_scaled = scaler.fit_transform(features)
 
-        # Train-Test Split
+        # Train-test split
         X_train, X_test, y_train, y_test = train_test_split(features_scaled, target, test_size=0.2, random_state=42)
 
-        # Train SVM Classifier
+        # Train SVM
         svm_classifier = SVC(kernel='linear', random_state=42)
         svm_classifier.fit(X_train, y_train)
 
-        # Make predictions and evaluate
+        # Predictions
         y_pred = svm_classifier.predict(X_test)
 
-        # Display results
-        confusion = confusion_matrix(y_test, y_pred)
+        # Evaluate and display results
         report = classification_report(y_test, y_pred)
-
-        print("Confusion Matrix:\n", confusion)
-        print("Classification Report:\n", report)
-
         QMessageBox.information(self, "SVM Results", f"Classification Report:\n{report}")
+
+        # Plot results
+        self.plot_svm_results(svm_classifier, scaler, features_scaled, target)
     
     def style_button(self, button):
         button.setStyleSheet(
@@ -776,6 +773,37 @@ class MainApp(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
     
+    def plot_svm_results(self, classifier, scaler, features, target):
+        # Create a mesh grid for decision boundary visualization
+        h = 0.02  # Step size in mesh
+        x_min, x_max = features[:, 0].min() - 1, features[:, 0].max() + 1
+        y_min, y_max = features[:, 1].min() - 1, features[:, 1].max() + 1
+        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+
+        Z = classifier.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+
+        # Plot decision boundary
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ax.contourf(xx, yy, Z, alpha=0.8, cmap=plt.cm.coolwarm)
+
+        # Plot data points
+        scatter = ax.scatter(
+            features[:, 0], features[:, 1], c=target, edgecolors='k', cmap=plt.cm.coolwarm
+        )
+        ax.set_title("SVM Classification of Rock Types")
+        ax.set_xlabel("Porosity (scaled)")
+        ax.set_ylabel("Absolute Permeability (scaled)")
+        ax.legend(*scatter.legend_elements(), title="Rock Types")
+
+        # Show plot in the ML tab
+        if hasattr(self, 'ml_canvas') and self.ml_canvas:
+            self.ml_tab.layout().removeWidget(self.ml_canvas)
+            self.ml_canvas.deleteLater()
+
+        self.ml_canvas = FigureCanvas(fig)
+        self.ml_tab.layout().addWidget(self.ml_canvas)
+        self.ml_canvas.draw()
  
     def show_plot(self, fig):
         if hasattr(self, 'canvas') and self.canvas:
