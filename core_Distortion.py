@@ -101,6 +101,7 @@ class MainApp(QMainWindow):
         # Add canvas to layout
         self.rock_type_canvas = FigureCanvas(fig)
         layout.addWidget(self.rock_type_canvas)
+        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
 
         # Spacer for alignment
         layout.addStretch()
@@ -214,39 +215,14 @@ class MainApp(QMainWindow):
         axes[1].grid(True)
 
         # Add hover functionality for tooltip
+
         def on_hover(event):
-            for ax in [axes[0], axes[1]]:
-                for scatter in ax.collections:
-                    cont, ind = scatter.contains(event)
-                    if cont:
-                        index = ind["ind"][0]
-                        x, y = scatter.get_offsets()[index]
-                        tooltip_text = f"({x:.2f}, {y:.2f})"
-
-                        # Remove old tooltip if present
-                        if hasattr(self, 'tooltip') and self.tooltip:
-                            self.tooltip.remove()
-
-                        # Add a new tooltip
-                        self.tooltip = ax.annotate(
-                            tooltip_text,
-                            (x, y),
-                            textcoords="offset points",
-                            xytext=(10, 10),
-                            ha='center',
-                            bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
-                            fontsize=10
-                        )
-                        self.rock_type_canvas.draw_idle()
-                        return
-
-            # Remove tooltip when not hovering over any point
-            if hasattr(self, 'tooltip') and self.tooltip:
-                self.tooltip.remove()
-                self.tooltip = None
-                self.rock_type_canvas.draw_idle()
-
-        self.rock_type_canvas.mpl_connect('motion_notify_event', on_hover)
+            cont, ind = scatter_points.contains(event)
+            if cont:
+                fig.canvas.set_cursor(Cursors.HAND)
+            else:
+                fig.canvas.set_cursor(Cursors.POINTER)
+       
 
         # Update the canvas
         self.rock_type_canvas.draw()
@@ -635,6 +611,7 @@ class MainApp(QMainWindow):
         # Add the figure to the plots tab
         self.plot_canvas = FigureCanvas(fig)
         layout.addWidget(self.plot_canvas)
+        self.plot_canvas.mpl_connect('button_press_event', self.handle_plot_click)
 
         # Add a "Plot Data" button
         plot_button = QPushButton("Plot Data")
@@ -1010,6 +987,7 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
+        self.distortion_canvas.mpl_connect('button_press_event', self.handle_plot_click)
 
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
@@ -1129,6 +1107,43 @@ class MainApp(QMainWindow):
         columns = ["Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"]
         self.data = pd.DataFrame(data, columns=columns)
 
+    def show_plot_context_menu(self, event):
+        menu = QMenu(self)
+        save_action = menu.addAction("Save Plot As...")
+        save_action.triggered.connect(lambda: self.save_plot(event))
+        menu.exec_(self.mapToGlobal(QPoint(event.globalX(), event.globalY())))
+
+    def save_plot(self, canvas):
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Plot", "", "Images (*.png *.jpg *.jpeg *.bmp *.svg);;All Files (*)", options=options
+        )
+        if file_path:
+            canvas.figure.savefig(file_path)
+
+    def handle_plot_click(self, event):
+        if event.button == 3:  # Right-click
+            menu = QMenu(self)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #ffffff;  /* Menu background color */
+                    color: #000000;  /* Default text color */
+                    border: 1px solid #cccccc;  /* Border color */
+                }
+                QMenu::item {
+                    padding: 8px 20px;  /* Padding around each menu item */
+                }
+                QMenu::item:selected {
+                    background-color: #0078d7;  /* Highlight color on hover */
+                    color: #ffffff;  /* Text color on hover */
+                }
+            """)
+
+            save_action = menu.addAction("Save Plot As...")
+            save_action.triggered.connect(lambda: self.save_plot(event.canvas))
+
+            from PyQt5.QtGui import QCursor
+            menu.exec_(QCursor.pos())
 
 
 
