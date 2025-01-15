@@ -976,6 +976,11 @@ class MainApp(QMainWindow):
             label='Recommended k'
         )
 
+        # Set plot labels and title
+        ax.set_title("Distortion Method for Optimal K", fontsize=14, fontweight='bold')
+        ax.set_xlabel("K", fontsize=12)
+        ax.set_ylabel("Distortion", fontsize=12)
+
         # Add legend to the plot
         ax.legend(loc='best', fontsize=10, title="Legend")
 
@@ -996,7 +1001,7 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
-    
+   
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
