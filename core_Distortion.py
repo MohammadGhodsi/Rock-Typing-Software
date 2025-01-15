@@ -250,8 +250,7 @@ class MainApp(QMainWindow):
 
         # Update the canvas
         self.rock_type_canvas.draw()
-
-    
+   
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -939,7 +938,7 @@ class MainApp(QMainWindow):
 
         # Highlight optimal K with a red circle
         optimal_k = self.find_optimal_k(distortions)
-        recommended_k_circle = ax.scatter(
+        selected_circle = ax.scatter(
             optimal_k,
             distortions[optimal_k - 1],
             facecolors='none',
@@ -956,50 +955,32 @@ class MainApp(QMainWindow):
         ax.grid(True)
         ax.legend(loc='best', fontsize=12)
 
-        # Change cursor to hand when hovering over points
+        # Add interaction to toggle points
         def on_hover(event):
             cont, ind = scatter_points.contains(event)
             if cont:
+                fig.canvas.set_cursor(fig.canvas.get_cursor("hand"))
+            else:
+                fig.canvas.set_cursor(fig.canvas.get_cursor("arrow"))
+
+        def on_click(event):
+            cont, ind = scatter_points.contains(event)
+            if cont:
                 index = ind['ind'][0]
-                x = index + 1
-                y = distortions[index]
-                tooltip_text = f"({x}, {y:.2f})"
+                k_value = index + 1
 
                 # Update Recommended K textbox
-                self.selected_K_textbox.setText(str(x))
+                self.selected_K_textbox.setText(str(k_value))
 
-                # Remove old tooltip if present
-                if hasattr(self, 'tooltip') and self.tooltip:
-                    self.tooltip.remove()
+                # Clear previous selection
+                selected_circle.set_offsets((None, None))
 
-                # Add a new tooltip
-                self.tooltip = ax.annotate(
-                    tooltip_text,
-                    (x, y),
-                    textcoords="offset points",
-                    xytext=(10, 10),
-                    ha='center',
-                    bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
-                    fontsize=10
-                )
-
-                # Highlight hovered point
-                hovered_point = ax.scatter(
-                    x, y, color='red', s=200, zorder=3
-                )
+                # Highlight the new selected point
+                selected_circle.set_offsets((k_value, distortions[index]))
                 fig.canvas.draw_idle()
 
-                # Remove highlight after unhovering
-                def reset_hover(event):
-                    hovered_point.remove()
-                    if hasattr(self, 'tooltip') and self.tooltip:
-                        self.tooltip.remove()
-                        self.tooltip = None
-                    fig.canvas.draw_idle()
-
-                fig.canvas.mpl_connect('motion_notify_event', reset_hover)
-
         fig.canvas.mpl_connect('motion_notify_event', on_hover)
+        fig.canvas.mpl_connect('button_press_event', on_click)
 
         # Replace or update the canvas
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
@@ -1010,7 +991,7 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
-   
+
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
