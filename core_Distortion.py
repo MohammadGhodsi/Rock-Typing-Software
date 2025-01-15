@@ -1129,6 +1129,9 @@ class MainApp(QMainWindow):
         columns = ["Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"]
         self.data = pd.DataFrame(data, columns=columns)
 
+
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_app = MainApp()
