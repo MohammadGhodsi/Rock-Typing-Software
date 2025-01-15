@@ -949,11 +949,6 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
             return
 
-        # Validate the number of clusters
-        if max_clusters > len(X):
-            QMessageBox.warning(self, "Error", f"Number of clusters ({max_clusters}) exceeds the number of samples ({len(X)}). Please reduce the number of clusters.")
-            return
-
         # Generate distortion plot
         distortions = []
         for k in range(1, max_clusters + 1):
@@ -962,14 +957,9 @@ class MainApp(QMainWindow):
             distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
             distortions.append(distortion)
 
-        # Save data for export
-        self.current_clustering_data = {
-            "distortion": {"k": list(range(1, max_clusters + 1)), "values": distortions}
-        }
-
         # Create the plot
         fig, ax = plt.subplots(figsize=(5, 10))
-        scatter_points = ax.scatter(
+        scatter = ax.scatter(
             range(1, max_clusters + 1), distortions, color='blue', s=100, label='Distortion Points'
         )
         ax.plot(range(1, max_clusters + 1), distortions, marker='o', color='blue', linestyle='-', label='Distortion Curve')
@@ -986,14 +976,15 @@ class MainApp(QMainWindow):
             label='Recommended k'
         )
 
-        # Style the plot
-        ax.set_title('Distortion Method for Optimal k', fontsize=14, fontweight='bold')
-        ax.set_xlabel('Number of Clusters (k)', fontsize=12)
-        ax.set_ylabel('Distortion', fontsize=12)
-        ax.grid(True)
-        ax.legend(loc='best', fontsize=12)
+        # Add legend to the plot
+        ax.legend(loc='best', fontsize=10, title="Legend")
 
-        # Attach context menu for export
+        # Set aspect ratio to "equal"
+        ax.set_aspect('equal', adjustable='datalim')  # Ensure circles are not distorted
+
+        # Attach hover and click events
+        self.hover_circle = None  # To store the circle artist for hover effect
+        fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_hover_distortion_plot(event, scatter, ax))
         fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_distortion_plot(event, distortions))
 
         # Replace or update the canvas
@@ -1024,24 +1015,28 @@ class MainApp(QMainWindow):
         optimal_k = np.argmax(second_diff) + 2  # +2 because np.diff reduces the length twice
         return optimal_k
     
-    def on_hover_distortion_plot(self, event, scatter_points, distortions):
-        cont, ind = scatter_points.contains(event)
-        if cont:
-            index = ind["ind"][0]
-            x = index + 1
-            y = distortions[index]
-            tooltip_text = f"({x}, {y:.2f})"
-            if self.tooltip:
-                self.tooltip.remove()
-            self.tooltip = event.inaxes.annotate(tooltip_text, (x, y), textcoords="offset points", xytext=(10, 10),
-                                                ha='center', bbox=dict(boxstyle="round,pad=0.3", edgecolor="black",
-                                                                        facecolor="lightyellow"), fontsize=10)
-            event.canvas.draw_idle()
-        else:
-            if self.tooltip:
-                self.tooltip.remove()
-                self.tooltip = None
-                event.canvas.draw_idle()
+    def on_hover_distortion_plot(self, event, scatter, ax):
+        if event.inaxes:
+            # Check if hovering over a point
+            cont, ind = scatter.contains(event)
+            if cont:
+                index = ind["ind"][0]
+                x, y = scatter.get_offsets()[index]
+                
+                # Remove existing circle
+                if self.hover_circle:
+                    self.hover_circle.remove()
+                
+                # Add a new circle around the hovered point
+                self.hover_circle = plt.Circle((x, y), radius=0.2, color='red', fill=False, linewidth=2)
+                ax.add_artist(self.hover_circle)
+                self.distortion_canvas.draw_idle()  # Redraw the canvas
+            else:
+                # Remove the circle if not hovering over any point
+                if self.hover_circle:
+                    self.hover_circle.remove()
+                    self.hover_circle = None
+                    self.distortion_canvas.draw_idle()
     
     def on_click_distortion_plot(self, event, distortions):
         cont, ind = event.inaxes.collections[0].contains(event)
