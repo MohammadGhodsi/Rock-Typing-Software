@@ -902,7 +902,7 @@ class MainApp(QMainWindow):
 
         # Highlight optimal K with a red circle
         optimal_k = self.find_optimal_k(distortions)
-        ax.scatter(
+        red_circle = ax.scatter(
             optimal_k,
             distortions[optimal_k - 1],
             facecolors='none',
@@ -919,17 +919,39 @@ class MainApp(QMainWindow):
         ax.grid(True)
         ax.legend(loc='best', fontsize=12)
 
-        # Event handling for click interaction
-        def on_click(event):
-            if event.inaxes == ax:
-                cont, ind = scatter_points.contains(event)
-                if cont:
-                    index = ind["ind"][0]
-                    chosen_k = index + 1  # Add 1 because cluster range starts from 1
-                    self.selected_K_textbox.setText(str(chosen_k))
-                    QMessageBox.information(self, "Chosen K", f"You have selected K = {chosen_k}")
+        # Change cursor to hand when hovering over points
+        def on_hover(event):
+            cont, ind = scatter_points.contains(event)
+            if cont:
+                index = ind['ind'][0]
+                x = index + 1
+                y = distortions[index]
+                tooltip_text = f"({x}, {y:.2f})"
 
-        fig.canvas.mpl_connect("button_press_event", on_click)
+                # Remove old tooltip if present
+                if hasattr(self, 'tooltip') and self.tooltip:
+                    self.tooltip.remove()
+
+                # Add a new tooltip and red circle
+                self.tooltip = ax.annotate(
+                    tooltip_text,
+                    (x, y),
+                    textcoords="offset points",
+                    xytext=(10, 10),
+                    ha='center',
+                    bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                    fontsize=10
+                )
+                red_circle.set_offsets([x, y])
+                fig.canvas.draw_idle()
+            else:
+                if hasattr(self, 'tooltip') and self.tooltip:
+                    self.tooltip.remove()
+                    self.tooltip = None
+                    red_circle.set_offsets([None, None])  # Hide red circle
+                    fig.canvas.draw_idle()
+
+        fig.canvas.mpl_connect('motion_notify_event', on_hover)
 
         # Replace or update the canvas
         if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
@@ -940,6 +962,7 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
+
     
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
