@@ -721,8 +721,8 @@ class MainApp(QMainWindow):
                 permeability = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
 
                 if porosity is not None and permeability is not None:
-                    # Add condition to include only positive values
-                    if porosity > 0 and permeability > 0:
+                    # Limit porosity to 1.0 and include only positive values
+                    if 0 < porosity <= 1.0 and permeability > 0:
                         features.append([porosity, permeability])  # Use raw values for original_features
                         original_features.append([porosity, permeability])  # Keep original values
                         # Assuming rock types are integers (you may want to replace this logic):
@@ -757,7 +757,7 @@ class MainApp(QMainWindow):
 
         # Plot results
         self.plot_svm_results(svm_classifier, scaler, original_features, target)
-    
+      
     def determine_rock_type(self, porosity, permeability):
         # Replace this with the actual logic to determine rock type based on porosity and permeability
         if porosity < 0.15:
