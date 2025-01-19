@@ -842,11 +842,14 @@ class MainApp(QMainWindow):
             marker="o",
         )
 
-        # Set titles and labels
+        # Set titles, labels, and limits
         ax.set_title("SVM Classification of Rock Types (with Decision Boundary Lines)")
         ax.set_xlabel("Porosity")
         ax.set_ylabel("Permeability")
         ax.legend(*scatter.legend_elements(), title="Rock Types", loc="upper right")
+        
+        # Limit X-axis from 0 to 1.0
+        ax.set_xlim(0, 1.0)
 
         # Save plot data for CSV export
         self.current_svm_data = {
