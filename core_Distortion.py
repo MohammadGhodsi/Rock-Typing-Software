@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence , QIntValidator
 from PyQt5.QtWidgets import QShortcut
-from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
+from matplotlib.offssadetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas , NavigationToolbar2QT as NavigationToolbar)
 
