@@ -141,108 +141,96 @@ class MainApp(QMainWindow):
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
 
-        # Ensure a valid number of clusters is entered
-        try:
-            n_clusters = int(self.selected_K_textbox.text())
-            if n_clusters <= 0:
-                raise ValueError
-        except ValueError:
-            QMessageBox.warning(self, "Warning", "Please enter a valid positive number for clusters.")
-            return
-
         # Prepare data for clustering
         X = np.array(list(zip(porosity, permeability)))
 
-        # Validate the number of clusters
-        if n_clusters > len(X):
-            QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X)}). Please reduce the number of clusters.")
-            return
+        # Perform clustering (using KMeans)
+        n_clusters = min(3, len(X))  # Example: Default to 3 clusters
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        clusters = kmeans.fit_predict(X)
 
-        # Perform KMeans clustering
-        try:
-            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-            clusters = kmeans.fit_predict(X)
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
-            return
-
-        # Filter data for logarithmic plots
         valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
         log_rqi = np.log(np.array(rqi)[valid_indices])
         log_phi_z = np.log(np.array(phi_z)[valid_indices])
 
         filtered_clusters = clusters[valid_indices]
 
-        # Assign cluster labels for coloring
-        cluster_colors = plt.cm.tab10.colors  # Use a colormap with distinct colors
+        # Assign cluster colors
+        cluster_colors = plt.cm.tab10.colors
 
-        # Clear the previous plots
+        # Clear previous plots
         self.rock_type_canvas.figure.clear()
-
-        # Create a 1x2 grid for the subplots
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
-        # Plot 1: Absolute Permeability vs Porosity with clusters
-        for cluster in range(n_clusters):
-            cluster_data = X[clusters == cluster]
-            axes[0].scatter(
-                cluster_data[:, 0], cluster_data[:, 1],
-                color=cluster_colors[cluster % len(cluster_colors)],
-                label=f"Cluster {cluster + 1}",
-                alpha=0.7
-            )
+        # Plot 1: Absolute Permeability vs Porosity
+        scatter1 = axes[0].scatter(
+            porosity, permeability, c=clusters, cmap='tab10', alpha=0.7
+        )
         axes[0].set_title("Absolute Permeability (md) vs Porosity")
         axes[0].set_xlabel("Porosity")
         axes[0].set_ylabel("Absolute Permeability (md)")
-        axes[0].legend()
         axes[0].grid(True)
 
-        # Plot 2: log(RQI) vs log(Phi z) with clusters
-        for cluster in range(n_clusters):
-            cluster_indices = np.where(filtered_clusters == cluster)[0]
-            scatter = axes[1].scatter(
-                log_phi_z[cluster_indices], log_rqi[cluster_indices],
-                color=cluster_colors[cluster % len(cluster_colors)],
-                label=f"Cluster {cluster + 1}",
-                alpha=0.7
-            )
-
+        # Plot 2: log(RQI) vs log(Phi z)
+        scatter2 = axes[1].scatter(
+            log_phi_z, log_rqi, c=filtered_clusters, cmap='tab10', alpha=0.7
+        )
         axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
-        axes[1].legend()
         axes[1].grid(True)
 
-        # Add hover functionality for tooltip
+        # Save plot data and connect hover event
+        self.rock_type_tooltip = None
+        self.rock_type_plot_data = [
+            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
+            {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
+        ]
 
-        def on_hover(event):
-            cont, ind = scatter_points.contains(event)
-            if cont:
-                fig.canvas.set_cursor(Cursors.HAND)
-            else:
-                fig.canvas.set_cursor(Cursors.POINTER)
-       
+        self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
 
-        # Update the canvas
+        # Update canvas
         self.rock_type_canvas.draw()
-   
-        # Save plot data for export
-        self.current_plot_data = {
-            "points": list(zip(log_phi_z, log_rqi)),
-            "labels": filtered_clusters
-        }
-   
-        # Store extracted data for later CSV export
-        self.current_plot_data = {
-            "points": list(zip(log_phi_z, log_rqi)),
-            "labels": filtered_clusters,
-            "porosity": porosity,
-            "permeability": permeability,
-            "log_rqi": log_rqi.tolist(),
-            "log_phi_z": log_phi_z.tolist()
-        }
-   
+    
+    def handle_rock_type_hover_event(self, event):
+        for plot in self.rock_type_plot_data:
+            scatter = plot["scatter"]
+            x_data = plot["x_data"]
+            y_data = plot["y_data"]
+            axis = plot["axis"]
+
+            if event.inaxes == axis:
+                cont, ind = scatter.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    x = x_data[index]
+                    y = y_data[index]
+                    tooltip_text = f"({x:.2f}, {y:.2f})"
+
+                    # Remove previous tooltip
+                    if self.rock_type_tooltip:
+                        self.rock_type_tooltip.remove()
+
+                    # Create new tooltip
+                    self.rock_type_tooltip = axis.annotate(
+                        tooltip_text,
+                        (x, y),
+                        textcoords="offset points",
+                        xytext=(10, 10),
+                        ha='center',
+                        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                        fontsize=10
+                    )
+                    self.rock_type_canvas.draw_idle()
+                    return
+
+        # Remove tooltip if not hovering over any point
+        if self.rock_type_tooltip:
+            self.rock_type_tooltip.remove()
+            self.rock_type_tooltip = None
+            self.rock_type_canvas.draw_idle()
+    
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -301,20 +289,38 @@ class MainApp(QMainWindow):
             for column in range(self.table.columnCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
-    def show_context_menu(self, position):
-        menu = QMenu()
-        paste_action = menu.addAction("Paste from Clipboard")
-        delete_action = menu.addAction("Delete")
-        delete_all_action = menu.addAction("Delete All")
-        export_action = menu.addAction("Export as CSV")  # New action for exporting CSV
+    def show_context_menu(self, event):
+        if isinstance(event, MouseEvent):  # Check if it's a Matplotlib mouse event
+            # Convert the Matplotlib event position to a QPoint
+            position = self.mapToGlobal(QPoint(int(event.x), int(event.y)))
+        else:
+            position = event
 
-        paste_action.triggered.connect(self.handle_paste)
-        delete_action.triggered.connect(self.handle_delete)
-        delete_all_action.triggered.connect(self.handle_delete_all)
-        export_action.triggered.connect(self.export_to_csv)  # Connect to export function
+        menu = QMenu(self)
+        menu.setStyleSheet("""
+            QMenu {
+                background-color: #ffffff;
+                color: #000000;
+                border: 1px solid #cccccc;
+            }
+            QMenu::item {
+                padding: 8px 20px;
+            }
+            QMenu::item:selected {
+                background-color: #0078d7;
+                color: #ffffff;
+            }
+        """)
 
-        menu.exec_(self.table.viewport().mapToGlobal(position))
+        save_plot_action = menu.addAction("Save Plot As...")
+        save_plot_action.triggered.connect(lambda: self.save_plot(self.plot_canvas))
 
+        if hasattr(self, "current_plot_data") and self.current_plot_data:
+            export_csv_action = menu.addAction("Export Data As CSV")
+            export_csv_action.triggered.connect(self.export_plot_data_to_csv)
+
+        menu.exec_(position)  # Show the menu at the converted position
+    
     def export_to_csv(self):
         # Open a file dialog to get the file path
         options = QFileDialog.Options()
