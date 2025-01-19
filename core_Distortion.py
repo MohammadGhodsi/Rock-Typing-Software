@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence , QIntValidator
+from PyQt5.QtGui import QKeySequence , QIntValidator , QCursor 
 from PyQt5.QtWidgets import QShortcut
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from matplotlib.backends.backend_qt5agg import (
@@ -144,22 +144,34 @@ class MainApp(QMainWindow):
         # Prepare data for clustering
         X = np.array(list(zip(porosity, permeability)))
 
-        # Perform clustering (using KMeans)
-        n_clusters = min(3, len(X))  # Example: Default to 3 clusters
+        # Perform clustering (default to 3 clusters if no input)
+        try:
+            n_clusters = int(self.selected_K_textbox.text())
+            if n_clusters <= 0:
+                raise ValueError
+        except ValueError:
+            n_clusters = min(3, len(X))  # Default to 3 clusters if input is invalid
+
+        if n_clusters > len(X):
+            QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X)}).")
+            return
+
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         clusters = kmeans.fit_predict(X)
 
+        # Filter valid data for logarithmic plots
         valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
         log_rqi = np.log(np.array(rqi)[valid_indices])
         log_phi_z = np.log(np.array(phi_z)[valid_indices])
-
         filtered_clusters = clusters[valid_indices]
 
         # Assign cluster colors
         cluster_colors = plt.cm.tab10.colors
 
-        # Clear previous plots
+        # Clear the previous plots
         self.rock_type_canvas.figure.clear()
+
+        # Create a 1x2 grid for the subplots
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
@@ -181,7 +193,15 @@ class MainApp(QMainWindow):
         axes[1].set_ylabel("log(RQI)")
         axes[1].grid(True)
 
-        # Save plot data and connect hover event
+        # Save plot data for export
+        self.current_plot_data = {
+            "points1": list(zip(porosity, permeability)),
+            "clusters1": clusters,
+            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),
+            "clusters2": filtered_clusters,
+        }
+
+        # Add hover functionality for tooltips
         self.rock_type_tooltip = None
         self.rock_type_plot_data = [
             {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
@@ -189,8 +209,9 @@ class MainApp(QMainWindow):
         ]
 
         self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
+        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
 
-        # Update canvas
+        # Update the canvas
         self.rock_type_canvas.draw()
     
     def handle_rock_type_hover_event(self, event):
@@ -1211,15 +1232,15 @@ class MainApp(QMainWindow):
             """)
 
             save_plot_action = menu.addAction("Save Plot As...")
-            save_plot_action.triggered.connect(lambda: self.save_plot(event.canvas))
+            save_plot_action.triggered.connect(lambda: self.save_plot(self.rock_type_canvas))
 
             if hasattr(self, "current_plot_data") and self.current_plot_data:
-                export_csv_action = menu.addAction("Export Data As CSV")
+                export_csv_action = menu.addAction("Export Data as CSV")
                 export_csv_action.triggered.connect(self.export_plot_data_to_csv)
 
-            from PyQt5.QtGui import QCursor
             menu.exec_(QCursor.pos())
 
+    
     def export_plot_data_to_csv(self):
         if not hasattr(self, "current_plot_data") or not self.current_plot_data:
             QMessageBox.warning(self, "No Data", "No plot data available for export.")
@@ -1233,26 +1254,31 @@ class MainApp(QMainWindow):
 
         if file_path:
             try:
-                # Extract data and legend classifications
-                data = [
-                {
-                    "Porosity": self.current_plot_data["porosity"][i],
-                    "Permeability": self.current_plot_data["permeability"][i],
-                    "Log(RQI)": self.current_plot_data["log_rqi"][i],
-                    "Log(Phi z)": self.current_plot_data["log_phi_z"][i],
-                    "Cluster": self.current_plot_data["labels"][i]
-                }
-                for i in range(len(self.current_plot_data["points"]))
-                        ]
-                
+                # Prepare data for the CSV
+                # Extract data from the points1 and points2 along with their respective clusters
+                points1_data = [
+                    {"Porosity": pt[0], "Permeability": pt[1], "Cluster": cl}
+                    for pt, cl in zip(self.current_plot_data["points1"], self.current_plot_data["clusters1"])
+                ]
+                points2_data = [
+                    {"log(Phi z)": pt[0], "log(RQI)": pt[1], "Cluster": cl}
+                    for pt, cl in zip(self.current_plot_data["points2"], self.current_plot_data["clusters2"])
+                ]
 
-                # Save to CSV using pandas
-                df = pd.DataFrame(data)
-                df.to_csv(file_path, index=False)
+                # Create DataFrames for both sets of plot data
+                df1 = pd.DataFrame(points1_data)
+                df2 = pd.DataFrame(points2_data)
+
+                # Merge the two DataFrames on the Cluster column
+                merged_df = pd.merge(df1, df2, on='Cluster', how='outer', suffixes=('_plot1', '_plot2'))
+
+                # Save the merged DataFrame into a single CSV file
+                merged_df.to_csv(file_path, index=False)
+
                 QMessageBox.information(self, "Success", "Plot data exported successfully.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-
+    
     def export_svm_data_to_csv(self):
         if not hasattr(self, "current_svm_data") or not self.current_svm_data:
             QMessageBox.warning(self, "No Data", "No SVM data available for export.")
