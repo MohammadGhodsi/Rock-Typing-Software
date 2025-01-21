@@ -176,12 +176,16 @@ class MainApp(QMainWindow):
         axes[0].set_xlabel("Porosity")
         axes[0].set_ylabel("Absolute Permeability (md)")
         axes[0].grid(True)
+        legend1 = axes[0].legend(*scatter1.legend_elements(), title="Cluster")
+        axes[0].add_artist(legend1)
 
         # Plot 2: log(RQI) vs log(Phi z)
         scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.7)
         axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
+        legend2 = axes[1].legend(*scatter2.legend_elements(), title="Cluster")
+        axes[1].add_artist(legend2)
 
         # Synchronize X and Y axis limits
         min_limit = min(min(log_phi_z), min(log_rqi))
@@ -208,7 +212,7 @@ class MainApp(QMainWindow):
         # Connect hover event for tooltips
         self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
         self.rock_type_canvas.draw()
-
+    
     
     def handle_rock_type_hover_event(self, event):
         for plot in self.rock_type_plot_data:
