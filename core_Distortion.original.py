@@ -117,7 +117,6 @@ class MainApp(QMainWindow):
 
         self.rock_type_tab.setLayout(layout)
     
-    
     def update_rock_type_tab(self):
         # Extract data from the table
         porosity = []
@@ -138,17 +137,12 @@ class MainApp(QMainWindow):
             except ValueError:
                 continue  # Skip rows with invalid or missing data
 
-        if not rqi or not phi_z:
+        if not porosity or not permeability or not rqi or not phi_z:
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
 
-        # Filter valid data for clustering
-        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
-        log_rqi = np.log(np.array(rqi)[valid_indices])
-        log_phi_z = np.log(np.array(phi_z)[valid_indices])
-
-        # Prepare data for clustering based on log(RQI) and log(Phi z)
-        X = np.array(list(zip(log_rqi, log_phi_z)))
+        # Prepare data for clustering
+        X = np.array(list(zip(porosity, permeability)))
 
         # Perform clustering (default to 3 clusters if no input)
         try:
@@ -165,50 +159,66 @@ class MainApp(QMainWindow):
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         clusters = kmeans.fit_predict(X)
 
-        # Plot the data
+        # Filter valid data for logarithmic plots
+        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
+        log_rqi = np.log(np.array(rqi)[valid_indices])
+        log_phi_z = np.log(np.array(phi_z)[valid_indices])
+        filtered_clusters = clusters[valid_indices]
+
+        # Assign cluster colors
+        cluster_colors = plt.cm.tab10.colors
+
+        # Clear the previous plots
         self.rock_type_canvas.figure.clear()
+
+        # Create a 1x2 grid for the subplots
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
         # Plot 1: Absolute Permeability vs Porosity
-        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.7)
+        scatter1 = axes[0].scatter(
+            porosity, permeability, c=clusters, cmap='tab10', alpha=0.7
+        )
         axes[0].set_title("Absolute Permeability (md) vs Porosity")
         axes[0].set_xlabel("Porosity")
         axes[0].set_ylabel("Absolute Permeability (md)")
         axes[0].grid(True)
 
         # Plot 2: log(RQI) vs log(Phi z)
-        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.7)
+        scatter2 = axes[1].scatter(
+            log_phi_z, log_rqi, c=filtered_clusters, cmap='tab10', alpha=0.7
+        )
         axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
+        axes[1].grid(True)
 
         # Synchronize X and Y axis limits
         min_limit = min(min(log_phi_z), min(log_rqi))
         max_limit = max(max(log_phi_z), max(log_rqi))
         axes[1].set_xlim(min_limit, max_limit)
         axes[1].set_ylim(min_limit, max_limit)
-        axes[1].grid(True)
 
         # Save plot data for export
         self.current_plot_data = {
-            "points1": list(zip(porosity, permeability)),  # Plot 1 data (Porosity vs Permeability)
-            "clusters1": clusters.tolist(),
-            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),  # Plot 2 data (log(Phi z) vs log(RQI))
-            "clusters2": clusters.tolist(),
+            "points1": list(zip(porosity, permeability)),
+            "clusters1": clusters,
+            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),
+            "clusters2": filtered_clusters,
         }
 
-        # Update tooltip data
+        # Add hover functionality for tooltips
         self.rock_type_tooltip = None
         self.rock_type_plot_data = [
             {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
             {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
         ]
 
-        # Connect hover event for tooltips
         self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
-        self.rock_type_canvas.draw()
+        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
 
+        # Update the canvas
+        self.rock_type_canvas.draw()
     
     def handle_rock_type_hover_event(self, event):
         for plot in self.rock_type_plot_data:
