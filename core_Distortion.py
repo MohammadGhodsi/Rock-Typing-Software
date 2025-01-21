@@ -526,6 +526,12 @@ class MainApp(QMainWindow):
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
 
+        # Synchronize X and Y axis limits
+        min_limit = min(min(log_phi_z), min(log_rqi))
+        max_limit = max(max(log_phi_z), max(log_rqi))
+        axes[1].set_xlim(min_limit, max_limit)
+        axes[1].set_ylim(min_limit, max_limit)
+        
             # Connect hover events for both plots using a unified event handler
         self.tooltip = None  # To store the active tooltip
         self.plot_data = [
