@@ -193,6 +193,12 @@ class MainApp(QMainWindow):
         axes[1].set_ylabel("log(RQI)")
         axes[1].grid(True)
 
+        # Synchronize X and Y axis limits
+        min_limit = min(min(log_phi_z), min(log_rqi))
+        max_limit = max(max(log_phi_z), max(log_rqi))
+        axes[1].set_xlim(min_limit, max_limit)
+        axes[1].set_ylim(min_limit, max_limit)
+
         # Save plot data for export
         self.current_plot_data = {
             "points1": list(zip(porosity, permeability)),
@@ -943,8 +949,8 @@ class MainApp(QMainWindow):
         # Add Recommended K inputs
         recommended_k_layout = QHBoxLayout()
         self.selected_K_textbox = QLineEdit()
-        self.selected_K_textbox.setPlaceholderText("Recommended K")
-        recommended_k_layout.addWidget(QLabel("Recommended K:"))
+        self.selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
+        recommended_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
         recommended_k_layout.addWidget(self.selected_K_textbox)
         layout.addLayout(recommended_k_layout)
 
