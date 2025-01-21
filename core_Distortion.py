@@ -150,7 +150,8 @@ class MainApp(QMainWindow):
             if n_clusters <= 0:
                 raise ValueError
         except ValueError:
-            n_clusters = min(3, len(X))  # Default to 3 clusters if input is invalid
+            #n_clusters = min(3, len(X))  # Default to 3 clusters if input is invalid
+            QMessageBox.warning(self,"Error", "Coudn't find the number of clusters")
 
         if n_clusters > len(X):
             QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X)}).")
@@ -972,11 +973,12 @@ class MainApp(QMainWindow):
 
         self.clustering_tab.setLayout(layout)
     
+    
     def generate_distortion_plot(self):
         rqi = []
         phi_z = []
 
-        # Extract data from the table
+        # Extract RQI and Phi z data from the table
         for row in range(self.table.rowCount()):
             try:
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
