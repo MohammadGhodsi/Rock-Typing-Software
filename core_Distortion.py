@@ -118,6 +118,7 @@ class MainApp(QMainWindow):
         self.rock_type_tab.setLayout(layout)
     
     
+    
     def update_rock_type_tab(self):
         # Extract data from the table
         porosity = []
@@ -128,56 +129,24 @@ class MainApp(QMainWindow):
         for row in range(self.table.rowCount()):
             try:
                 if self.table.item(row, 0) and self.table.item(row, 0).text():
-                    por = float(self.table.item(row, 0).text())
-                else:
-                    por = None
-
+                    porosity.append(float(self.table.item(row, 0).text()))
                 if self.table.item(row, 1) and self.table.item(row, 1).text():
-                    perm = float(self.table.item(row, 1).text())
-                else:
-                    perm = None
-
+                    permeability.append(float(self.table.item(row, 1).text()))
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
-                    rqi_value = float(self.table.item(row, 2).text())
-                else:
-                    rqi_value = None
-
+                    rqi.append(float(self.table.item(row, 2).text()))
                 if self.table.item(row, 3) and self.table.item(row, 3).text():
-                    phi_z_value = float(self.table.item(row, 3).text())
-                else:
-                    phi_z_value = None
-
-                # Only append valid rows for porosity and permeability
-                if por is not None and perm is not None:
-                    porosity.append(por)
-                    permeability.append(perm)
-
-                # Only append valid rows for RQI and Phi z
-                if rqi_value is not None and phi_z_value is not None:
-                    rqi.append(rqi_value)
-                    phi_z.append(phi_z_value)
-
+                    phi_z.append(float(self.table.item(row, 3).text()))
             except ValueError:
                 continue  # Skip rows with invalid or missing data
 
-        # Check if data is sufficient for plotting
-        if not porosity or not permeability:
-            QMessageBox.warning(self, "Warning", "Insufficient data for Porosity and Permeability to generate the first plot.")
+        if not porosity or not permeability or not rqi or not phi_z:
+            QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
-
-        if not rqi or not phi_z:
-            QMessageBox.warning(self, "Warning", "Insufficient data for RQI and Phi z to generate the second plot.")
-            return
-
-        # Filter valid data for clustering
-        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
-        log_rqi = np.log(np.array(rqi)[valid_indices])
-        log_phi_z = np.log(np.array(phi_z)[valid_indices])
 
         # Prepare data for clustering
-        X = np.array(list(zip(log_rqi, log_phi_z)))
+        X = np.array(list(zip(porosity, permeability)))
 
-        # Perform clustering
+        # Perform clustering (default to 3 clusters if no input)
         try:
             n_clusters = int(self.selected_K_textbox.text())
             if n_clusters <= 0:
@@ -192,8 +161,19 @@ class MainApp(QMainWindow):
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         clusters = kmeans.fit_predict(X)
 
-        # Plot the data
+        # Filter valid data for logarithmic plots
+        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
+        log_rqi = np.log(np.array(rqi)[valid_indices])
+        log_phi_z = np.log(np.array(phi_z)[valid_indices])
+        filtered_clusters = clusters[valid_indices]
+
+        # Assign cluster colors
+        cluster_colors = plt.cm.tab10.colors
+
+        # Clear the previous plots
         self.rock_type_canvas.figure.clear()
+
+        # Create a 1x2 grid for the subplots
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
@@ -221,9 +201,26 @@ class MainApp(QMainWindow):
         axes[1].set_xlim(min_limit, max_limit)
         axes[1].set_ylim(min_limit, max_limit)
 
+        # Save plot data for export
+        self.current_plot_data = {
+            "points1": list(zip(porosity, permeability)),
+            "clusters1": clusters,
+            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),
+            "clusters2": filtered_clusters,
+        }
+
+        # Add hover functionality for tooltips
+        self.rock_type_tooltip = None
+        self.rock_type_plot_data = [
+            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
+            {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
+        ]
+
+        self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
+        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
+
         # Update the canvas
         self.rock_type_canvas.draw()
-    
     
     def handle_rock_type_hover_event(self, event):
         for plot in self.rock_type_plot_data:
