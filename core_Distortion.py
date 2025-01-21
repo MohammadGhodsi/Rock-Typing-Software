@@ -616,7 +616,7 @@ class MainApp(QMainWindow):
             for circle in axis.collections:
                 cont, ind = circle.contains(event)
                 if cont:
-                    tooltip_text = "Recommended k"
+                    tooltip_text = "Recommended Number of Clusters"
                     if self.tooltip:
                         self.tooltip.remove()
 
@@ -934,9 +934,9 @@ class MainApp(QMainWindow):
         # Add inputs for max clusters
         max_clusters_layout = QHBoxLayout()
         self.max_clusters_textbox = QLineEdit()
-        self.max_clusters_textbox.setPlaceholderText("Max Clusters (e.g., 10)")
+        self.max_clusters_textbox.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
         self.max_clusters_textbox.setValidator(QIntValidator(1, 50))
-        max_clusters_layout.addWidget(QLabel("Max Clusters:"))
+        max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
         max_clusters_layout.addWidget(self.max_clusters_textbox)
         layout.addLayout(max_clusters_layout)
 
@@ -1022,7 +1022,7 @@ class MainApp(QMainWindow):
         )
 
         # Set plot labels and title
-        ax.set_title("Distortion Method for Optimal Number of Clusters", fontsize=14, fontweight='bold')
+        ax.set_title("Distortion Method to find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
         ax.set_xlabel("Number of Clusters", fontsize=12)
         ax.set_ylabel("Distortion", fontsize=12)
 
@@ -1104,7 +1104,7 @@ class MainApp(QMainWindow):
         - wcss: List of WCSS values for different k values.
 
         Returns:
-        - Recommended number of clusters (k) based on the distortion method.
+        - Recommended number of clusters based on the distortion method.
         """
         if len(wcss) < 2:
             return 1  # if there's not enough data, default to 1 cluster
