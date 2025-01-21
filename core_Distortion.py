@@ -128,18 +128,45 @@ class MainApp(QMainWindow):
         for row in range(self.table.rowCount()):
             try:
                 if self.table.item(row, 0) and self.table.item(row, 0).text():
-                    porosity.append(float(self.table.item(row, 0).text()))
+                    por = float(self.table.item(row, 0).text())
+                else:
+                    por = None
+
                 if self.table.item(row, 1) and self.table.item(row, 1).text():
-                    permeability.append(float(self.table.item(row, 1).text()))
+                    perm = float(self.table.item(row, 1).text())
+                else:
+                    perm = None
+
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
-                    rqi.append(float(self.table.item(row, 2).text()))
+                    rqi_value = float(self.table.item(row, 2).text())
+                else:
+                    rqi_value = None
+
                 if self.table.item(row, 3) and self.table.item(row, 3).text():
-                    phi_z.append(float(self.table.item(row, 3).text()))
+                    phi_z_value = float(self.table.item(row, 3).text())
+                else:
+                    phi_z_value = None
+
+                # Only append valid rows for porosity and permeability
+                if por is not None and perm is not None:
+                    porosity.append(por)
+                    permeability.append(perm)
+
+                # Only append valid rows for RQI and Phi z
+                if rqi_value is not None and phi_z_value is not None:
+                    rqi.append(rqi_value)
+                    phi_z.append(phi_z_value)
+
             except ValueError:
                 continue  # Skip rows with invalid or missing data
 
+        # Check if data is sufficient for plotting
+        if not porosity or not permeability:
+            QMessageBox.warning(self, "Warning", "Insufficient data for Porosity and Permeability to generate the first plot.")
+            return
+
         if not rqi or not phi_z:
-            QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
+            QMessageBox.warning(self, "Warning", "Insufficient data for RQI and Phi z to generate the second plot.")
             return
 
         # Filter valid data for clustering
@@ -147,10 +174,10 @@ class MainApp(QMainWindow):
         log_rqi = np.log(np.array(rqi)[valid_indices])
         log_phi_z = np.log(np.array(phi_z)[valid_indices])
 
-        # Prepare data for clustering based on log(RQI) and log(Phi z)
+        # Prepare data for clustering
         X = np.array(list(zip(log_rqi, log_phi_z)))
 
-        # Perform clustering (default to 3 clusters if no input)
+        # Perform clustering
         try:
             n_clusters = int(self.selected_K_textbox.text())
             if n_clusters <= 0:
@@ -184,6 +211,7 @@ class MainApp(QMainWindow):
         axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
+        axes[1].grid(True)
         legend2 = axes[1].legend(*scatter2.legend_elements(), title="Cluster")
         axes[1].add_artist(legend2)
 
@@ -192,25 +220,8 @@ class MainApp(QMainWindow):
         max_limit = max(max(log_phi_z), max(log_rqi))
         axes[1].set_xlim(min_limit, max_limit)
         axes[1].set_ylim(min_limit, max_limit)
-        axes[1].grid(True)
 
-        # Save plot data for export
-        self.current_plot_data = {
-            "points1": list(zip(porosity, permeability)),  # Plot 1 data (Porosity vs Permeability)
-            "clusters1": clusters.tolist(),
-            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),  # Plot 2 data (log(Phi z) vs log(RQI))
-            "clusters2": clusters.tolist(),
-        }
-
-        # Update tooltip data
-        self.rock_type_tooltip = None
-        self.rock_type_plot_data = [
-            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
-            {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
-        ]
-
-        # Connect hover event for tooltips
-        self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
+        # Update the canvas
         self.rock_type_canvas.draw()
     
     
@@ -310,11 +321,11 @@ class MainApp(QMainWindow):
             for column in range(self.table.columnCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
-    def show_context_menu(self, event):
-        
-        # Adjust position for the table's context menu
+    def show_context_menu(self, position):
+        # Map the position to global coordinates for the context menu
         global_position = self.table.viewport().mapToGlobal(position)
 
+        # Create the context menu
         menu = QMenu(self)
         menu.setStyleSheet("""
             QMenu {
@@ -331,14 +342,20 @@ class MainApp(QMainWindow):
             }
         """)
 
-        save_plot_action = menu.addAction("Save Plot As...")
-        save_plot_action.triggered.connect(lambda: self.save_plot(self.plot_canvas))
+        # Add "Delete" action to clear the value of the selected cell
+        delete_action = menu.addAction("Delete")
+        delete_action.triggered.connect(self.handle_delete)
 
-        if hasattr(self, "current_plot_data") and self.current_plot_data:
-            export_csv_action = menu.addAction("Export Data As CSV")
-            export_csv_action.triggered.connect(self.export_plot_data_to_csv)
+        # Add "Delete All" action to clear the entire column
+        delete_all_action = menu.addAction("Delete All")
+        delete_all_action.triggered.connect(self.handle_delete_all)
 
-        menu.exec_(position)  # Show the menu at the global position
+        # Add "Save as CSV" action to export the table as CSV
+        save_csv_action = menu.addAction("Save as CSV")
+        save_csv_action.triggered.connect(self.export_to_csv)
+
+        # Show the context menu at the global position
+        menu.exec_(global_position)
     
     def export_to_csv(self):
         # Open a file dialog to get the file path
