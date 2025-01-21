@@ -117,21 +117,13 @@ class MainApp(QMainWindow):
 
         self.rock_type_tab.setLayout(layout)
     
-    
-    
     def update_rock_type_tab(self):
         # Extract data from the table
-        porosity = []
-        permeability = []
         rqi = []
         phi_z = []
-
+        
         for row in range(self.table.rowCount()):
             try:
-                if self.table.item(row, 0) and self.table.item(row, 0).text():
-                    porosity.append(float(self.table.item(row, 0).text()))
-                if self.table.item(row, 1) and self.table.item(row, 1).text():
-                    permeability.append(float(self.table.item(row, 1).text()))
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
                     rqi.append(float(self.table.item(row, 2).text()))
                 if self.table.item(row, 3) and self.table.item(row, 3).text():
@@ -139,12 +131,14 @@ class MainApp(QMainWindow):
             except ValueError:
                 continue  # Skip rows with invalid or missing data
 
-        if not porosity or not permeability or not rqi or not phi_z:
+        if not rqi or not phi_z:
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
 
-        # Prepare data for clustering
-        X = np.array(list(zip(porosity, permeability)))
+        # Prepare data for clustering (log transformations)
+        log_rqi = np.log(np.array(rqi))
+        log_phi_z = np.log(np.array(phi_z))
+        X = np.column_stack((log_rqi, log_phi_z))
 
         # Perform clustering (default to 3 clusters if no input)
         try:
@@ -161,15 +155,6 @@ class MainApp(QMainWindow):
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         clusters = kmeans.fit_predict(X)
 
-        # Filter valid data for logarithmic plots
-        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
-        log_rqi = np.log(np.array(rqi)[valid_indices])
-        log_phi_z = np.log(np.array(phi_z)[valid_indices])
-        filtered_clusters = clusters[valid_indices]
-
-        # Assign cluster colors
-        cluster_colors = plt.cm.tab10.colors
-
         # Clear the previous plots
         self.rock_type_canvas.figure.clear()
 
@@ -177,47 +162,17 @@ class MainApp(QMainWindow):
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
-        # Plot 1: Absolute Permeability vs Porosity
-        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.7)
-        axes[0].set_title("Absolute Permeability (md) vs Porosity")
-        axes[0].set_xlabel("Porosity")
-        axes[0].set_ylabel("Absolute Permeability (md)")
+        # Plot 1: log(RQI) vs log(Phi z)
+        scatter1 = axes[0].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.7)
+        axes[0].set_title("log(RQI) vs log(Phi z)")
+        axes[0].set_xlabel("log(Phi z)")
+        axes[0].set_ylabel("log(RQI)")
         axes[0].grid(True)
         legend1 = axes[0].legend(*scatter1.legend_elements(), title="Cluster")
         axes[0].add_artist(legend1)
 
-        # Plot 2: log(RQI) vs log(Phi z)
-        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.7)
-        axes[1].set_title("log(RQI) vs log(Phi z)")
-        axes[1].set_xlabel("log(Phi z)")
-        axes[1].set_ylabel("log(RQI)")
-        axes[1].grid(True)
-        legend2 = axes[1].legend(*scatter2.legend_elements(), title="Cluster")
-        axes[1].add_artist(legend2)
-
-        # Synchronize X and Y axis limits
-        min_limit = min(min(log_phi_z), min(log_rqi))
-        max_limit = max(max(log_phi_z), max(log_rqi))
-        axes[1].set_xlim(min_limit, max_limit)
-        axes[1].set_ylim(min_limit, max_limit)
-
-        # Save plot data for export
-        self.current_plot_data = {
-            "points1": list(zip(porosity, permeability)),
-            "clusters1": clusters,
-            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),
-            "clusters2": filtered_clusters,
-        }
-
-        # Add hover functionality for tooltips
-        self.rock_type_tooltip = None
-        self.rock_type_plot_data = [
-            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
-            {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
-        ]
-
-        self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
-        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
+        # Here, if you want a secondary plot for verification you may keep your Absolute Permeability vs Porosity as is 
+        # or replace it; here we avoided that for clarity on log data.
 
         # Update the canvas
         self.rock_type_canvas.draw()
@@ -476,45 +431,22 @@ class MainApp(QMainWindow):
             self.table.blockSignals(False)
     
     def update_plots(self):
-        # Extract data from the table
-        porosity = []
-        permeability = []
+        # Extract data from the table for RQI and Phi Z
         rqi = []
         phi_z = []
 
         for row in range(self.table.rowCount()):
             try:
-                if self.table.item(row, 0) and self.table.item(row, 0).text():
-                    p = float(self.table.item(row, 0).text())
-                else:
-                    p = None
-
-                if self.table.item(row, 1) and self.table.item(row, 1).text():
-                    k = float(self.table.item(row, 1).text())
-                else:
-                    k = None
-
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
-                    r = float(self.table.item(row, 2).text())
-                else:
-                    r = None
-
+                    rqi.append(float(self.table.item(row, 2).text()))
                 if self.table.item(row, 3) and self.table.item(row, 3).text():
-                    z = float(self.table.item(row, 3).text())
-                else:
-                    z = None
+                    phi_z.append(float(self.table.item(row, 3).text()))
+            except ValueError:
+                continue  # Skip rows with invalid or missing data
 
-                if p is not None and k is not None:
-                    porosity.append(p)
-                    permeability.append(k)
-
-                if r is not None and z is not None:
-                    rqi.append(r)
-                    phi_z.append(z)
-
-            except ValueError as e:
-                print(f"Error parsing row {row}: {e}")
-                continue
+        # Log transformation of RQI and Phi Z
+        log_rqi = np.log(rqi) if rqi else []
+        log_phi_z = np.log(phi_z) if phi_z else []
 
         # Clear the existing figure
         self.plot_canvas.figure.clear()
@@ -523,37 +455,16 @@ class MainApp(QMainWindow):
         axes = self.plot_canvas.figure.subplots(1, 2)
         self.plot_canvas.figure.tight_layout(pad=5.0)
 
-        # Plot 1: Absolute Permeability vs Porosity
-        scatter1 = axes[0].scatter(porosity, permeability, color='blue', picker=True)
-        axes[0].set_title("Absolute Permeability (md) vs Porosity")
-        axes[0].set_xlabel("Porosity")
-        axes[0].set_ylabel("Absolute Permeability (md)")
+        # Plot 1: log(RQI) vs log(Phi z)
+        scatter1 = axes[0].scatter(log_phi_z, log_rqi, color='red', picker=True)
+        axes[0].set_title("log(RQI) vs log(Phi z)")
+        axes[0].set_xlabel("log(Phi z)")
+        axes[0].set_ylabel("log(RQI)")
+        axes[0].grid(True)
 
-        # Plot 2: log(RQI) vs log(Phi z)
-        import numpy as np
-        log_rqi = np.log(rqi) if rqi else []
-        log_phi_z = np.log(phi_z) if phi_z else []
-        scatter2 = axes[1].scatter(log_phi_z, log_rqi, color='red', picker=True)
-        axes[1].set_title("log(RQI) vs log(Phi z)")
-        axes[1].set_xlabel("log(Phi z)")
-        axes[1].set_ylabel("log(RQI)")
-
-        # Synchronize X and Y axis limits
-        min_limit = min(min(log_phi_z), min(log_rqi))
-        max_limit = max(max(log_phi_z), max(log_rqi))
-        axes[1].set_xlim(min_limit, max_limit)
-        axes[1].set_ylim(min_limit, max_limit)
-        
-            # Connect hover events for both plots using a unified event handler
-        self.tooltip = None  # To store the active tooltip
-        self.plot_data = [
-            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
-            {"scatter": scatter2, "x_data": log_phi_z, "y_data": log_rqi, "axis": axes[1]},]
-
-        self.plot_canvas.mpl_connect('motion_notify_event', self.handle_hover_event)
-        # Redraw the canvas
+        # Update the canvas
         self.plot_canvas.draw()
-
+    
     def show_tooltip(self, event, scatter, x_data, y_data, axis):
         if event.inaxes != axis:
             # Remove tooltip if the mouse moves outside the plot
@@ -975,26 +886,33 @@ class MainApp(QMainWindow):
         self.clustering_tab.setLayout(layout)
     
     def generate_distortion_plot(self):
-        porosity = []
-        permeability = []
+        rqi = []
+        phi_z = []
 
         # Extract data from the table
         for row in range(self.table.rowCount()):
             try:
-                if self.table.item(row, 0) and self.table.item(row, 0).text():
-                    porosity.append(float(self.table.item(row, 0).text()))
-                if self.table.item(row, 1) and self.table.item(row, 1).text():
-                    permeability.append(float(self.table.item(row, 1).text()))
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+                    rqi_value = float(self.table.item(row, 2).text())
+                    if rqi_value > 0:  # Ensure we only log positive values
+                        rqi.append(rqi_value)
+
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+                    phi_z_value = float(self.table.item(row, 3).text())
+                    if phi_z_value > 0:  # Ensure we only log positive values
+                        phi_z.append(phi_z_value)
             except ValueError:
-                QMessageBox.warning(self, "Invalid Input", f"Non-numeric value in row {row + 1}. Skipping.")
+                QMessageBox.warning(self, "Invalid Input", f"Non-numeric value in row {row + 1}. Skipping the row.")
                 continue
 
-        if not porosity or not permeability:
-            QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in both columns before generating the Distortion Plot.")
+        if not rqi or not phi_z:
+            QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in RQI and Phi z columns before generating the Distortion Plot.")
             return
 
-        # Prepare data for clustering
-        X = np.array(list(zip(porosity, permeability)))
+        # Prepare data for clustering using log values
+        log_rqi = np.log(np.array(rqi))
+        log_phi_z = np.log(np.array(phi_z))
+        X = np.array(list(zip(log_rqi, log_phi_z)))
 
         # Get the maximum number of clusters
         max_clusters_text = self.max_clusters_textbox.text()
@@ -1021,7 +939,7 @@ class MainApp(QMainWindow):
         )
         ax.plot(range(1, max_clusters + 1), distortions, marker='o', color='blue', linestyle='-', label='Distortion Curve')
 
-        # Highlight optimal K with a red circle
+        # Highlight the optimal K with a red circle
         optimal_k = self.find_optimal_k(distortions)
         selected_circle = ax.scatter(
             optimal_k,
@@ -1034,7 +952,7 @@ class MainApp(QMainWindow):
         )
 
         # Set plot labels and title
-        ax.set_title("Distortion Method to find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
+        ax.set_title("Distortion Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
         ax.set_xlabel("Number of Clusters", fontsize=12)
         ax.set_ylabel("Distortion", fontsize=12)
 
@@ -1058,7 +976,7 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
-   
+    
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
@@ -1261,7 +1179,6 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
 
-    
     def export_plot_data_to_csv(self):
         if not hasattr(self, "current_plot_data") or not self.current_plot_data:
             QMessageBox.warning(self, "No Data", "No plot data available for export.")
