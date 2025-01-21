@@ -1022,8 +1022,8 @@ class MainApp(QMainWindow):
         )
 
         # Set plot labels and title
-        ax.set_title("Distortion Method for Optimal K", fontsize=14, fontweight='bold')
-        ax.set_xlabel("K", fontsize=12)
+        ax.set_title("Distortion Method for Optimal Number of Clusters", fontsize=14, fontweight='bold')
+        ax.set_xlabel("Number of Clusters", fontsize=12)
         ax.set_ylabel("Distortion", fontsize=12)
 
         # Add legend to the plot
