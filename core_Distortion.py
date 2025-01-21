@@ -311,11 +311,9 @@ class MainApp(QMainWindow):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
     def show_context_menu(self, event):
-        if isinstance(event, MouseEvent):  # Check if it's a Matplotlib mouse event
-            # Convert the Matplotlib event position to a QPoint
-            position = self.mapToGlobal(QPoint(int(event.x), int(event.y)))
-        else:
-            position = event
+        
+        # Adjust position for the table's context menu
+        global_position = self.table.viewport().mapToGlobal(position)
 
         menu = QMenu(self)
         menu.setStyleSheet("""
@@ -340,7 +338,7 @@ class MainApp(QMainWindow):
             export_csv_action = menu.addAction("Export Data As CSV")
             export_csv_action.triggered.connect(self.export_plot_data_to_csv)
 
-        menu.exec_(position)  # Show the menu at the converted position
+        menu.exec_(position)  # Show the menu at the global position
     
     def export_to_csv(self):
         # Open a file dialog to get the file path
@@ -715,25 +713,19 @@ class MainApp(QMainWindow):
         self.ml_tab.setLayout(layout)
     
     def train_evaluate_svm(self):
-        # Extract features and target from the table
+        # Extract features (log(RQI) and log(Phi z)) and target from the table
         features = []
         target = []
-        original_features = []  # To store original feature values
-
         for row in range(self.table.rowCount()):
             try:
-                # Extract porosity and permeability as features
-                porosity = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
-                permeability = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
+                rqi = float(self.table.item(row, 2).text()) if self.table.item(row, 2) else None
+                phi_z = float(self.table.item(row, 3).text()) if self.table.item(row, 3) else None
 
-                if porosity is not None and permeability is not None:
-                    # Limit porosity to 1.0 and include only positive values
-                    if 0 < porosity <= 1.0 and permeability > 0:
-                        features.append([porosity, permeability])  # Use raw values for original_features
-                        original_features.append([porosity, permeability])  # Keep original values
-                        # Assuming rock types are integers (you may want to replace this logic):
-                        rock_type = self.determine_rock_type(porosity, permeability)  # Replace with your own logic
-                        target.append(rock_type)
+                if rqi is not None and phi_z is not None and rqi > 0 and phi_z > 0:
+                    log_rqi = np.log(rqi)
+                    log_phi_z = np.log(phi_z)
+                    features.append([log_rqi, log_phi_z])
+                    target.append(self.determine_rock_type(log_rqi, log_phi_z))  # Replace with your logic
             except ValueError:
                 continue
 
@@ -744,6 +736,11 @@ class MainApp(QMainWindow):
         features = np.array(features)
         target = np.array(target)
 
+        # Check if there are at least two distinct classes
+        if len(set(target)) < 2:
+            QMessageBox.warning(self, "Warning", "SVM training requires at least two distinct classes.")
+            return
+        
         # Standardize the features
         scaler = StandardScaler()
         features_scaled = scaler.fit_transform(features)
@@ -758,12 +755,13 @@ class MainApp(QMainWindow):
         # Predictions
         y_pred = svm_classifier.predict(X_test)
 
-        # Generate the classification report (silent handling)
+        # Generate classification report
         report = classification_report(y_test, y_pred)
+        print("Classification Report:\n", report)
 
         # Plot results
-        self.plot_svm_results(svm_classifier, scaler, original_features, target)
-      
+        self.plot_svm_results(svm_classifier, scaler, features, target)
+    
     def determine_rock_type(self, porosity, permeability):
         # Replace this with the actual logic to determine rock type based on porosity and permeability
         if porosity < 0.15:
