@@ -27,6 +27,7 @@ from PyQt5.QtGui import QKeySequence, QIntValidator, QCursor, QPixmap, QIcon
 class MainApp(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.plot_data = []  # Initialize plot_data as an empty list
         self.setWindowTitle("Rock Typing Application")
         self.setGeometry(100, 100, 1200, 900)
         self.setStyleSheet("background-color: #f0f0f0;")
@@ -566,6 +567,7 @@ class MainApp(QMainWindow):
             # Re-enable signals after processing
             self.table.blockSignals(False)
     
+    
     def update_plots(self):
 
         # Extract data from the table
@@ -621,7 +623,6 @@ class MainApp(QMainWindow):
         # Create a 1x2 grid for two plots
 
         axes = self.plot_canvas.figure.subplots(1, 2)
-
 
         self.plot_canvas.figure.tight_layout(pad=5.0)
 
@@ -719,6 +720,19 @@ class MainApp(QMainWindow):
         # Update the canvas
 
         self.plot_canvas.draw()
+
+
+        # Reconnect tooltip functionality
+
+        self.plot_canvas.mpl_connect('motion_notify_event', lambda event: self.handle_hover_event(event))
+        
+        self.plot_data = [
+
+        {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
+
+        {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
+
+        ]
     
     def show_tooltip(self, event, scatter, x_data, y_data, axis):
         if event.inaxes != axis:
@@ -760,60 +774,69 @@ class MainApp(QMainWindow):
                 self.plot_canvas.draw_idle()
 
     def handle_hover_event(self, event):
+
         for plot in self.plot_data:
+
             scatter = plot["scatter"]
+
             x_data = plot["x_data"]
+
             y_data = plot["y_data"]
+
             axis = plot["axis"]
 
+
             if event.inaxes == axis:
+
                 cont, ind = scatter.contains(event)
+
                 if cont:
+
                     index = ind["ind"][0]
+
                     x = x_data[index]
+
                     y = y_data[index]
+
                     tooltip_text = f"({x:.2f}, {y:.2f})"
 
+
                     if self.tooltip:
+
                         self.tooltip.remove()
 
+
                     self.tooltip = axis.annotate(
+
                         tooltip_text,
+
                         (x, y),
+
                         textcoords="offset points",
+
                         xytext=(10, 10),
+
                         ha='center',
+
                         bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+
                         fontsize=10
+
                     )
+
                     self.plot_canvas.draw_idle()
+
                     return
 
-        # Check if hovering over the red circle
-        if event.inaxes == axis:
-            for circle in axis.collections:
-                cont, ind = circle.contains(event)
-                if cont:
-                    tooltip_text = "Recommended Number of Clusters"
-                    if self.tooltip:
-                        self.tooltip.remove()
-
-                    self.tooltip = axis.annotate(
-                        tooltip_text,
-                        event,
-                        textcoords="offset points",
-                        xytext=(10, 10),
-                        ha='center',
-                        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
-                        fontsize=10
-                    )
-                    self.plot_canvas.draw_idle()
-                    return
 
         # Remove tooltip if not hovering over any point
+
         if self.tooltip:
+
             self.tooltip.remove()
+
             self.tooltip = None
+
             self.plot_canvas.draw_idle()
     
     def init_plots_tab(self):
