@@ -39,76 +39,158 @@ class MainApp(QMainWindow):
         
 
     def initUI(self):
+
         # Main layout
+
         main_layout = QVBoxLayout()
 
+
         # Horizontal layout for header
+
         top_layout = QHBoxLayout()
 
+
         # Header Label
+
         header_label = QLabel("Rock Typing Application")
+
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+
         header_label.setAlignment(Qt.AlignLeft)
+
         top_layout.addWidget(header_label)
 
+
         # Add top layout to the main layout
+
         main_layout.addLayout(top_layout)
 
+
         # Initialize tabs
+
         self.tabs = QTabWidget()  # Initialize QTabWidget
 
-        # Set custom styles for the tabs
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #cccccc;  /* Border around the tab pane */
-                background-color: #f0f0f0;  /* Background color of the tab pane */
-            }
-            QTabBar::tab {
-                background: #0078d7;  /* Background color of the tabs */
-                color: white;          /* Text color of the tabs */
-                padding: 10px;        /* Padding around the text */
-                border: 1px solid #0078d7; /* Border around each tab */
-                border-bottom: none;  /* Remove bottom border to connect with pane */
-            }
-            QTabBar::tab:selected {
-                background: #005a9e;  /* Background color of the selected tab */
-                color: white;          /* Text color of the selected tab */
-            }
-            QTabBar::tab:hover {
-                background: #005a9e;  /* Background color when hovering over a tab */
-            }
-        """)
 
         # Add tabs to the QTabWidget
+
         self.dataset_tab = QWidget()
+
         self.plots_tab = QWidget()
+
         self.clustering_tab = QWidget()
-        self.ml_tab = QWidget()
+
         self.rock_type_tab = QWidget()
 
+        self.ml_tab = QWidget()
+
+        self.distance_clustering_tab = QWidget()  # New tab for Distance Clustering
+
+
         self.tabs.addTab(self.dataset_tab, "Dataset")
+
         self.tabs.addTab(self.plots_tab, "Plots")
+
         self.tabs.addTab(self.clustering_tab, "Clustering")
+
         self.tabs.addTab(self.rock_type_tab, "Rock Type")
+
         self.tabs.addTab(self.ml_tab, "Machine Learning")
 
+        self.tabs.addTab(self.distance_clustering_tab, "Distance Clustering")  # Add new tab
+
+
         # Add Tabs to the main layout
+
         main_layout.addWidget(self.tabs)
 
+
         # Set central widget layout
+
         central_widget = QWidget()
+
         central_widget.setLayout(main_layout)
+
         self.setCentralWidget(central_widget)
 
+
         # Initialize individual tabs
+
         self.init_dataset_tab()
+
         self.init_plots_tab()
+
         self.init_clustering_tab()
+
         self.init_ml_tab()
+
         self.init_rock_type_tab()
-        
-        pass
+
+        self.init_distance_clustering_tab()  # Initialize the new tab
     
+    def init_distance_clustering_tab(self):
+
+        layout = QVBoxLayout()
+
+
+        # Header
+
+        header_label = QLabel("Distance Clustering")
+
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+
+        header_label.setAlignment(Qt.AlignCenter)
+
+        layout.addWidget(header_label)
+
+
+        # Add input fields for distance clustering parameters
+
+        self.distance_input = QLineEdit()
+
+        self.distance_input.setPlaceholderText("Enter distance threshold")
+
+        layout.addWidget(self.distance_input)
+
+
+        # Button to perform distance clustering
+
+        cluster_button = QPushButton("Perform Distance Clustering")
+
+        cluster_button.clicked.connect(self.perform_distance_clustering)
+
+        self.style_button(cluster_button)  # Reuse button styling
+
+        layout.addWidget(cluster_button)
+
+
+        # Placeholder for results
+
+        self.result_label = QLabel("Results will be displayed here.")
+
+        layout.addWidget(self.result_label)
+
+
+        self.distance_clustering_tab.setLayout(layout)
+    
+    def perform_distance_clustering(self):
+
+        # Implement the logic for distance clustering here
+
+        distance_threshold = self.distance_input.text()
+
+        try:
+
+            distance_threshold = float(distance_threshold)
+
+            # Perform clustering logic using the distance threshold
+
+            # Update the result_label with the results
+
+            self.result_label.setText(f"Clustering performed with distance threshold: {distance_threshold}")
+
+        except ValueError:
+
+            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number for the distance threshold.")
     
     def init_rock_type_tab(self):
         layout = QVBoxLayout()
