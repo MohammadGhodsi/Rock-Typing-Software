@@ -1,4 +1,4 @@
-import sys
+import sys , time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,10 +8,10 @@ from matplotlib.backend_bases import cursors
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,QFileDialog,
     QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit ,
-    QSizePolicy
+    QSizePolicy , QSplashScreen
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence , QIntValidator , QCursor 
+from PyQt5.QtGui import QKeySequence , QIntValidator , QCursor , QPixmap
 from PyQt5.QtWidgets import QShortcut
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from matplotlib.backends.backend_qt5agg import (
@@ -103,6 +103,8 @@ class MainApp(QMainWindow):
         self.init_clustering_tab()
         self.init_ml_tab()
         self.init_rock_type_tab()
+        
+        pass
     
     
     def init_rock_type_tab(self):
@@ -1359,6 +1361,19 @@ class MainApp(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    # Create and display the splash screen
+    splash_pix = QPixmap("Axone_logo.png")  # Replace with your image path
+    splash = QSplashScreen(splash_pix)
+    splash.setMask(splash_pix.mask())
+    splash.show()
+    
+    # Simulate loading time (optional)
+    time.sleep(2)  # Adjust the time as needed
+    
+    # Initialize the main application
     main_app = MainApp()
     main_app.show()
+    
+    # Close the splash screen
+    splash.finish(main_app)
     sys.exit(app.exec_())
