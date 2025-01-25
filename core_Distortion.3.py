@@ -567,84 +567,159 @@ class MainApp(QMainWindow):
             self.table.blockSignals(False)
     
     def update_plots(self):
+
         # Extract data from the table
+
         porosity = []
+
         permeability = []
+
         rqi = []
+
         phi_z = []
 
+
         for row in range(self.table.rowCount()):
+
             try:
-                if self.table.item(row, 0) and self.table.item(row, 0).text():
-                    p = float(self.table.item(row, 0).text())
-                else:
-                    p = None
 
-                if self.table.item(row, 1) and self.table.item(row, 1).text():
-                    k = float(self.table.item(row, 1).text())
-                else:
-                    k = None
+                p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
 
-                if self.table.item(row, 2) and self.table.item(row, 2).text():
-                    r = float(self.table.item(row, 2).text())
-                else:
-                    r = None
+                k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
 
-                if self.table.item(row, 3) and self.table.item(row, 3).text():
-                    z = float(self.table.item(row, 3).text())
-                else:
-                    z = None
+                r = float(self.table.item(row, 2).text()) if self.table.item(row, 2) else None
+
+                z = float(self.table.item(row, 3).text()) if self.table.item(row, 3) else None
+
 
                 if p is not None and k is not None:
+
                     porosity.append(p)
+
                     permeability.append(k)
 
+
                 if r is not None and z is not None:
+
                     rqi.append(r)
+
                     phi_z.append(z)
 
+
             except ValueError as e:
+
                 print(f"Error parsing row {row}: {e}")
+
                 continue
 
+
         # Clear the existing figure
+
         self.plot_canvas.figure.clear()
 
+
         # Create a 1x2 grid for two plots
+
         axes = self.plot_canvas.figure.subplots(1, 2)
+
+
         self.plot_canvas.figure.tight_layout(pad=5.0)
 
+
         # Plot 1: Absolute Permeability vs Porosity
-        scatter1 = axes[0].scatter(porosity, permeability, color='blue', picker=True)
-        axes[0].set_title("Absolute Permeability (md) vs Porosity")
-        axes[0].set_xlabel("Porosity")
-        axes[0].set_ylabel("Absolute Permeability (md)")
+
+        scatter1 = axes[0].scatter(
+
+            porosity, 
+
+            permeability, 
+
+            color='royalblue', 
+
+            s=100,  # Size of the dots
+
+            alpha=0.6,  # Transparency
+
+            edgecolor='black',  # Edge color for better visibility
+
+            linewidth=0.5,  # Edge width
+
+            marker='o',  # Marker style
+
+            label="Data Points"
+
+        )
+
+
+        axes[0].set_title("Absolute Permeability (md) vs Porosity", fontsize=16, fontweight='bold')
+
+        axes[0].set_xlabel("Porosity", fontsize=14)
+
+        axes[0].set_ylabel("Absolute Permeability (md)", fontsize=14)
+
+        axes[0].grid(True, linestyle='--', alpha=0.7)  # Add grid lines
+
+        axes[0].legend()
+
 
         # Plot 2: log(RQI) vs log(Phi z)
-        import numpy as np
+
         log_rqi = np.log(rqi) if rqi else []
+
         log_phi_z = np.log(phi_z) if phi_z else []
-        scatter2 = axes[1].scatter(log_phi_z, log_rqi, color='red', picker=True)
-        axes[1].set_title("log(RQI) vs log(Phi z)")
-        axes[1].set_xlabel("log(Phi z)")
-        axes[1].set_ylabel("log(RQI)")
 
-        # Synchronize X and Y axis limits
-        min_limit = min(min(log_phi_z), min(log_rqi))
-        max_limit = max(max(log_phi_z), max(log_rqi))
-        axes[1].set_xlim(min_limit, max_limit)
-        axes[1].set_ylim(min_limit, max_limit)
-        
-            # Connect hover events for both plots using a unified event handler
-        self.tooltip = None  # To store the active tooltip
-        self.plot_data = [
-            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
-            {"scatter": scatter2, "x_data": log_phi_z, "y_data": log_rqi, "axis": axes[1]},]
 
-        self.plot_canvas.mpl_connect('motion_notify_event', self.handle_hover_event)
-        # Redraw the canvas
+        if log_phi_z.size > 0 and log_rqi.size > 0:  # Updated condition
+
+            scatter2 = axes[1].scatter(
+
+                log_phi_z, 
+
+                log_rqi, 
+
+                color='tomato', 
+
+                s=100,  # Size of the dots
+
+                alpha=0.6,  # Transparency
+
+                edgecolor='black',  # Edge color for better visibility
+
+                linewidth=0.5,  # Edge width
+
+                marker='o',  # Marker style
+
+                label="Data Points"
+
+            )
+
+
+            axes[1].set_title("log(RQI) vs log(Phi z)", fontsize=16, fontweight='bold')
+
+            axes[1].set_xlabel("log(Phi z)", fontsize=14)
+
+            axes[1].set_ylabel("log(RQI)", fontsize=14)
+
+            axes[1].grid(True, linestyle='--', alpha=0.7)  # Add grid lines
+
+            axes[1].legend()
+
+
+            # Synchronize X and Y axis limits
+
+            min_limit = min(min(log_phi_z), min(log_rqi))
+
+            max_limit = max(max(log_phi_z), max(log_rqi))
+
+            axes[1].set_xlim(min_limit, max_limit)
+
+            axes[1].set_ylim(min_limit, max_limit)
+
+
+        # Update the canvas
+
         self.plot_canvas.draw()
-
+    
     def show_tooltip(self, event, scatter, x_data, y_data, axis):
         if event.inaxes != axis:
             # Remove tooltip if the mouse moves outside the plot
