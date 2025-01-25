@@ -309,9 +309,50 @@ class MainApp(QMainWindow):
 
         self.distance_clustering_canvas.draw()
     
+    
     def perform_distance_clustering(self):
 
-        # Implement the logic for distance clustering here
+        # Extract data from the table for clustering
+
+        log_rqi = []
+
+        log_phi_z = []
+
+
+        for row in range(self.table.rowCount()):
+
+            try:
+
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+
+                    log_rqi.append(np.log(float(self.table.item(row, 2).text())))
+
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+
+                    log_phi_z.append(np.log(float(self.table.item(row, 3).text())))
+
+            except ValueError:
+
+                continue  # Skip rows with invalid or missing data
+
+
+        if not log_rqi or not log_phi_z:
+
+            QMessageBox.warning(self, "Warning", "Insufficient data to perform clustering.")
+
+            return
+
+
+        # Convert lists to numpy arrays for distance calculations
+
+        log_rqi = np.array(log_rqi)
+
+        log_phi_z = np.array(log_phi_z)
+
+        points = np.column_stack((log_rqi, log_phi_z))
+
+
+        # Get the distance threshold from the input
 
         distance_threshold = self.distance_input.text()
 
@@ -319,15 +360,111 @@ class MainApp(QMainWindow):
 
             distance_threshold = float(distance_threshold)
 
-            # Perform clustering logic using the distance threshold
-
-            # Update the result_label with the results
-
-            self.result_label.setText(f"Clustering performed with distance threshold: {distance_threshold}")
-
         except ValueError:
 
             QMessageBox.warning(self, "Invalid Input", "Please enter a valid number for the distance threshold.")
+
+            return
+
+
+        # Perform clustering based on distance threshold
+
+        clusters = self.cluster_points(points, distance_threshold)
+
+
+        # Plot the results
+
+        self.plot_distance_clustering(points, clusters)
+    
+    def plot_distance_clustering(self, points, clusters):
+
+        # Clear the previous plots
+
+        self.distance_clustering_canvas.figure.clear()
+
+        axes = self.distance_clustering_canvas.figure.subplots()
+
+
+        # Assign colors for clusters
+
+        colors = plt.cm.get_cmap('tab10', len(clusters))
+
+
+        # Plot each cluster with a different color
+
+        for cluster_index, cluster in enumerate(clusters):
+
+            cluster_points = points[cluster]
+
+            axes.scatter(cluster_points[:, 0], cluster_points[:, 1], 
+
+                        color=colors(cluster_index), label=f'Cluster {cluster_index + 1}', alpha=0.6)
+
+
+        # Set titles and labels
+
+        axes.set_title("Log(RQI) vs Log(Phi z) Clustering")
+
+        axes.set_xlabel("Log(Phi z)")
+
+        axes.set_ylabel("Log(RQI)")
+
+        axes.legend()
+
+        axes.grid(True)
+
+
+        # Update the canvas
+
+        self.distance_clustering_canvas.draw()
+    
+    def cluster_points(self, points, threshold):
+
+        from scipy.spatial.distance import cdist
+
+
+        # Calculate the distance matrix
+
+        distance_matrix = cdist(points, points)
+
+
+        # Initialize clusters
+
+        clusters = []
+
+        visited = set()
+
+
+        for i in range(len(points)):
+
+            if i in visited:
+
+                continue
+
+
+            # Start a new cluster
+
+            current_cluster = [i]
+
+            visited.add(i)
+
+
+            # Find all points within the threshold distance
+
+            for j in range(len(points)):
+
+                if j != i and distance_matrix[i][j] <= threshold:
+
+                    current_cluster.append(j)
+
+                    visited.add(j)
+
+
+            clusters.append(current_cluster)
+
+
+        return clusters
+    
     
     def init_rock_type_tab(self):
         layout = QVBoxLayout()
