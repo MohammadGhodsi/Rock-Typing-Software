@@ -234,7 +234,10 @@ class MainApp(QMainWindow):
 
         # Plot 1: Absolute Permeability vs Porosity
 
-        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.7)
+        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, 
+
+                                    s=150, edgecolor='black', marker='o')  # Change size and marker style
+
 
         axes[0].set_title("Absolute Permeability (md) vs Porosity")
 
@@ -251,7 +254,10 @@ class MainApp(QMainWindow):
 
         # Plot 2: log(RQI) vs log(Phi z)
 
-        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.7)
+        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.6, 
+
+                                    s=150, edgecolor='black', marker='o')  # Change size and marker style
+
 
         axes[1].set_title("log(RQI) vs log(Phi z)")
 
