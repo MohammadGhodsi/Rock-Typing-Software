@@ -149,7 +149,6 @@ class MainApp(QMainWindow):
         self.rock_type_tab.setLayout(layout)
     
     def update_rock_type_tab(self):
-
         # Extract data from the table
         porosity = []
         permeability = []
@@ -169,156 +168,62 @@ class MainApp(QMainWindow):
             except ValueError:
                 continue  # Skip rows with invalid or missing data
 
-        if not porosity or not permeability or not rqi or not phi_z:
+        if not rqi or not phi_z:
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
-        # Prepare data for clustering
-        X = np.array(list(zip(porosity, permeability)))
+
+        # Prepare data for clustering using log values
+        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
+        log_rqi = np.log(np.array(rqi)[valid_indices])
+        log_phi_z = np.log(np.array(phi_z)[valid_indices])
+
+        # Combine log values into a feature array for clustering
+        X = np.array(list(zip(log_phi_z, log_rqi)))
+
         # Initialize n_clusters
         n_clusters = None
         # Perform clustering (default to 3 clusters if no input)
         try:
-
             n_clusters = int(self.selected_K_textbox.text())
-
             if n_clusters <= 0:
-
                 raise ValueError
-
         except ValueError:
-
             QMessageBox.warning(self, "Error", "Please enter a valid number of clusters.")
-
             return  # Exit the function if the input is invalid
 
-
         if n_clusters > len(X):
-
             QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X)}).")
-
             return
 
-
+        # Apply K-Means clustering
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-
         clusters = kmeans.fit_predict(X)
 
-
-        # Filter valid data for logarithmic plots
-
-        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
-
-        log_rqi = np.log(np.array(rqi)[valid_indices])
-
-        log_phi_z = np.log(np.array(phi_z)[valid_indices])
-
-        filtered_clusters = clusters[valid_indices]
-
-
-        # Assign cluster colors
-
-        cluster_colors = plt.cm.tab10.colors
-
-
         # Clear the previous plots
-
         self.rock_type_canvas.figure.clear()
 
-
         # Create a 1x2 grid for the subplots
-
         axes = self.rock_type_canvas.figure.subplots(1, 2)
-
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
-
-        # Plot 1: Absolute Permeability vs Porosity
-
-        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, 
-
-                                    s=150, edgecolor='black', marker='o')  # Change size and marker style
-
-
-        axes[0].set_title("Absolute Permeability (md) vs Porosity")
-
-        axes[0].set_xlabel("Porosity")
-
-        axes[0].set_ylabel("Absolute Permeability (md)")
-
+        # Plot 1: log(Phi z) vs log(RQI)
+        scatter1 = axes[0].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')
+        axes[0].set_title("log(RQI) vs log(Phi z)")
+        axes[0].set_xlabel("log(Phi z)")
+        axes[0].set_ylabel("log(RQI)")
         axes[0].grid(True)
-
         legend1 = axes[0].legend(*scatter1.legend_elements(), title="Cluster")
-
         axes[0].add_artist(legend1)
 
-
-        # Plot 2: log(RQI) vs log(Phi z)
-
-        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.6, 
-
-                                    s=150, edgecolor='black', marker='o')  # Change size and marker style
-
-
-        axes[1].set_title("log(RQI) vs log(Phi z)")
-
-        axes[1].set_xlabel("log(Phi z)")
-
-        axes[1].set_ylabel("log(RQI)")
-
-        axes[1].grid(True)
-
-        legend2 = axes[1].legend(*scatter2.legend_elements(), title="Cluster")
-
-        axes[1].add_artist(legend2)
-
-
-        # Synchronize X and Y axis limits
-
-        min_limit = min(min(log_phi_z), min(log_rqi))
-
-        max_limit = max(max(log_phi_z), max(log_rqi))
-
-        axes[1].set_xlim(min_limit, max_limit)
-
-        axes[1].set_ylim(min_limit, max_limit)
-
-
         # Save plot data for export
-
         self.current_plot_data = {
-
-            "points1": list(zip(porosity, permeability)),
-
+            "points1": list(zip(log_phi_z.tolist(), log_rqi.tolist())),
             "clusters1": clusters,
-
-            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),
-
-            "clusters2": filtered_clusters,
-
         }
 
-
-        # Add hover functionality for tooltips
-
-        self.rock_type_tooltip = None
-
-        self.rock_type_plot_data = [
-
-            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
-
-            {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
-
-        ]
-
-
-        self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
-
-        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
-
-
         # Update the canvas
-
         self.rock_type_canvas.draw()
+    
     
     def handle_rock_type_hover_event(self, event):
         for plot in self.rock_type_plot_data:
