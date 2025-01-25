@@ -198,11 +198,11 @@ class MainApp(QMainWindow):
         layout.addWidget(cluster_button)
 
 
-        # Placeholder for results
+        # Remove the placeholder for results
 
-        self.result_label = QLabel("Results will be displayed here.")
+        # self.result_label = QLabel("Results will be displayed here.")
 
-        layout.addWidget(self.result_label)
+        # layout.addWidget(self.result_label)
 
 
         self.distance_clustering_tab.setLayout(layout)
