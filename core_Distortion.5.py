@@ -127,6 +127,7 @@ class MainApp(QMainWindow):
 
         self.init_distance_clustering_tab()  # Initialize the new tab
     
+    
     def init_distance_clustering_tab(self):
 
         layout = QVBoxLayout()
@@ -170,7 +171,143 @@ class MainApp(QMainWindow):
         layout.addWidget(self.result_label)
 
 
+        # Create a figure with subplots
+
+        fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # 1 row, 2 columns
+
+        fig.tight_layout(pad=5.0)
+
+
+        # Set titles for empty plots
+
+        axes[0].set_title("Porosity vs Permeability")
+
+        axes[0].set_xlabel("Porosity")
+
+        axes[0].set_ylabel("Permeability (md)")
+
+        axes[0].grid(True)
+
+
+        axes[1].set_title("Log(RQI) vs Log(Phi z)")
+
+        axes[1].set_xlabel("Log(Phi z)")
+
+        axes[1].set_ylabel("Log(RQI)")
+
+        axes[1].grid(True)
+
+
+        # Add canvas to layout
+
+        self.distance_clustering_canvas = FigureCanvas(fig)
+
+        layout.addWidget(self.distance_clustering_canvas)
+
+
+        # Button for plotting, placed at the bottom
+
+        plot_button = QPushButton("Plot Distance Clustering Data")
+
+        plot_button.clicked.connect(self.update_distance_clustering_tab)
+
+        self.style_button(plot_button)  # Reuse button styling
+
+        layout.addWidget(plot_button)
+
+
         self.distance_clustering_tab.setLayout(layout)
+    
+    def update_distance_clustering_tab(self):
+
+        # Extract data from the table for plotting
+
+        porosity = []
+
+        permeability = []
+
+        rqi = []
+
+        phi_z = []
+
+
+        for row in range(self.table.rowCount()):
+
+            try:
+
+                if self.table.item(row, 0) and self.table.item(row, 0).text():
+
+                    porosity.append(float(self.table.item(row, 0).text()))
+
+                if self.table.item(row, 1) and self.table.item(row, 1).text():
+
+                    permeability.append(float(self.table.item(row, 1).text()))
+
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+
+                    rqi.append(float(self.table.item(row, 2).text()))
+
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+
+                    phi_z.append(float(self.table.item(row, 3).text()))
+
+            except ValueError:
+
+                continue  # Skip rows with invalid or missing data
+
+
+        if not porosity or not permeability or not rqi or not phi_z:
+
+            QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
+
+            return
+
+
+        # Clear the previous plots
+
+        self.distance_clustering_canvas.figure.clear()
+
+
+        # Create a 1x2 grid for the subplots
+
+        axes = self.distance_clustering_canvas.figure.subplots(1, 2)
+
+        self.distance_clustering_canvas.figure.tight_layout(pad=5.0)
+
+
+        # Plot 1: Porosity vs Permeability
+
+        axes[0].scatter(porosity, permeability, color='blue', alpha=0.6, s=100)
+
+        axes[0].set_title("Porosity vs Permeability")
+
+        axes[0].set_xlabel("Porosity")
+
+        axes[0].set_ylabel("Permeability (md)")
+
+        axes[0].grid(True)
+
+
+        # Plot 2: Log(RQI) vs Log(Phi z)
+
+        log_rqi = np.log(np.array(rqi))
+
+        log_phi_z = np.log(np.array(phi_z))
+
+        axes[1].scatter(log_phi_z, log_rqi, color='orange', alpha=0.6, s=100)
+
+        axes[1].set_title("Log(RQI) vs Log(Phi z)")
+
+        axes[1].set_xlabel("Log(Phi z)")
+
+        axes[1].set_ylabel("Log(RQI)")
+
+        axes[1].grid(True)
+
+
+        # Update the canvas
+
+        self.distance_clustering_canvas.draw()
     
     def perform_distance_clustering(self):
 
