@@ -150,60 +150,32 @@ class MainApp(QMainWindow):
     def update_rock_type_tab(self):
 
         # Extract data from the table
-
         porosity = []
-
         permeability = []
-
         rqi = []
-
         phi_z = []
 
-
         for row in range(self.table.rowCount()):
-
             try:
-
                 if self.table.item(row, 0) and self.table.item(row, 0).text():
-
                     porosity.append(float(self.table.item(row, 0).text()))
-
                 if self.table.item(row, 1) and self.table.item(row, 1).text():
-
                     permeability.append(float(self.table.item(row, 1).text()))
-
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
-
                     rqi.append(float(self.table.item(row, 2).text()))
-
                 if self.table.item(row, 3) and self.table.item(row, 3).text():
-
                     phi_z.append(float(self.table.item(row, 3).text()))
-
             except ValueError:
-
                 continue  # Skip rows with invalid or missing data
 
-
         if not porosity or not permeability or not rqi or not phi_z:
-
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
-
             return
-
-
         # Prepare data for clustering
-
         X = np.array(list(zip(porosity, permeability)))
-
-
         # Initialize n_clusters
-
         n_clusters = None
-
-
         # Perform clustering (default to 3 clusters if no input)
-
         try:
 
             n_clusters = int(self.selected_K_textbox.text())
