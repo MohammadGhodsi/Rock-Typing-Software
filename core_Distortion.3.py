@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (
     QSizePolicy , QSplashScreen
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence , QIntValidator , QCursor , QPixmap
+from PyQt5.QtGui import QKeySequence , QIntValidator , QCursor , QPixmap , QIcon
 from PyQt5.QtWidgets import QShortcut
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from matplotlib.backends.backend_qt5agg import (
@@ -29,6 +29,7 @@ class MainApp(QMainWindow):
         self.setWindowTitle("Rock Typing Application")
         self.setGeometry(100, 100, 1200, 900)
         self.setStyleSheet("background-color: #f0f0f0;")
+        self.setWindowIcon(QIcon("Axone_logo.png"))  # Set the window icon
         self.batch_processing = False  # Flag to control batch updates
         self.data = None
         self.tooltip = None  # Initialize tooltip
