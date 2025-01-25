@@ -18,6 +18,7 @@ from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas , NavigationToolbar2QT as NavigationToolbar)
 
 from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -138,36 +139,38 @@ class MainApp(QMainWindow):
             except ValueError:
                 continue  # Skip rows with invalid or missing data
 
-        if not porosity or not permeability or not rqi or not phi_z:
+        if not rqi or not phi_z:
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
 
-        # Prepare data for clustering
-        X = np.array(list(zip(porosity, permeability)))
+        # Prepare data for clustering using log values
+        log_rqi = np.log(np.array(rqi))
+        log_phi_z = np.log(np.array(phi_z))
 
-        # Perform clustering (default to 3 clusters if no input)
+        # Create feature set
+        X = np.array(list(zip(log_phi_z, log_rqi)))
+
+        # Perform KMeans clustering
         try:
             n_clusters = int(self.selected_K_textbox.text())
             if n_clusters <= 0:
                 raise ValueError
         except ValueError:
-            #n_clusters = min(3, len(X))  # Default to 3 clusters if input is invalid
-            QMessageBox.warning(self,"Error", "Coudn't find the number of clusters")
+            QMessageBox.warning(self,"Error", "Couldn't find the number of clusters")
+            return
 
-        if n_clusters > len(X):
-            QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X)}).")
+        # Remove data points that are both NaN
+        valid_indices = np.where(np.isfinite(X).all(axis=1))[0]
+        X_valid = X[valid_indices]
+        
+        if n_clusters > len(X_valid):
+            QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X_valid)}).")
             return
 
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-        clusters = kmeans.fit_predict(X)
+        clusters = kmeans.fit_predict(X_valid)
 
-        # Filter valid data for logarithmic plots
-        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
-        log_rqi = np.log(np.array(rqi)[valid_indices])
-        log_phi_z = np.log(np.array(phi_z)[valid_indices])
-        filtered_clusters = clusters[valid_indices]
-
-        # Assign cluster colors
+        # Assign cluster colors accessible in scatter plot
         cluster_colors = plt.cm.tab10.colors
 
         # Clear the previous plots
@@ -177,50 +180,53 @@ class MainApp(QMainWindow):
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
-        # Plot 1: Absolute Permeability vs Porosity
-        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.7)
-        axes[0].set_title("Absolute Permeability (md) vs Porosity")
-        axes[0].set_xlabel("Porosity")
-        axes[0].set_ylabel("Absolute Permeability (md)")
+        # Plot 1: log(Phi z) vs log(RQI) with clusters
+        scatter1 = axes[0].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.7)
+        axes[0].set_title("log(Phi z) vs log(RQI)")
+        axes[0].set_xlabel("log(Phi z)")
+        axes[0].set_ylabel("log(RQI)")
         axes[0].grid(True)
         legend1 = axes[0].legend(*scatter1.legend_elements(), title="Cluster")
         axes[0].add_artist(legend1)
 
-        # Plot 2: log(RQI) vs log(Phi z)
-        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.7)
-        axes[1].set_title("log(RQI) vs log(Phi z)")
-        axes[1].set_xlabel("log(Phi z)")
-        axes[1].set_ylabel("log(RQI)")
-        axes[1].grid(True)
-        legend2 = axes[1].legend(*scatter2.legend_elements(), title="Cluster")
-        axes[1].add_artist(legend2)
-
-        # Synchronize X and Y axis limits
-        min_limit = min(min(log_phi_z), min(log_rqi))
-        max_limit = max(max(log_phi_z), max(log_rqi))
-        axes[1].set_xlim(min_limit, max_limit)
-        axes[1].set_ylim(min_limit, max_limit)
+        # Plot 2: Placeholder (you can customize)
+        axes[1].axis('off')
 
         # Save plot data for export
         self.current_plot_data = {
-            "points1": list(zip(porosity, permeability)),
+            "points1": list(zip(log_phi_z, log_rqi)),
             "clusters1": clusters,
-            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),
-            "clusters2": filtered_clusters,
         }
-
-        # Add hover functionality for tooltips
-        self.rock_type_tooltip = None
-        self.rock_type_plot_data = [
-            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
-            {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
-        ]
-
-        self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
-        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
 
         # Update the canvas
         self.rock_type_canvas.draw()
+
+        # Classify new points with nearest neighbor
+        self.classify_with_knn(log_phi_z, log_rqi, clusters)
+
+    def classify_with_knn(self, log_phi_z, log_rqi, clusters):
+        # Assuming you have points you want to classify, here we're using the same points
+        knn_classifier = KNeighborsClassifier(n_neighbors=10)  # 3-NN classifier, you can choose k
+        knn_classifier.fit(np.array(list(zip(log_phi_z, log_rqi))), clusters)
+
+        # Classify the same points again; adjust this part based on your need
+        predicted_clusters = knn_classifier.predict(np.array(list(zip(log_phi_z, log_rqi))))
+
+        # You can visualize the predictions the same way you did with KMeans
+        # Clear previous data and plot with predicted clusters
+        self.rock_type_canvas.figure.clear()
+        axes = self.rock_type_canvas.figure.subplots(1, 1)
+
+        scatter2 = axes.scatter(log_phi_z, log_rqi, c=predicted_clusters, cmap='tab10', alpha=0.7)
+        axes.set_title("KNN Predicted Clusters")
+        axes.set_xlabel("log(Phi z)")
+        axes.set_ylabel("log(RQI)")
+        axes.grid(True)
+        legend2 = axes.legend(*scatter2.legend_elements(), title="Predicted Cluster")
+        axes.add_artist(legend2)
+
+        self.rock_type_canvas.draw()
+
     
     def handle_rock_type_hover_event(self, event):
         for plot in self.rock_type_plot_data:
