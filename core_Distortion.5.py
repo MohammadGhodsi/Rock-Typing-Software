@@ -146,7 +146,8 @@ class MainApp(QMainWindow):
 
         # Create a figure with subplots
 
-        fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # 1 row, 2 columns
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))  # Adjusted size to match Plots tab
+
 
         fig.tight_layout(pad=5.0)
 
@@ -196,13 +197,6 @@ class MainApp(QMainWindow):
         self.style_button(cluster_button)  # Reuse button styling
 
         layout.addWidget(cluster_button)
-
-
-        # Remove the placeholder for results
-
-        # self.result_label = QLabel("Results will be displayed here.")
-
-        # layout.addWidget(self.result_label)
 
 
         self.distance_clustering_tab.setLayout(layout)
