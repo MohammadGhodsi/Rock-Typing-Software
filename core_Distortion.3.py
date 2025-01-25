@@ -1,27 +1,28 @@
-import sys , time
-import pandas as pd
+import sys
+import time
 import numpy as np
+import pandas as pd
+
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
 from matplotlib.widgets import Button, TextBox
 from matplotlib.backend_bases import cursors
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QLabel,QFileDialog,
-    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit ,
-    QSizePolicy , QSplashScreen
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence , QIntValidator , QCursor , QPixmap , QIcon
-from PyQt5.QtWidgets import QShortcut
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvasQTAgg as FigureCanvas , NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
 
+from scipy.spatial.distance import cdist
+from sklearn.cluster import KMeans
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
-from scipy.spatial.distance import cdist  
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QPushButton, QLabel, QFileDialog,
+    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget,
+    QTableWidget, QTableWidgetItem, QMenu, QLineEdit,
+    QSizePolicy, QSplashScreen, QShortcut)
+
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QKeySequence, QIntValidator, QCursor, QPixmap, QIcon
 
 class MainApp(QMainWindow):
     def __init__(self):
