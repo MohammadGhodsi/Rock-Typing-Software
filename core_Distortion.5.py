@@ -403,7 +403,7 @@ class MainApp(QMainWindow):
 
         # Assign colors for clusters
 
-        colors = plt.cm.get_cmap('tab10', len(clusters))  # Get a colormap with enough colors
+        colors = plt.get_cmap('tab10', len(clusters))  # Get a colormap with enough colors
 
 
         # Plot 1: Porosity vs Permeability
