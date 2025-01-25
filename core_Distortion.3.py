@@ -6,89 +6,13 @@ from sklearn.cluster import KMeans
 from matplotlib.widgets import Button, TextBox
 from matplotlib.backend_bases import cursors
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QLabel, QFileDialog,
-    QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu, QLineEdit,
-    QSizePolicy
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence, QIntValidator, QCursor
-from PyQt5.QtWidgets import QShortcut
-from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
-
-from sklearn.svm import SVC
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from scipy.spatial.distance import cdist
-
-class MainApp(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Rock Typing Application")  # Set the window title
-        self.setGeometry(100, 100, 1200, 900)  # Set the window size and position
-        self.setStyleSheet("background-color: #f0f0f0;")  # Set the background color
-        self.batch_processing = False  # Flag to control batch updates
-        self.data = None  # Placeholder for data
-        self.tooltip = None  # Initialize tooltip
-        self.initUI()  # Initialize the user interface
-
-    def initUI(self):
-        # Main layout
-        main_layout = QVBoxLayout()
-
-        # Horizontal layout for header
-        top_layout = QHBoxLayout()
-
-        # Header Label
-        header_label = QLabel("Rock Typing Application")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")  # Style the header
-        header_label.setAlignment(Qt.AlignLeft)  # Align header to the left
-        top_layout.addWidget(header_label)  # Add header to the top layout
-
-        # Add top layout to the main layout
-        main_layout.addLayout(top_layout)
-
-        # Initialize tabs
-        self.tabs = QTabWidget()  # Initialize QTabWidget for tabbed interface
-        
-        
-        
-        self.dataset_tab = QWidget()  # Create dataset tab
-        self.plots_tab = QWidget()  # Create plots tab
-        self.clustering_tab = QWidget()  # Create clustering tab
-        self.ml_tab = QWidget()  # Create machine learning tab
-        self.rock_type_tab = QWidget()  # Create rock type visualization tab
-
-        # Add tabs to the QTabWidget
-        self.tabs.addTab(self.dataset_tab, "Dataset")
-        self.tabs.addTab(self.plots_tab, "Plots")
-        self.tabs.addTab(self.clustering_tab, "Clustering")
-        self.tabs.addTab(self.rock_type_tab, "Rock Type")
-        self.tabs.addTab(self.ml_tab, "Machine Learning")
-
-        # Add Tabs to the main layout
-        main_layout.addWidget(self.tabs)
-
-        # Set central widget layout
-        central_widget = QWidget()  # Create central widget
-        central_widget.setLayout(main_layout)  # Set the layout for the central widget
-
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
-from matplotlib.widgets import Button, TextBox
-from matplotlib.backend_bases import cursors
-from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel,QFileDialog,
     QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget, QTableWidget, QTableWidgetItem, QMenu,QLineEdit ,
     QSizePolicy
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence , QIntValidator , QCursor 
-from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtWidgets import QShortcut , 
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas , NavigationToolbar2QT as NavigationToolbar)
