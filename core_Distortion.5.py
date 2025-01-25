@@ -144,33 +144,6 @@ class MainApp(QMainWindow):
         layout.addWidget(header_label)
 
 
-        # Add input fields for distance clustering parameters
-
-        self.distance_input = QLineEdit()
-
-        self.distance_input.setPlaceholderText("Enter distance threshold")
-
-        layout.addWidget(self.distance_input)
-
-
-        # Button to perform distance clustering
-
-        cluster_button = QPushButton("Perform Distance Clustering")
-
-        cluster_button.clicked.connect(self.perform_distance_clustering)
-
-        self.style_button(cluster_button)  # Reuse button styling
-
-        layout.addWidget(cluster_button)
-
-
-        # Placeholder for results
-
-        self.result_label = QLabel("Results will be displayed here.")
-
-        layout.addWidget(self.result_label)
-
-
         # Create a figure with subplots
 
         fig, axes = plt.subplots(1, 2, figsize=(10, 5))  # 1 row, 2 columns
@@ -205,15 +178,31 @@ class MainApp(QMainWindow):
         layout.addWidget(self.distance_clustering_canvas)
 
 
-        # Button for plotting, placed at the bottom
+        # Add input fields for distance clustering parameters
 
-        plot_button = QPushButton("Plot Distance Clustering Data")
+        self.distance_input = QLineEdit()
 
-        plot_button.clicked.connect(self.update_distance_clustering_tab)
+        self.distance_input.setPlaceholderText("Enter distance threshold")
 
-        self.style_button(plot_button)  # Reuse button styling
+        layout.addWidget(self.distance_input)
 
-        layout.addWidget(plot_button)
+
+        # Button to perform distance clustering
+
+        cluster_button = QPushButton("Perform Distance Clustering")
+
+        cluster_button.clicked.connect(self.perform_distance_clustering)
+
+        self.style_button(cluster_button)  # Reuse button styling
+
+        layout.addWidget(cluster_button)
+
+
+        # Placeholder for results
+
+        self.result_label = QLabel("Results will be displayed here.")
+
+        layout.addWidget(self.result_label)
 
 
         self.distance_clustering_tab.setLayout(layout)
