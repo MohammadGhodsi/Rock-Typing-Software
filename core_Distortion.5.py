@@ -313,9 +313,9 @@ class MainApp(QMainWindow):
 
         permeability = []
 
-        rqi = []  # Initialize rqi list
+        rqi = []
 
-        phi_z = []  # Initialize phi_z list
+        phi_z = []
 
 
         for row in range(self.table.rowCount()):
@@ -326,22 +326,22 @@ class MainApp(QMainWindow):
 
                     log_rqi.append(np.log(float(self.table.item(row, 2).text())))
 
-                    rqi.append(float(self.table.item(row, 2).text()))  # Extract rqi
+                    rqi.append(float(self.table.item(row, 2).text()))
 
 
                 if self.table.item(row, 3) and self.table.item(row, 3).text():
 
                     log_phi_z.append(np.log(float(self.table.item(row, 3).text())))
 
-                    phi_z.append(float(self.table.item(row, 3).text()))  # Extract phi_z
+                    phi_z.append(float(self.table.item(row, 3).text()))
 
 
-                if self.table.item(row, 0) and self.table.item(row, 0).text():  # Extract porosity
+                if self.table.item(row, 0) and self.table.item(row, 0).text():
 
                     porosity.append(float(self.table.item(row, 0).text()))
 
 
-                if self.table.item(row, 1) and self.table.item(row, 1).text():  # Extract permeability
+                if self.table.item(row, 1) and self.table.item(row, 1).text():
 
                     permeability.append(float(self.table.item(row, 1).text()))
 
@@ -389,9 +389,9 @@ class MainApp(QMainWindow):
 
         # Plot the results
 
-        self.plot_distance_clustering(points, clusters, porosity, permeability, rqi, phi_z)  # Pass phi_z as well
+        self.plot_distance_clustering(points, clusters, porosity, permeability, rqi, phi_z)
     
-    def plot_distance_clustering(self, points, clusters, porosity, permeability,rqi,phi_z):
+    def plot_distance_clustering(self, points, clusters, porosity, permeability, rqi, phi_z):
 
         # Clear the previous plots
 
@@ -401,9 +401,21 @@ class MainApp(QMainWindow):
         axes = self.distance_clustering_canvas.figure.subplots(1, 2)  # Create 1x2 subplots
 
 
+        # Assign colors for clusters
+
+        colors = plt.cm.get_cmap('tab10', len(clusters))  # Get a colormap with enough colors
+
+
         # Plot 1: Porosity vs Permeability
 
-        axes[0].scatter(porosity, permeability, color='blue', alpha=0.6, s=100)
+        for cluster_index, cluster in enumerate(clusters):
+
+            cluster_points = [(porosity[i], permeability[i]) for i in cluster]
+
+            cluster_porosity, cluster_permeability = zip(*cluster_points)
+
+            axes[0].scatter(cluster_porosity, cluster_permeability, color=colors(cluster_index), alpha=0.6, s=100, label=f'Cluster {cluster_index + 1}')
+
 
         axes[0].set_title("Porosity vs Permeability")
 
@@ -413,14 +425,21 @@ class MainApp(QMainWindow):
 
         axes[0].grid(True)
 
+        axes[0].legend()
+
 
         # Plot 2: Log(RQI) vs Log(Phi z)
 
-        log_rqi = np.log(np.array(rqi))
+        for cluster_index, cluster in enumerate(clusters):
 
-        log_phi_z = np.log(np.array(phi_z))
+            cluster_points = [(np.log(phi_z[i]), np.log(rqi[i])) for i in cluster if rqi[i] > 0 and phi_z[i] > 0]
 
-        axes[1].scatter(log_phi_z, log_rqi, color='orange', alpha=0.6, s=100)
+            if cluster_points:  # Check if there are points in the cluster
+
+                cluster_log_phi_z, cluster_log_rqi = zip(*cluster_points)
+
+                axes[1].scatter(cluster_log_phi_z, cluster_log_rqi, color=colors(cluster_index), alpha=0.6, s=100, label=f'Cluster {cluster_index + 1}')
+
 
         axes[1].set_title("Log(RQI) vs Log(Phi z)")
 
@@ -429,6 +448,8 @@ class MainApp(QMainWindow):
         axes[1].set_ylabel("Log(RQI)")
 
         axes[1].grid(True)
+
+        axes[1].legend()
 
 
         # Update the canvas
