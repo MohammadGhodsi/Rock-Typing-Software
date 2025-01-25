@@ -148,60 +148,35 @@ class MainApp(QMainWindow):
 
         self.rock_type_tab.setLayout(layout)
     
-    
     def update_rock_type_tab(self):
 
         # Extract data from the table
-
         porosity = []
-
         permeability = []
-
         rqi = []
-
         phi_z = []
 
-
         for row in range(self.table.rowCount()):
-
             try:
-
                 if self.table.item(row, 0) and self.table.item(row, 0).text():
-
                     porosity.append(float(self.table.item(row, 0).text()))
-
                 if self.table.item(row, 1) and self.table.item(row, 1).text():
-
                     permeability.append(float(self.table.item(row, 1).text()))
-
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
-
                     rqi.append(float(self.table.item(row, 2).text()))
-
                 if self.table.item(row, 3) and self.table.item(row, 3).text():
-
                     phi_z.append(float(self.table.item(row, 3).text()))
-
             except ValueError:
-
                 continue  # Skip rows with invalid or missing data
 
-
         if not porosity or not permeability or not rqi or not phi_z:
-
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
-
             return
-
-
         # Prepare data for clustering
-
         X = np.array(list(zip(porosity, permeability)))
-
-        
-
+        # Initialize n_clusters
+        n_clusters = None
         # Perform clustering (default to 3 clusters if no input)
-
         try:
 
             n_clusters = int(self.selected_K_textbox.text())
@@ -240,32 +215,9 @@ class MainApp(QMainWindow):
         filtered_clusters = clusters[valid_indices]
 
 
-        # Calculate distances between points
+        # Assign cluster colors
 
-        distances = cdist(np.column_stack((log_phi_z, log_rqi)), np.column_stack((log_phi_z, log_rqi)), 'euclidean')
-
-
-        # Define a threshold for clustering
-
-        threshold = 0.5  # Example threshold, adjust as needed
-
-        classified_groups = []
-
-        
-
-        for i in range(len(log_rqi)):
-
-            group = []
-
-            for j in range(len(log_rqi)):
-
-                if distances[i][j] < threshold and i != j:  # Exclude self-distance
-
-                    group.append(j)
-
-            if group:
-
-                classified_groups.append(group)
+        cluster_colors = plt.cm.tab10.colors
 
 
         # Clear the previous plots
@@ -282,7 +234,10 @@ class MainApp(QMainWindow):
 
         # Plot 1: Absolute Permeability vs Porosity
 
-        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')
+        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, 
+
+                                    s=150, edgecolor='black', marker='o')  # Change size and marker style
+
 
         axes[0].set_title("Absolute Permeability (md) vs Porosity")
 
@@ -297,11 +252,11 @@ class MainApp(QMainWindow):
         axes[0].add_artist(legend1)
 
 
-        # Plot 2: log(RQI) vs log(Phi z) with classified groups
+        # Plot 2: log(RQI) vs log(Phi z)
 
-        for group in classified_groups:
+        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.6, 
 
-            axes[1].scatter(log_phi_z[group], log_rqi[group], alpha=0.6, s=150, edgecolor='black', marker='o')
+                                    s=150, edgecolor='black', marker='o')  # Change size and marker style
 
 
         axes[1].set_title("log(RQI) vs log(Phi z)")
@@ -311,6 +266,10 @@ class MainApp(QMainWindow):
         axes[1].set_ylabel("log(RQI)")
 
         axes[1].grid(True)
+
+        legend2 = axes[1].legend(*scatter2.legend_elements(), title="Cluster")
+
+        axes[1].add_artist(legend2)
 
 
         # Synchronize X and Y axis limits
@@ -322,6 +281,39 @@ class MainApp(QMainWindow):
         axes[1].set_xlim(min_limit, max_limit)
 
         axes[1].set_ylim(min_limit, max_limit)
+
+
+        # Save plot data for export
+
+        self.current_plot_data = {
+
+            "points1": list(zip(porosity, permeability)),
+
+            "clusters1": clusters,
+
+            "points2": list(zip(log_phi_z.tolist(), log_rqi.tolist())),
+
+            "clusters2": filtered_clusters,
+
+        }
+
+
+        # Add hover functionality for tooltips
+
+        self.rock_type_tooltip = None
+
+        self.rock_type_plot_data = [
+
+            {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
+
+            {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
+
+        ]
+
+
+        self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
+
+        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
 
 
         # Update the canvas
