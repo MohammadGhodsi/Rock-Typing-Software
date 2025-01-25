@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence , QIntValidator , QCursor 
-from PyQt5.QtWidgets import QShortcut , 
+from PyQt5.QtWidgets import QShortcut
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas , NavigationToolbar2QT as NavigationToolbar)
@@ -53,6 +53,30 @@ class MainApp(QMainWindow):
 
         # Initialize tabs
         self.tabs = QTabWidget()  # Initialize QTabWidget
+
+        # Set custom styles for the tabs
+        self.tabs.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #cccccc;  /* Border around the tab pane */
+                background-color: #f0f0f0;  /* Background color of the tab pane */
+            }
+            QTabBar::tab {
+                background: #0078d7;  /* Background color of the tabs */
+                color: white;          /* Text color of the tabs */
+                padding: 10px;        /* Padding around the text */
+                border: 1px solid #0078d7; /* Border around each tab */
+                border-bottom: none;  /* Remove bottom border to connect with pane */
+            }
+            QTabBar::tab:selected {
+                background: #005a9e;  /* Background color of the selected tab */
+                color: white;          /* Text color of the selected tab */
+            }
+            QTabBar::tab:hover {
+                background: #005a9e;  /* Background color when hovering over a tab */
+            }
+        """)
+
+        # Add tabs to the QTabWidget
         self.dataset_tab = QWidget()
         self.plots_tab = QWidget()
         self.clustering_tab = QWidget()
@@ -79,7 +103,8 @@ class MainApp(QMainWindow):
         self.init_clustering_tab()
         self.init_ml_tab()
         self.init_rock_type_tab()
-   
+    
+    
     def init_rock_type_tab(self):
         layout = QVBoxLayout()
 
