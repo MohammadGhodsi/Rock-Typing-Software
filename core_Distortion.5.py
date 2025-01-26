@@ -2124,7 +2124,7 @@ class MainApp(QMainWindow):
             """)
 
             save_plot_action = menu.addAction("Save Plot As...")
-            save_plot_action.triggered.connect(lambda: self.save_plot(self.rock_type_canvas))
+            save_plot_action.triggered.connect(lambda: self.save_plot(self.plot_canvas))
 
             if hasattr(self, "current_plot_data") and self.current_plot_data:
                 export_csv_action = menu.addAction("Export Data as CSV")
