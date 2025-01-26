@@ -82,17 +82,13 @@ class MainApp(QMainWindow):
 
             QTabBar::tab {
 
-                background: #0078d7; 
-
-                color: white; 
-
                 padding: 10px; 
 
                 font-size: 14px; 
 
                 font-weight: bold; 
 
-                border: 1px solid #0078d7; 
+                border: 1px solid #32a1a2; 
 
                 border-bottom: none; 
 
@@ -100,7 +96,7 @@ class MainApp(QMainWindow):
 
             QTabBar::tab:selected {
 
-                background: #005a9e; 
+                background: #32a1a2; 
 
                 color: white; 
 
@@ -108,7 +104,7 @@ class MainApp(QMainWindow):
 
             QTabBar::tab:hover {
 
-                background: #005a9e; 
+                background:rgb(60, 203, 205); 
 
             }
 
