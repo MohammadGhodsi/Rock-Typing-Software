@@ -204,6 +204,7 @@ class MainApp(QMainWindow):
         # Connect hover event for tooltips
 
         self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
+        self.distance_clustering_canvas.mpl_connect('button_press_event', self.show_distance_clustering_context_menu)
     
     def update_distance_clustering_tab(self):
 
@@ -299,7 +300,52 @@ class MainApp(QMainWindow):
         self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
     
     
-    
+    def show_distance_clustering_context_menu(self, event):
+
+        if event.button == 3:  # Right-click
+
+            menu = QMenu(self)
+
+            menu.setStyleSheet("""
+
+                QMenu {
+
+                    background-color: #ffffff;
+
+                    color: #000000;
+
+                    border: 1px solid #cccccc;
+
+                }
+
+                QMenu::item {
+
+                    padding: 8px 20px;
+
+                }
+
+                QMenu::item:selected {
+
+                    background-color: #0078d7;
+
+                    color: #ffffff;
+
+                }
+
+            """)
+
+
+            save_plot_action = menu.addAction("Save Plot As...")
+
+            save_plot_action.triggered.connect(lambda: self.save_plot(self.distance_clustering_canvas))
+
+
+            export_data_action = menu.addAction("Export Data as CSV")
+
+            export_data_action.triggered.connect(self.export_distance_clustering_data_to_csv)
+
+
+            menu.exec_(QCursor.pos())
     
     def perform_distance_clustering(self):
 
@@ -1897,6 +1943,44 @@ class MainApp(QMainWindow):
         )
         if file_path:
             canvas.figure.savefig(file_path)
+    
+    def export_distance_clustering_data_to_csv(self):
+
+        if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
+
+            QMessageBox.warning(self, "No Data", "No distance clustering data available for export.")
+
+            return
+
+
+        # Open a file dialog to save the CSV
+
+        options = QFileDialog.Options()
+
+        file_path, _ = QFileDialog.getSaveFileName(
+
+            self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options
+
+        )
+
+
+        if file_path:
+
+            try:
+
+                # Prepare data for the CSV
+
+                data = self.current_distance_clustering_data  # Assuming this holds your clustering data
+
+                df = pd.DataFrame(data)  # Adjust this based on your data structure
+
+                df.to_csv(file_path, index=False)
+
+                QMessageBox.information(self, "Success", "Distance clustering data exported successfully.")
+
+            except Exception as e:
+
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
 
     def handle_plot_click(self, event):
         if event.button == 3:  # Right-click
