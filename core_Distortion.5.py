@@ -380,12 +380,80 @@ class MainApp(QMainWindow):
             save_plot_action.triggered.connect(lambda: self.save_plot(self.distance_clustering_canvas))
 
 
-            export_data_action = menu.addAction("Export Data as CSV")
+            export_data_action = menu.addAction("Export Merged Data as CSV")
 
-            export_data_action.triggered.connect(self.export_distance_clustering_data_to_csv)
+            export_data_action.triggered.connect(self.export_merged_distance_clustering_data_to_csv)
 
 
             menu.exec_(QCursor.pos())
+    
+    
+    def export_merged_distance_clustering_data_to_csv(self):
+
+        if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
+
+            QMessageBox.warning(self, "No Data", "No distance clustering data available for export.")
+
+            return
+
+
+        # Extract data for merging
+
+        log_rqi = np.array(self.current_distance_clustering_data["log_rqi"])
+
+        log_phi_z = np.array(self.current_distance_clustering_data["log_phi_z"])
+
+        clusters = self.current_distance_clustering_data["clusters"]
+
+
+        # Prepare data for DataFrame
+
+        data = []
+
+        for cluster_index, cluster in enumerate(clusters):
+
+            for idx in cluster:
+
+                # Append the required data to the list
+
+                data.append({
+
+                    "Porosity": self.table.item(idx, 0).text() if self.table.item(idx, 0) else None,
+
+                    "Permeability": self.table.item(idx, 1).text() if self.table.item(idx, 1) else None,
+
+                    "Log(RQI)": log_rqi[idx],
+
+                    "Log(Phi z)": log_phi_z[idx],
+
+                    "Cluster": cluster_index
+
+                })
+
+
+        # Create DataFrame
+
+        df = pd.DataFrame(data)
+
+
+        # Open a file dialog to save the CSV
+
+        options = QFileDialog.Options()
+
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
+
+
+        if file_path:
+
+            try:
+
+                df.to_csv(file_path, index=False)
+
+                QMessageBox.information(self, "Success", "Merged distance clustering data exported successfully.")
+
+            except Exception as e:
+
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
     
     def perform_distance_clustering(self):
 
