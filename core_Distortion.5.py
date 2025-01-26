@@ -2004,65 +2004,37 @@ class MainApp(QMainWindow):
     
    
     def export_distance_clustering_data_to_csv(self):
-
         if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
-
             QMessageBox.warning(self, "No Data", "No distance clustering data available for export.")
-
             return
 
-
         # Open a file dialog to save the CSV
-
         options = QFileDialog.Options()
-
         file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
 
-
         if file_path:
-
             try:
-
                 # Extract and filter data
-
                 log_rqi = np.array(self.current_distance_clustering_data["log_rqi"])  # Convert to NumPy array
-
                 log_phi_z = np.array(self.current_distance_clustering_data["log_phi_z"])  # Convert to NumPy array
+                clusters = self.current_distance_clustering_data["clusters"]  # This should be a list of lists
 
-                clusters = np.array(self.current_distance_clustering_data["clusters"])  # Convert to NumPy array
-
-
-                # Ensure all lists are of the same length
-
-                valid_indices = np.where((log_rqi > 0) & (log_phi_z > 0))[0]
-
-
-                log_rqi_filtered = log_rqi[valid_indices]
-
-                log_phi_z_filtered = log_phi_z[valid_indices]
-
-                clusters_filtered = clusters[valid_indices]
-
+                # Prepare data for DataFrame
+                data = []
+                for cluster_index, cluster in enumerate(clusters):
+                    for idx in cluster:
+                        data.append({
+                            "log_RQI": log_rqi[idx],
+                            "log_Phi_z": log_phi_z[idx],
+                            "Cluster": cluster_index
+                        })
 
                 # Create DataFrame
-
-                df = pd.DataFrame({
-
-                    "log_RQI": log_rqi_filtered,
-
-                    "log_Phi_z": log_phi_z_filtered,
-
-                    "Cluster": clusters_filtered
-
-                })
-
-
+                df = pd.DataFrame(data)
                 df.to_csv(file_path, index=False)
 
                 QMessageBox.information(self, "Success", "Distance clustering data exported successfully.")
-
             except Exception as e:
-
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
     
     def handle_plot_click(self, event):
