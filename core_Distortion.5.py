@@ -431,6 +431,24 @@ class MainApp(QMainWindow):
         # Perform clustering based on distance threshold
 
         clusters = self.cluster_points(points, distance_threshold)
+        
+        # After clustering, store the data
+
+        self.current_distance_clustering_data = {
+
+            "log_rqi": log_rqi,
+
+            "log_phi_z": log_phi_z,
+
+            "clusters": clusters,
+
+            # Add any other relevant data you want to export
+
+        }
+        
+            # Debugging output
+        
+        print("Distance clustering data stored:", self.current_distance_clustering_data)
 
 
         # Plot the results
