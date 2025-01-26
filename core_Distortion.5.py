@@ -54,7 +54,7 @@ class MainApp(QMainWindow):
 
         header_label = QLabel("Rock Typing Application")
 
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman'; color: #333;")
 
         header_label.setAlignment(Qt.AlignLeft)
 
@@ -69,6 +69,50 @@ class MainApp(QMainWindow):
         # Initialize tabs
 
         self.tabs = QTabWidget()  # Initialize QTabWidget
+
+        self.tabs.setStyleSheet("""
+
+            QTabWidget::pane { 
+
+                border: 1px solid #0078d7; 
+
+                background-color: #f0f0f0; 
+
+            }
+
+            QTabBar::tab {
+
+                background: #0078d7; 
+
+                color: white; 
+
+                padding: 10px; 
+
+                font-size: 14px; 
+
+                font-weight: bold; 
+
+                border: 1px solid #0078d7; 
+
+                border-bottom: none; 
+
+            }
+
+            QTabBar::tab:selected {
+
+                background: #005a9e; 
+
+                color: white; 
+
+            }
+
+            QTabBar::tab:hover {
+
+                background: #005a9e; 
+
+            }
+
+        """)
 
 
         # Add tabs to the QTabWidget
@@ -86,17 +130,17 @@ class MainApp(QMainWindow):
         self.distance_clustering_tab = QWidget()  # New tab for Distance Clustering
 
 
-        self.tabs.addTab(self.dataset_tab, "Dataset")
+        self.tabs.addTab(self.dataset_tab, QIcon("dataset_icon.png"), "Dataset")  # Add icons for tabs
 
-        self.tabs.addTab(self.plots_tab, "Plots")
+        self.tabs.addTab(self.plots_tab, QIcon("plots_icon.png"), "Plots")
 
-        self.tabs.addTab(self.clustering_tab, "Clustering")
+        self.tabs.addTab(self.clustering_tab, QIcon("clustering_icon.png"), "Clustering")
 
-        self.tabs.addTab(self.rock_type_tab, "Rock Type")
+        self.tabs.addTab(self.rock_type_tab, QIcon("rock_type_icon.png"), "Rock Type")
 
-        self.tabs.addTab(self.ml_tab, "Machine Learning")
+        self.tabs.addTab(self.ml_tab, QIcon("ml_icon.png"), "Machine Learning")
 
-        self.tabs.addTab(self.distance_clustering_tab, "Distance Clustering")  # Add new tab
+        self.tabs.addTab(self.distance_clustering_tab, QIcon("distance_clustering_icon.png"), "Distance Clustering")  # Add new tab
 
 
         # Add Tabs to the main layout
@@ -126,7 +170,7 @@ class MainApp(QMainWindow):
         self.init_rock_type_tab()
 
         self.init_distance_clustering_tab()  # Initialize the new tab
-    
+   
     
     def init_distance_clustering_tab(self):
 
