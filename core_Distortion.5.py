@@ -146,8 +146,7 @@ class MainApp(QMainWindow):
 
         # Create a figure with subplots
 
-        fig, axes = plt.subplots(1, 2, figsize=(10, 10))  # Adjusted size to match Plots tab
-
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
 
         fig.tight_layout(pad=5.0)
 
@@ -200,6 +199,11 @@ class MainApp(QMainWindow):
 
 
         self.distance_clustering_tab.setLayout(layout)
+
+
+        # Connect hover event for tooltips
+
+        self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
     
     def update_distance_clustering_tab(self):
 
@@ -249,6 +253,7 @@ class MainApp(QMainWindow):
         # Clear the previous plots
 
         self.distance_clustering_canvas.figure.clear()
+        
 
 
         # Create a 1x2 grid for the subplots
@@ -291,6 +296,7 @@ class MainApp(QMainWindow):
         # Update the canvas
 
         self.distance_clustering_canvas.draw()
+        self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
     
     
     
@@ -450,6 +456,72 @@ class MainApp(QMainWindow):
 
         self.distance_clustering_canvas.draw()
     
+    
+    def handle_distance_clustering_hover_event(self, event):
+
+        if event.inaxes is not None:  # Check if the event is within the axes
+
+            for ax in self.distance_clustering_canvas.figure.axes:
+
+                if event.inaxes == ax:
+
+                    for scatter in ax.collections:  # Iterate through scatter plots
+
+                        cont, ind = scatter.contains(event)
+
+                        if cont:
+
+                            index = ind["ind"][0]
+
+                            x = scatter.get_offsets()[index][0]
+
+                            y = scatter.get_offsets()[index][1]
+
+                            tooltip_text = f"({x:.2f}, {y:.2f})"
+
+
+                            # Remove previous tooltip
+
+                            if self.tooltip:
+
+                                self.tooltip.remove()
+
+
+                            # Create new tooltip
+
+                            self.tooltip = ax.annotate(
+
+                                tooltip_text,
+
+                                (x, y),
+
+                                textcoords="offset points",
+
+                                xytext=(10, 10),
+
+                                ha='center',
+
+                                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+
+                                fontsize=10
+
+                            )
+
+
+                            self.distance_clustering_canvas.draw_idle()
+
+                            return
+
+
+            # Remove tooltip if not hovering over any point
+
+            if self.tooltip:
+
+                self.tooltip.remove()
+
+                self.tooltip = None
+
+                self.distance_clustering_canvas.draw_idle()
     
     def cluster_points(self, points, threshold):
 
