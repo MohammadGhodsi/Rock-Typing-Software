@@ -447,7 +447,7 @@ class MainApp(QMainWindow):
         }
         
             # Debugging output
-        
+
         print("Distance clustering data stored:", self.current_distance_clustering_data)
 
 
@@ -1962,6 +1962,7 @@ class MainApp(QMainWindow):
         if file_path:
             canvas.figure.savefig(file_path)
     
+   
     def export_distance_clustering_data_to_csv(self):
 
         if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
@@ -1975,22 +1976,46 @@ class MainApp(QMainWindow):
 
         options = QFileDialog.Options()
 
-        file_path, _ = QFileDialog.getSaveFileName(
-
-            self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options
-
-        )
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
 
 
         if file_path:
 
             try:
 
-                # Prepare data for the CSV
+                # Extract and filter data
 
-                data = self.current_distance_clustering_data  # Assuming this holds your clustering data
+                log_rqi = np.array(self.current_distance_clustering_data["log_rqi"])  # Convert to NumPy array
 
-                df = pd.DataFrame(data)  # Adjust this based on your data structure
+                log_phi_z = np.array(self.current_distance_clustering_data["log_phi_z"])  # Convert to NumPy array
+
+                clusters = np.array(self.current_distance_clustering_data["clusters"])  # Convert to NumPy array
+
+
+                # Ensure all lists are of the same length
+
+                valid_indices = np.where((log_rqi > 0) & (log_phi_z > 0))[0]
+
+
+                log_rqi_filtered = log_rqi[valid_indices]
+
+                log_phi_z_filtered = log_phi_z[valid_indices]
+
+                clusters_filtered = clusters[valid_indices]
+
+
+                # Create DataFrame
+
+                df = pd.DataFrame({
+
+                    "log_RQI": log_rqi_filtered,
+
+                    "log_Phi_z": log_phi_z_filtered,
+
+                    "Cluster": clusters_filtered
+
+                })
+
 
                 df.to_csv(file_path, index=False)
 
@@ -1999,7 +2024,7 @@ class MainApp(QMainWindow):
             except Exception as e:
 
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-
+    
     def handle_plot_click(self, event):
         if event.button == 3:  # Right-click
             menu = QMenu(self)
