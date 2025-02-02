@@ -123,6 +123,10 @@ class MainApp(QMainWindow):
         self.ml_tab = QWidget()
 
         self.distance_clustering_tab = QWidget()  # New tab for Distance Clustering
+        
+        # New tabs for Inertia Clustering and Inertia Rock Type
+        self.inertia_clustering_tab = QWidget()
+        self.inertia_rock_type_tab = QWidget()
 
 
         self.tabs.addTab(self.dataset_tab, QIcon("dataset_icon.png"), "Dataset")  # Add icons for tabs
@@ -132,6 +136,10 @@ class MainApp(QMainWindow):
         self.tabs.addTab(self.clustering_tab, QIcon("clustering_icon.png"), "Distortion Clustering")
         
         self.tabs.addTab(self.rock_type_tab, QIcon("rock_type_icon.png"), "Distortion Rock Type")
+        
+        self.tabs.addTab(self.inertia_clustering_tab, QIcon("inertia_clustering_icon.png"), "Inertia Clustering")
+        
+        self.tabs.addTab(self.inertia_rock_type_tab, QIcon("inertia_rock_type_icon.png"), "Inertia Rock Type")
 
         self.tabs.addTab(self.ml_tab, QIcon("ml_icon.png"), "Machine Learning")
 
@@ -160,7 +168,10 @@ class MainApp(QMainWindow):
 
         self.init_clustering_tab()
         
+        # Initialize new tabs
+        self.init_inertia_clustering_tab()
         
+        self.init_inertia_rock_type_tab()
         
         self.init_ml_tab()
 
@@ -245,6 +256,17 @@ class MainApp(QMainWindow):
 
         self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
         self.distance_clustering_canvas.mpl_connect('button_press_event', self.show_distance_clustering_context_menu)
+    
+    def init_inertia_clustering_tab(self):
+        layout = QVBoxLayout()
+        header_label = QLabel("Inertia Clustering")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+
+        # Add additional UI components for Inertia Clustering here
+
+        self.inertia_clustering_tab.setLayout(layout)
     
     def update_distance_clustering_tab(self):
 
@@ -776,6 +798,17 @@ class MainApp(QMainWindow):
         layout.addLayout(button_layout)
 
         self.rock_type_tab.setLayout(layout)
+    
+    def init_inertia_rock_type_tab(self):
+        layout = QVBoxLayout()
+        header_label = QLabel("Inertia Rock Type Visualization")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+
+        # Add additional UI components for Inertia Rock Type here
+
+        self.inertia_rock_type_tab.setLayout(layout)
     
     def update_rock_type_tab(self):
 
