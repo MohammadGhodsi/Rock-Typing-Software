@@ -117,11 +117,7 @@ class MainApp(QMainWindow):
         self.plots_tab = QWidget()
 
         self.clustering_tab = QWidget()
-        
-        self.elbow_clustering_tab = QWidget()
-        
-        self.elbow_rock_type_tab = QWidget()
-
+    
         self.rock_type_tab = QWidget()
 
         self.ml_tab = QWidget()
@@ -136,10 +132,6 @@ class MainApp(QMainWindow):
         self.tabs.addTab(self.clustering_tab, QIcon("clustering_icon.png"), "Distortion Clustering")
         
         self.tabs.addTab(self.rock_type_tab, QIcon("rock_type_icon.png"), "Distortion Rock Type")
-        
-        self.tabs.addTab(self.elbow_clustering_tab, QIcon("elbow_clustering_icon.png"), "Elbow Clustering")
-        
-        self.tabs.addTab(self.elbow_rock_type_tab, QIcon("elbow_rock_type_icon.png"), "Elbow Rock Type")
 
         self.tabs.addTab(self.ml_tab, QIcon("ml_icon.png"), "Machine Learning")
 
@@ -168,7 +160,7 @@ class MainApp(QMainWindow):
 
         self.init_clustering_tab()
         
-        self.init_elbow_clustering_tab()
+        
         
         self.init_ml_tab()
 
@@ -1805,124 +1797,6 @@ class MainApp(QMainWindow):
 
         self.clustering_tab.setLayout(layout)
     
-    def init_elbow_clustering_tab(self):
-        layout = QVBoxLayout()
-
-        # Header
-        header_label = QLabel("Elbow Clustering")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-        header_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(header_label)
-
-        self.elbow_clustering_tab.setLayout(layout)
-    
-    def perform_elbow_clustering(self):
-        # Similar implementation as perform_distance_clustering
-        # Extract data from the table for clustering
-        log_rqi = []
-        log_phi_z = []
-        porosity = []
-        permeability = []
-
-        for row in range(self.table.rowCount()):
-            try:
-                if self.table.item(row, 2) and self.table.item(row, 2).text():
-                    log_rqi.append(np.log(float(self.table.item(row, 2).text())))
-                if self.table.item(row, 3) and self.table.item(row, 3).text():
-                    log_phi_z.append(np.log(float(self.table.item(row, 3).text())))
-                if self.table.item(row, 0) and self.table.item(row, 0).text():
-                    porosity.append(float(self.table.item(row, 0).text()))
-                if self.table.item(row, 1) and self.table.item(row, 1).text():
-                    permeability.append(float(self.table.item(row, 1).text()))
-            except ValueError:
-                continue  # Skip rows with invalid or missing data
-
-        if not log_rqi or not log_phi_z:
-            QMessageBox.warning(self, "Warning", "Insufficient data to perform clustering.")
-            return
-
-        # Convert lists to numpy arrays for distance calculations
-        log_rqi = np.array(log_rqi)
-        log_phi_z = np.array(log_phi_z)
-        points = np.column_stack((log_rqi, log_phi_z))
-
-        # Get the distance threshold from the input
-        distance_threshold = self.elbow_distance_input.text()
-        try:
-            distance_threshold = float(distance_threshold)
-        except ValueError:
-            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number for the distance threshold.")
-            return
-
-        # Perform clustering based on distance threshold
-        clusters = self.cluster_points(points, distance_threshold)
-
-        # Plot the results
-        self.plot_elbow_clustering(points, clusters, porosity, permeability)
-    
-    def plot_elbow_clustering(self, points, clusters, porosity, permeability):
-        # Clear the previous plots
-        self.elbow_clustering_canvas.figure.clear()
-
-        axes = self.elbow_clustering_canvas.figure.subplots(1, 2)  # Create 1x2 subplots
-
-        # Assign colors for clusters
-        colors = plt.get_cmap('tab10', len(clusters))  # Get a colormap with enough colors
-
-        # Plot 1: Porosity vs Permeability
-        for cluster_index, cluster in enumerate(clusters):
-            cluster_points = [(porosity[i], permeability[i]) for i in cluster]
-            cluster_porosity, cluster_permeability = zip(*cluster_points)
-            axes[0].scatter(cluster_porosity, cluster_permeability, color=colors(cluster_index), alpha=0.6, s=100, label=f'Cluster {cluster_index + 1}')
-
-        axes[0].set_title("Porosity vs Permeability")
-        axes[0].set_xlabel("Porosity")
-        axes[0].set_ylabel("Permeability (md)")
-        axes[0].grid(True)
-        axes[0].legend()
-
-        # Plot 2: Log(RQI) vs Log(Phi z)
-        for cluster_index, cluster in enumerate(clusters):
-            cluster_points = [(np.log(phi_z[i]), np.log(rqi[i])) for i in cluster if rqi[i] > 0 and phi_z[i] > 0]
-            if cluster_points:  # Check if there are points in the cluster
-                cluster_log_phi_z, cluster_log_rqi = zip(*cluster_points)
-                axes[1].scatter(cluster_log_phi_z, cluster_log_rqi, color=colors(cluster_index), alpha=0.6, s=100, label=f'Cluster {cluster_index + 1}')
-
-        axes[1].set_title("Log(RQI) vs Log(Phi z)")
-        axes[1].set_xlabel("Log(Phi z)")
-        axes[1].set_ylabel("Log(RQI)")
-        axes[1].grid(True)
-        axes[1].legend()
-
-        # Update the canvas
-        self.elbow_clustering_canvas.draw()
-    
-    def show_elbow_clustering_context_menu(self, event):
-        if event.button == 3:  # Right-click
-            menu = QMenu(self)
-            menu.setStyleSheet("""
-                QMenu {
-                    background-color: #ffffff;
-                    color: #000000;
-                    border: 1px solid #cccccc;
-                }
-                QMenu::item {
-                    padding: 8px 20px;
-                }
-                QMenu::item:selected {
-                    background-color: #0078d7;
-                    color: #ffffff;
-                }
-            """)
-
-            save_plot_action = menu.addAction("Save Plot As...")
-            save_plot_action.triggered.connect(lambda: self.save_plot(self.elbow_clustering_canvas))
-
-            export_data_action = menu.addAction("Export Merged Data as CSV")
-            export_data_action.triggered.connect(self.export_merged_elbow_clustering_data_to_csv)
-
-            menu.exec_(QCursor.pos())
-    
     def generate_distortion_plot(self):
         rqi = []
         phi_z = []
@@ -2181,76 +2055,6 @@ class MainApp(QMainWindow):
                 QMessageBox.information(self, "Success", "Distortion data exported successfully.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-    
-    def export_merged_elbow_clustering_data_to_csv(self):
-        if not hasattr(self, "current_elbow_clustering_data") or not self.current_elbow_clustering_data:
-            QMessageBox.warning(self, "No Data", "No elbow clustering data available for export.")
-            return
-
-        # Extract data for merging
-        log_rqi = np.array(self.current_elbow_clustering_data["log_rqi"])
-        log_phi_z = np.array(self.current_elbow_clustering_data["log_phi_z"])
-        clusters = self.current_elbow_clustering_data["clusters"]
-
-        # Prepare data for DataFrame
-        data = []
-        for cluster_index, cluster in enumerate(clusters):
-            for idx in cluster:
-                data.append({
-                    "Log(RQI)": log_rqi[idx],
-                    "Log(Phi z)": log_phi_z[idx],
-                    "Cluster": cluster_index
-                })
-
-        # Create DataFrame
-        df = pd.DataFrame(data)
-
-        # Open a file dialog to save the CSV
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
-
-        if file_path:
-            try:
-                df.to_csv(file_path, index=False)
-                QMessageBox.information(self, "Success", "Merged elbow clustering data exported successfully.")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-    
-    def handle_elbow_clustering_hover_event(self, event):
-        if event.inaxes is not None:  # Check if the event is within the axes
-            for ax in self.elbow_clustering_canvas.figure.axes:
-                if event.inaxes == ax:
-                    for scatter in ax.collections:  # Iterate through scatter plots
-                        cont, ind = scatter.contains(event)
-                        if cont:
-                            index = ind["ind"][0]
-                            x = scatter.get_offsets()[index][0]
-                            y = scatter.get_offsets()[index][1]
-                            tooltip_text = f"({x:.2f}, {y:.2f})"
-
-                            # Remove previous tooltip
-                            if self.tooltip:
-                                self.tooltip.remove()
-
-                            # Create new tooltip
-                            self.tooltip = ax.annotate(
-                                tooltip_text,
-                                (x, y),
-                                textcoords="offset points",
-                                xytext=(10, 10),
-                                ha='center',
-                                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
-                                fontsize=10
-                            )
-
-                            self.elbow_clustering_canvas.draw_idle()
-                            return
-
-            # Remove tooltip if not hovering over any point
-            if self.tooltip:
-                self.tooltip.remove()
-                self.tooltip = None
-                self.elbow_clustering_canvas.draw_idle()
     
     def save_plot(self, canvas):
         options = QFileDialog.Options()
