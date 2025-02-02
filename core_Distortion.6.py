@@ -8,7 +8,7 @@ from matplotlib.widgets import Button, TextBox
 from matplotlib.backend_bases import cursors
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
-
+from PyQt5.QtCore import QPropertyAnimation, QRect
 from scipy.spatial.distance import cdist
 from sklearn.cluster import KMeans
 from sklearn.svm import SVC
@@ -71,6 +71,8 @@ class MainApp(QMainWindow):
 
         self.tabs.setStyleSheet("""
 
+
+
             QTabWidget::pane { 
 
                 border: 1px solid #0078d7; 
@@ -90,6 +92,8 @@ class MainApp(QMainWindow):
                 border: 1px solid #32a1a2; 
 
                 border-bottom: none; 
+                
+                background-color: #f0f0f0;  /* Default background */
 
             }
 
@@ -104,6 +108,7 @@ class MainApp(QMainWindow):
             QTabBar::tab:hover {
 
                 background:rgb(60, 203, 205); 
+                color: white;  /* Text color on hover */
 
             }
 
@@ -178,6 +183,15 @@ class MainApp(QMainWindow):
         self.init_rock_type_tab()
 
         self.init_distance_clustering_tab() 
+          
+        # Connect mouse events for the tabs
+        
+        self.tabs.tabBar().installEventFilter(self)  
+        
+        def eventFilter(self, source, event):
+            if event.type() == QEvent.Enter and source == self.tabs.tabBar():
+                self.animate_tab(self.tabs.tabBar())
+            return super().eventFilter(source, event)
           
     def init_distance_clustering_tab(self):
 
@@ -2220,6 +2234,17 @@ class MainApp(QMainWindow):
                 QMessageBox.information(self, "Success", "SVM data exported successfully.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
+
+    def animate_tab(self, tab_widget):
+        # Create an animation for the tab widget
+        animation = QPropertyAnimation(tab_widget, b"geometry")
+        animation.setDuration(300)  # Duration of the animation in milliseconds
+        animation.setStartValue(QRect(tab_widget.x(), tab_widget.y(), tab_widget.width(), tab_widget.height()))
+        animation.setEndValue(QRect(tab_widget.x(), tab_widget.y(), tab_widget.width() + 10, tab_widget.height()))  # Slightly increase width
+        animation.setEasingCurve(QEasingCurve.OutCubic)  # Smooth easing curve
+        animation.start()
+
+   
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
