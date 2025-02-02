@@ -8,7 +8,7 @@ from matplotlib.widgets import Button, TextBox
 from matplotlib.backend_bases import cursors
 from matplotlib.offsetbox import AnchoredOffsetbox, TextArea, HPacker, VPacker
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
-from PyQt5.QtCore import QPropertyAnimation, QRect
+from PyQt5.QtCore import QPropertyAnimation, QRect , QEvent , QEasingCurve
 from scipy.spatial.distance import cdist
 from sklearn.cluster import KMeans
 from sklearn.svm import SVC
@@ -130,6 +130,7 @@ class MainApp(QMainWindow):
         self.distance_clustering_tab = QWidget()  # New tab for Distance Clustering
         
         # New tabs for Inertia Clustering and Inertia Rock Type
+        
         self.inertia_clustering_tab = QWidget()
         
         self.inertia_rock_type_tab = QWidget()
@@ -189,10 +190,10 @@ class MainApp(QMainWindow):
         
         self.tabs.tabBar().installEventFilter(self)  
         
-        def eventFilter(self, source, event):
-            if event.type() == QEvent.Enter and source == self.tabs.tabBar():
-                self.animate_tab(self.tabs.tabBar())
-            return super().eventFilter(source, event)
+    def eventFilter(self, source, event):
+        if event.type() == QEvent.Enter and source == self.tabs.tabBar():
+            self.animate_tab(self.tabs.tabBar())
+        return super().eventFilter(source, event)
           
     def init_distance_clustering_tab(self):
 
