@@ -282,11 +282,11 @@ class MainApp(QMainWindow):
         
         # Add inputs for max clusters
         max_clusters_layout = QHBoxLayout()
-        self.max_clusters_textbox = QLineEdit()
-        self.max_clusters_textbox.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
-        self.max_clusters_textbox.setValidator(QIntValidator(1, 50))
+        self.max_clusters_textbox_inertia = QLineEdit()
+        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.max_clusters_textbox_inertia.setValidator(QIntValidator(1, 50))
         max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
-        max_clusters_layout.addWidget(self.max_clusters_textbox)
+        max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
         layout.addLayout(max_clusters_layout)
 
         # Button for generating inertia plot
@@ -1977,7 +1977,7 @@ class MainApp(QMainWindow):
         log_phi_z = np.log(np.array(phi_z))
         X = np.array(list(zip(log_rqi, log_phi_z)))
 
-        # Get the maximum number of clusters
+        # Get the maximum number of clusters for distortion plot
         max_clusters_text = self.max_clusters_textbox.text()
         try:
             max_clusters = int(max_clusters_text)
@@ -2069,8 +2069,8 @@ class MainApp(QMainWindow):
         log_phi_z = np.log(np.array(phi_z))
         X = np.array(list(zip(log_rqi, log_phi_z)))
 
-        # Get the maximum number of clusters
-        max_clusters_text = self.max_clusters_textbox.text()
+        # Get the maximum number of clusters for inertia plot
+        max_clusters_text = self.max_clusters_textbox_inertia.text()
         try:
             max_clusters = int(max_clusters_text)
             if max_clusters <= 0:
