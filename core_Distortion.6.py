@@ -133,10 +133,11 @@ class MainApp(QMainWindow):
 
         self.tabs.addTab(self.clustering_tab, QIcon("clustering_icon.png"), "Distortion Clustering")
         
+        self.tabs.addTab(self.rock_type_tab, QIcon("rock_type_icon.png"), "Distortion Rock Type")
+        
         self.tabs.addTab(self.elbow_clustering_tab, QIcon("elbow_clustering_icon.png"), "Elbow Clustering")
 
-        self.tabs.addTab(self.rock_type_tab, QIcon("rock_type_icon.png"), "Distortion Rock Type")
-
+        
         self.tabs.addTab(self.ml_tab, QIcon("ml_icon.png"), "Machine Learning")
 
         self.tabs.addTab(self.distance_clustering_tab, QIcon("distance_clustering_icon.png"), "Distance Clustering")  # Add new tab
