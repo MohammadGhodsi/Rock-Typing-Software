@@ -145,9 +145,11 @@ class MainApp(QMainWindow):
 
         self.tabs.addTab(self.distance_clustering_tab, QIcon("distance_clustering_icon.png"), "Distance Clustering")  # Add new tab
 
+
         # Add Tabs to the main layout
 
         main_layout.addWidget(self.tabs)
+
 
         # Set central widget layout
 
@@ -156,6 +158,7 @@ class MainApp(QMainWindow):
         central_widget.setLayout(main_layout)
 
         self.setCentralWidget(central_widget)
+
 
         # Initialize individual tabs
 
@@ -172,20 +175,6 @@ class MainApp(QMainWindow):
         self.init_rock_type_tab()
 
         self.init_distance_clustering_tab() 
-        
-        self.init_elbow_rock_type_tab()
-        
-        
-    def init_elbow_rock_type_tab(self):
-        layout = QVBoxLayout()
-
-        # Header
-        header_label = QLabel("Elbow Rock Type Visualization")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-        header_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(header_label)
-
-        self.elbow_rock_type_tab.setLayout(layout)
           
     def init_distance_clustering_tab(self):
 
