@@ -135,7 +135,7 @@ class MainApp(QMainWindow):
         
         self.tabs.addTab(self.elbow_clustering_tab, QIcon("elbow_clustering_icon.png"), "Elbow Clustering")
 
-        self.tabs.addTab(self.rock_type_tab, QIcon("rock_type_icon.png"), "Rock Type")
+        self.tabs.addTab(self.rock_type_tab, QIcon("rock_type_icon.png"), "Distortion Rock Type")
 
         self.tabs.addTab(self.ml_tab, QIcon("ml_icon.png"), "Machine Learning")
 
