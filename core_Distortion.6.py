@@ -131,6 +131,7 @@ class MainApp(QMainWindow):
         
         # New tabs for Inertia Clustering and Inertia Rock Type
         self.inertia_clustering_tab = QWidget()
+        
         self.inertia_rock_type_tab = QWidget()
 
 
