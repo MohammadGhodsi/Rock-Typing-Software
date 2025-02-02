@@ -747,7 +747,7 @@ class MainApp(QMainWindow):
         layout = QVBoxLayout()
 
         # Header
-        header_label = QLabel("Rock Type Visualization")
+        header_label = QLabel("Distortion Rock Type Visualization")  # Updated header
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
@@ -772,7 +772,7 @@ class MainApp(QMainWindow):
 
         # Button for plotting, placed at the bottom
         button_layout = QHBoxLayout()
-        plot_button = QPushButton("Plot Rock Type Data")
+        plot_button = QPushButton("Plot Distortion Rock Type Data")  # Updated button text
         plot_button.clicked.connect(self.update_rock_type_tab)
         self.style_button(plot_button)  # Reuse button styling
         button_layout.addWidget(plot_button)
@@ -1810,41 +1810,7 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Create a figure with subplots
-        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
-        fig.tight_layout(pad=5.0)
-
-        # Set titles for empty plots
-        axes[0].set_title("Porosity vs Permeability")
-        axes[0].set_xlabel("Porosity")
-        axes[0].set_ylabel("Permeability (md)")
-        axes[0].grid(True)
-
-        axes[1].set_title("Log(RQI) vs Log(Phi z)")
-        axes[1].set_xlabel("Log(Phi z)")
-        axes[1].set_ylabel("Log(RQI)")
-        axes[1].grid(True)
-
-        # Add canvas to layout
-        self.elbow_clustering_canvas = FigureCanvas(fig)
-        layout.addWidget(self.elbow_clustering_canvas)
-
-        # Add input fields for elbow clustering parameters
-        self.elbow_distance_input = QLineEdit()
-        self.elbow_distance_input.setPlaceholderText("Enter distance threshold")
-        layout.addWidget(self.elbow_distance_input)
-
-        # Button to perform elbow clustering
-        elbow_cluster_button = QPushButton("Perform Elbow Clustering")
-        elbow_cluster_button.clicked.connect(self.perform_elbow_clustering)
-        self.style_button(elbow_cluster_button)  # Reuse button styling
-        layout.addWidget(elbow_cluster_button)
-
         self.elbow_clustering_tab.setLayout(layout)
-
-        # Connect hover event for tooltips
-        self.elbow_clustering_canvas.mpl_connect('motion_notify_event', self.handle_elbow_clustering_hover_event)
-        self.elbow_clustering_canvas.mpl_connect('button_press_event', self.show_elbow_clustering_context_menu)
     
     def perform_elbow_clustering(self):
         # Similar implementation as perform_distance_clustering
