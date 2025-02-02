@@ -279,9 +279,26 @@ class MainApp(QMainWindow):
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
+        
+        # Add inputs for max clusters
+        max_clusters_layout = QHBoxLayout()
+        self.max_clusters_textbox = QLineEdit()
+        self.max_clusters_textbox.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.max_clusters_textbox.setValidator(QIntValidator(1, 50))
+        max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
+        max_clusters_layout.addWidget(self.max_clusters_textbox)
+        layout.addLayout(max_clusters_layout)
+
+        # Button for generating inertia plot
+        button_layout = QHBoxLayout()
+        inertia_button = QPushButton("Generate Inertia Plot")
+        inertia_button.clicked.connect(self.generate_inertia_plot)
+        self.style_button(inertia_button)  # Reuse button styling
+        button_layout.addWidget(inertia_button)
 
         # Add additional UI components for Inertia Clustering here
 
+        layout.addLayout(button_layout)
         self.inertia_clustering_tab.setLayout(layout)
     
     def update_distance_clustering_tab(self):
@@ -822,9 +839,94 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
+        # Add inputs for number of clusters
+        self.selected_K_textbox = QLineEdit()
+        self.selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
+        layout.addWidget(self.selected_K_textbox)
+
+        # Button for plotting inertia rock type
+        plot_button = QPushButton("Plot Inertia Rock Type Data")
+        plot_button.clicked.connect(self.update_inertia_rock_type_tab)
+        self.style_button(plot_button)  # Reuse button styling
+        layout.addWidget(plot_button)
+        
         # Add additional UI components for Inertia Rock Type here
 
         self.inertia_rock_type_tab.setLayout(layout)
+    
+    def update_inertia_rock_type_tab(self):
+        # Extract data from the table
+        porosity = []
+        permeability = []
+        rqi = []
+        phi_z = []
+
+        for row in range(self.table.rowCount()):
+            try:
+                if self.table.item(row, 0) and self.table.item(row, 0).text():
+                    porosity.append(float(self.table.item(row, 0).text()))
+                if self.table.item(row, 1) and self.table.item(row, 1).text():
+                    permeability.append(float(self.table.item(row, 1).text()))
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+                    rqi.append(float(self.table.item(row, 2).text()))
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+                    phi_z.append(float(self.table.item(row, 3).text()))
+            except ValueError:
+                continue  # Skip rows with invalid or missing data
+
+        if not porosity or not permeability or not rqi or not phi_z:
+            QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
+            return
+
+        # Prepare data for clustering
+        X = np.array(list(zip(porosity, permeability)))
+
+        # Initialize n_clusters
+        n_clusters = None
+        try:
+            n_clusters = int(self.selected_K_textbox.text())
+            if n_clusters <= 0:
+                raise ValueError
+        except ValueError:
+            QMessageBox.warning(self, "Error", "Please enter a valid number of clusters.")
+            return
+
+        if n_clusters > len(X):
+            QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X)}).")
+            return
+
+        # Perform KMeans clustering
+        kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+        clusters = kmeans.fit_predict(X)
+
+        # Clear the previous plots
+        self.rock_type_canvas.figure.clear()
+
+        # Create a 1x2 grid for the subplots
+        axes = self.rock_type_canvas.figure.subplots(1, 2)
+        self.rock_type_canvas.figure.tight_layout(pad=5.0)
+
+        # Plot 1: Absolute Permeability vs Porosity
+        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')
+        axes[0].set_title("Absolute Permeability (md) vs Porosity")
+        axes[0].set_xlabel("Porosity")
+        axes[0].set_ylabel("Absolute Permeability (md)")
+        axes[0].grid(True)
+
+        # Plot 2: log(RQI) vs log(Phi z)
+        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
+        log_rqi = np.log(np.array(rqi)[valid_indices])
+        log_phi_z = np.log(np.array(phi_z)[valid_indices])
+        filtered_clusters = clusters[valid_indices]
+
+        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=filtered_clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')
+        axes[1].set_title("log(RQI) vs log(Phi z)")
+        axes[1].set_xlabel("log(Phi z)")
+        axes[1].set_ylabel("log(RQI)")
+        axes[1].grid(True)
+
+        # Update the canvas
+        self.rock_type_canvas.draw()
     
     def update_rock_type_tab(self):
 
@@ -1937,6 +2039,70 @@ class MainApp(QMainWindow):
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
+    
+    def generate_inertia_plot(self):
+        rqi = []
+        phi_z = []
+
+        # Extract RQI and Phi z data from the table
+        for row in range(self.table.rowCount()):
+            try:
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+                    rqi_value = float(self.table.item(row, 2).text())
+                    if rqi_value > 0:  # Ensure we only log positive values
+                        rqi.append(rqi_value)
+
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+                    phi_z_value = float(self.table.item(row, 3).text())
+                    if phi_z_value > 0:  # Ensure we only log positive values
+                        phi_z.append(phi_z_value)
+            except ValueError:
+                QMessageBox.warning(self, "Invalid Input", f"Non-numeric value in row {row + 1}. Skipping the row.")
+                continue
+
+        if not rqi or not phi_z:
+            QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in RQI and Phi z columns before generating the Inertia Plot.")
+            return
+
+        # Prepare data for clustering using log values
+        log_rqi = np.log(np.array(rqi))
+        log_phi_z = np.log(np.array(phi_z))
+        X = np.array(list(zip(log_rqi, log_phi_z)))
+
+        # Get the maximum number of clusters
+        max_clusters_text = self.max_clusters_textbox.text()
+        try:
+            max_clusters = int(max_clusters_text)
+            if max_clusters <= 0:
+                raise ValueError
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
+            return
+
+        # Generate inertia plot
+        inertias = []
+        for k in range(1, max_clusters + 1):
+            kmeans = KMeans(n_clusters=k, random_state=42)
+            kmeans.fit(X)
+            inertias.append(kmeans.inertia_)
+
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(5, 10))
+        ax.plot(range(1, max_clusters + 1), inertias, marker='o', color='blue', label='Inertia Curve')
+        ax.set_title("Inertia Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
+        ax.set_xlabel("Number of Clusters", fontsize=12)
+        ax.set_ylabel("Inertia", fontsize=12)
+        ax.legend(loc='best', fontsize=10)
+
+        # Replace or update the canvas
+        if hasattr(self, 'inertia_canvas') and self.inertia_canvas:
+            self.inertia_clustering_tab.layout().removeWidget(self.inertia_canvas)
+            self.inertia_canvas.deleteLater()
+            self.inertia_canvas = None
+
+        self.inertia_canvas = FigureCanvas(fig)
+        self.inertia_clustering_tab.layout().addWidget(self.inertia_canvas)
+        self.inertia_canvas.draw()
     
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
