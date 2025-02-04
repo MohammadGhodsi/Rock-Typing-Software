@@ -284,6 +284,15 @@ class MainApp(QMainWindow):
         max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
         layout.addLayout(max_clusters_layout)
 
+        # Add Recommended K inputs for inertia clustering
+
+        inertia_selected_k_layout = QHBoxLayout()
+        self.inertia_selected_K_textbox = QLineEdit()
+        self.inertia_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
+        inertia_selected_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
+        inertia_selected_k_layout.addWidget(self.inertia_selected_K_textbox)
+        layout.addLayout(inertia_selected_k_layout)
+
         # Button for generating inertia plot
 
         button_layout = QHBoxLayout()
