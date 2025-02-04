@@ -920,6 +920,7 @@ class MainApp(QMainWindow):
             except ValueError:
                 continue  # Skip rows with invalid or missing data
 
+        # Check if data is sufficient
         if not porosity or not permeability or not rqi or not phi_z:
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
