@@ -275,11 +275,21 @@ class MainApp(QMainWindow):
     
     def init_inertia_clustering_tab(self):
 
-        layout = QVBoxLayout()
+        
+        
         header_label = QLabel("Inertia Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
+
+        # Add inputs for max clusters
+        max_clusters_layout = QHBoxLayout()
+        self.max_clusters_textbox_inertia = QLineEdit()
+        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.max_clusters_textbox_inertia.setValidator(QIntValidator(1, 50))
+        max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
+        max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
+        layout.addLayout(max_clusters_layout)
 
         # Button for generating inertia plot
 
@@ -288,16 +298,6 @@ class MainApp(QMainWindow):
         inertia_button.clicked.connect(self.generate_inertia_plot)
         self.style_button(inertia_button)  # Reuse button styling
         button_layout.addWidget(inertia_button)
-        
-        # Add inputs for max clusters
-
-        max_clusters_layout = QHBoxLayout()
-        self.max_clusters_textbox_inertia = QLineEdit()
-        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
-        self.max_clusters_textbox_inertia.setValidator(QIntValidator(1, 50))
-        max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
-        max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
-        layout.addLayout(max_clusters_layout)
 
         layout.addLayout(button_layout)
         self.inertia_clustering_tab.setLayout(layout)
@@ -1916,11 +1916,11 @@ class MainApp(QMainWindow):
 
         # Add inputs for max clusters
         max_clusters_layout = QHBoxLayout()
-        self.inertia_max_clusters_textox = QLineEdit()
-        self.inertia_max_clusters_textox.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
-        self.inertia_max_clusters_textox.setValidator(QIntValidator(1, 50))
+        self.distortion_max_clusters_texbox = QLineEdit()
+        self.distortion_max_clusters_texbox.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.distortion_max_clusters_texbox.setValidator(QIntValidator(1, 50))
         max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
-        max_clusters_layout.addWidget(self.inertia_max_clusters_textox)
+        max_clusters_layout.addWidget(self.distortion_max_clusters_texbox)
         layout.addLayout(max_clusters_layout)
 
         # Add Recommended K inputs
