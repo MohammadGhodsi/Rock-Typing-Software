@@ -835,10 +835,10 @@ class MainApp(QMainWindow):
 
         # Button for plotting, placed at the bottom
         button_layout = QHBoxLayout()
-        plot_button = QPushButton("Plot Distortion Rock Type Data")  # Updated button text
-        plot_button.clicked.connect(self.update_rock_type_tab)
-        self.style_button(plot_button)  # Reuse button styling
-        button_layout.addWidget(plot_button)
+        plot_button_distortion = QPushButton("Plot Distortion Rock Type Data")  # Updated button text
+        plot_button_distortion.clicked.connect(self.update_rock_type_tab)
+        self.style_button(plot_button_distortion)  # Reuse button styling
+        button_layout.addWidget(plot_button_distortion)
 
         layout.addLayout(button_layout)
 
@@ -860,13 +860,13 @@ class MainApp(QMainWindow):
 
         # Button for plotting inertia rock type
 
-        plot_button = QPushButton("Plot Inertia Rock Type Data")
+        plot_button_inertia = QPushButton("Plot Inertia Rock Type Data")
 
-        plot_button.clicked.connect(self.update_inertia_rock_type_tab)
+        plot_button_inertia.clicked.connect(self.update_inertia_rock_type_tab)
 
-        self.style_button(plot_button)  # Reuse button styling
+        self.style_button(plot_button_inertia)  # Reuse button styling
 
-        layout.addWidget(plot_button)
+        layout.addWidget(plot_button_inertia)
 
         # Create a figure with subplots
 
