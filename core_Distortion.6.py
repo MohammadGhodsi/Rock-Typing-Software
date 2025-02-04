@@ -2178,12 +2178,50 @@ class MainApp(QMainWindow):
                     self.hover_circle = None
                     self.distortion_canvas.draw_idle()
     
+    def on_hover_inertia_plot(self, event, scatter, ax):
+        if event.inaxes:
+            # Check if hovering over a point
+            cont, ind = scatter.contains(event)
+            if cont:
+                index = ind["ind"][0]
+                x, y = scatter.get_offsets()[index]
+                
+                # Remove existing circle
+                if self.hover_circle:
+                    self.hover_circle.remove()
+                
+                # Add a new circle around the hovered point
+                self.hover_circle = plt.Circle((x, y), radius=0.2, color='red', fill=False, linewidth=2)
+                ax.add_artist(self.hover_circle)
+                self.inertia_canvas.draw_idle()  # Redraw the canvas
+            else:
+                # Remove the circle if not hovering over any point
+                if self.hover_circle:
+                    self.hover_circle.remove()
+                    self.hover_circle = None
+                    self.inertia_canvas.draw_idle()
+    
+    
     def on_click_distortion_plot(self, event, distortions):
         cont, ind = event.inaxes.collections[0].contains(event)
         if cont:
             index = ind["ind"][0]
             chosen_k = index + 1
             self.distortion_selected_K_textbox.setText(str(chosen_k))
+            QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
+    
+    def on_click_inertia_plot(self, event, inertias):
+
+        cont, ind = event.inaxes.collections[0].contains(event)
+
+        if cont:
+
+            index = ind["ind"][0]
+
+            chosen_k = index + 1
+
+            self.inertia_selected_K_textbox.setText(str(chosen_k))
+
             QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
     
     def find_selected_K(self, wcss):
