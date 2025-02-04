@@ -194,7 +194,6 @@ class MainApp(QMainWindow):
 
         layout = QVBoxLayout()
 
-
         # Header
 
         header_label = QLabel("Distance Clustering")
@@ -269,7 +268,7 @@ class MainApp(QMainWindow):
         self.distance_clustering_canvas.mpl_connect('button_press_event', self.show_distance_clustering_context_menu)
     
     def init_inertia_clustering_tab(self):
-
+        layout = QVBoxLayout()
   
         header_label = QLabel("Inertia Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
@@ -1783,7 +1782,7 @@ class MainApp(QMainWindow):
 
             # Get the number of clusters from the textbox
             try:
-                n_clusters = int(self.max_clusters_textbox.text())
+                n_clusters = int(self.max_clusters_texbox_distortion.text())
             except ValueError:
                 QMessageBox.warning(self, "Warning", "Please specify a valid number of clusters.")
                 return
@@ -1910,11 +1909,11 @@ class MainApp(QMainWindow):
 
         # Add inputs for max clusters
         max_clusters_layout = QHBoxLayout()
-        self.distortion_max_clusters_texbox = QLineEdit()
-        self.distortion_max_clusters_texbox.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
-        self.distortion_max_clusters_texbox.setValidator(QIntValidator(1, 50))
+        self.max_clusters_textbox_distortion = QLineEdit()
+        self.max_clusters_textbox_distortion.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.max_clusters_textbox_distortion.setValidator(QIntValidator(1, 50))
         max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
-        max_clusters_layout.addWidget(self.distortion_max_clusters_texbox)
+        max_clusters_layout.addWidget(self.max_clusters_textbox_distortion)
         layout.addLayout(max_clusters_layout)
 
         # Add Recommended K inputs
@@ -1969,9 +1968,9 @@ class MainApp(QMainWindow):
         X = np.array(list(zip(log_rqi, log_phi_z)))
 
         # Get the maximum number of clusters for distortion plot
-        max_clusters_text = self.max_clusters_textbox.text()
+        max_clusters_text_distortion = self.max_clusters_textbox_distortion.text()
         try:
-            max_clusters = int(max_clusters_text)
+            max_clusters = int(max_clusters_text_distortion)
             if max_clusters <= 0:
                 raise ValueError
         except ValueError:
@@ -2063,7 +2062,7 @@ class MainApp(QMainWindow):
         # Get the maximum number of clusters for inertia plot
         inertia_max_clusters_text = self.max_clusters_textbox_inertia.text()
         try:
-            max_clusters = int(max_clusters_text)
+            max_clusters = int(inertia_max_clusters_text)
             if max_clusters <= 0:
                 raise ValueError
         except ValueError:
