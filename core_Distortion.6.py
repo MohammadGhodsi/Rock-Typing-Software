@@ -175,7 +175,6 @@ class MainApp(QMainWindow):
 
         self.init_distortion_clustering_tab()
         
-        # Initialize new tabs
         self.init_inertia_clustering_tab()
         
         self.init_inertia_rock_type_tab()
