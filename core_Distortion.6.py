@@ -2087,12 +2087,46 @@ class MainApp(QMainWindow):
 
         # Create the plot
         fig, ax = plt.subplots(figsize=(5, 10))
-        ax.plot(range(1, max_clusters + 1), inertias, marker='o', color='blue', label='Inertia Curve')
+        #ax.plot(range(1, max_clusters + 1), inertias, marker='o', color='blue', label='Inertia Curve')
+        #ax.set_title("Inertia Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
+        #ax.set_xlabel("Number of Clusters", fontsize=12)
+        #ax.set_ylabel("Inertia", fontsize=12)
+        #ax.legend(loc='best', fontsize=10)
+
+        scatter = ax.scatter(
+            range(1, max_clusters + 1), inertias, color='blue', s=100, label='Inertia Points'
+        )
+        
+        ax.plot(range(1, max_clusters + 1), inertias, marker='o', color='blue', linestyle='-', label='Inertia Curve')
+        
+        # Highlight the optimal K with a red circle
+        optimal_k = self.find_optimal_k(inertias)
+        selected_circle = ax.scatter(
+            optimal_k,
+            inertias[optimal_k - 1],
+            facecolors='none',
+            edgecolors='red',
+            s=500,
+            linewidth=2,
+            label='Recommended k'
+        )
+        
+        # Set plot labels and title
         ax.set_title("Inertia Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
         ax.set_xlabel("Number of Clusters", fontsize=12)
         ax.set_ylabel("Inertia", fontsize=12)
-        ax.legend(loc='best', fontsize=10)
-
+        
+        # Add legend to the plot
+        ax.legend(loc='best', fontsize=10, title="Legend")
+        
+        # Set aspect ratio to "equal"
+        ax.set_aspect('equal', adjustable='datalim')  # Ensure circles are not distorted
+        
+        # Attach hover and click events
+        self.hover_circle = None  # To store the circle artist for hover effect
+        fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_hover_inertia_plot(event, scatter, ax))
+        fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_inertia_plot(event, inertias))
+        
         # Replace or update the canvas
         if hasattr(self, 'inertia_canvas') and self.inertia_canvas:
             self.inertia_clustering_tab.layout().removeWidget(self.inertia_canvas)
