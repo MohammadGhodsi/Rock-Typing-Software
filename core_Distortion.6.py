@@ -269,11 +269,21 @@ class MainApp(QMainWindow):
     
     def init_inertia_clustering_tab(self):
         layout = QVBoxLayout()
-  
+
+        # Header
         header_label = QLabel("Inertia Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
+
+        # Create a figure with subplots
+        fig, ax = plt.subplots()
+        ax.set_title("Inertia Plot Placeholder")
+        ax.axis('off')  # Placeholder, no axes visible
+
+        # Add the figure canvas to the layout
+        self.inertia_canvas = FigureCanvas(fig)
+        layout.addWidget(self.inertia_canvas)
 
         # Add inputs for max clusters
         max_clusters_layout = QHBoxLayout()
@@ -285,7 +295,6 @@ class MainApp(QMainWindow):
         layout.addLayout(max_clusters_layout)
 
         # Add Recommended K inputs for inertia clustering
-
         inertia_selected_k_layout = QHBoxLayout()
         self.inertia_selected_K_textbox = QLineEdit()
         self.inertia_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
@@ -294,7 +303,6 @@ class MainApp(QMainWindow):
         layout.addLayout(inertia_selected_k_layout)
 
         # Button for generating inertia plot
-
         button_layout = QHBoxLayout()
         inertia_button = QPushButton("Generate Inertia Plot")
         inertia_button.clicked.connect(self.generate_inertia_plot)
@@ -302,6 +310,7 @@ class MainApp(QMainWindow):
         button_layout.addWidget(inertia_button)
 
         layout.addLayout(button_layout)
+
         self.inertia_clustering_tab.setLayout(layout)
     
     def update_distance_clustering_tab(self):
@@ -836,20 +845,58 @@ class MainApp(QMainWindow):
         self.rock_type_tab.setLayout(layout)
     
     def init_inertia_rock_type_tab(self):
+
         layout = QVBoxLayout()
+        
+        # Header
+
         header_label = QLabel("Inertia Rock Type Visualization")
+
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+
         header_label.setAlignment(Qt.AlignCenter)
+
         layout.addWidget(header_label)
 
-
         # Button for plotting inertia rock type
+
         plot_button = QPushButton("Plot Inertia Rock Type Data")
+
         plot_button.clicked.connect(self.update_inertia_rock_type_tab)
+
         self.style_button(plot_button)  # Reuse button styling
+
         layout.addWidget(plot_button)
-        
-        # Add additional UI components for Inertia Rock Type here
+
+        # Create a figure with subplots
+
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
+
+        fig.tight_layout(pad=5.0)
+
+
+        # Placeholders for axes
+
+        axes[0].set_title("Empty Plot 1")
+
+        axes[0].axis('off')
+
+        axes[1].set_title("Empty Plot 2")
+
+        axes[1].axis('off')
+
+
+        # Add canvas to layout
+
+        self.rock_type_canvas = FigureCanvas(fig)
+
+        layout.addWidget(self.rock_type_canvas)
+
+
+        # Spacer for alignment
+
+        layout.addStretch()
+
 
         self.inertia_rock_type_tab.setLayout(layout)
     
@@ -2087,17 +2134,15 @@ class MainApp(QMainWindow):
 
         # Create the plot
         fig, ax = plt.subplots(figsize=(5, 10))
-        #ax.plot(range(1, max_clusters + 1), inertias, marker='o', color='blue', label='Inertia Curve')
-        #ax.set_title("Inertia Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
-        #ax.set_xlabel("Number of Clusters", fontsize=12)
-        #ax.set_ylabel("Inertia", fontsize=12)
-        #ax.legend(loc='best', fontsize=10)
+        
 
         scatter = ax.scatter(
             range(1, max_clusters + 1), inertias, color='blue', s=100, label='Inertia Points'
         )
         
         ax.plot(range(1, max_clusters + 1), inertias, marker='o', color='blue', linestyle='-', label='Inertia Curve')
+        
+        ax.set_xlim(1, max_clusters)  # Ensure X-axis ranges from 1 to max_clusters
         
         # Highlight the optimal K with a red circle
         optimal_k = self.find_optimal_k(inertias)
@@ -2124,6 +2169,7 @@ class MainApp(QMainWindow):
         
         # Attach hover and click events
         self.hover_circle = None  # To store the circle artist for hover effect
+        
         fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_hover_inertia_plot(event, scatter, ax))
         fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_inertia_plot(event, inertias))
         
