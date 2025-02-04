@@ -121,7 +121,7 @@ class MainApp(QMainWindow):
 
         self.plots_tab = QWidget()
 
-        self.clustering_tab = QWidget()
+        self.distortion_clustering_tab = QWidget()
     
         self.rock_type_tab = QWidget()
 
@@ -140,7 +140,7 @@ class MainApp(QMainWindow):
 
         self.tabs.addTab(self.plots_tab, QIcon("plots_icon.png"), "Plots")
 
-        self.tabs.addTab(self.clustering_tab, QIcon("clustering_icon.png"), "Distortion Clustering")
+        self.tabs.addTab(self.distortion_clustering_tab, QIcon("clustering_icon.png"), "Distortion Clustering")
         
         self.tabs.addTab(self.rock_type_tab, QIcon("rock_type_icon.png"), "Distortion Rock Type")
         
@@ -173,7 +173,7 @@ class MainApp(QMainWindow):
 
         self.init_plots_tab()
 
-        self.init_clustering_tab()
+        self.init_distortion_clustering_tab()
         
         # Initialize new tabs
         self.init_inertia_clustering_tab()
@@ -274,13 +274,23 @@ class MainApp(QMainWindow):
         self.distance_clustering_canvas.mpl_connect('button_press_event', self.show_distance_clustering_context_menu)
     
     def init_inertia_clustering_tab(self):
+
         layout = QVBoxLayout()
         header_label = QLabel("Inertia Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
+
+        # Button for generating inertia plot
+
+        button_layout = QHBoxLayout()
+        inertia_button = QPushButton("Generate Inertia Plot")
+        inertia_button.clicked.connect(self.generate_inertia_plot)
+        self.style_button(inertia_button)  # Reuse button styling
+        button_layout.addWidget(inertia_button)
         
         # Add inputs for max clusters
+
         max_clusters_layout = QHBoxLayout()
         self.max_clusters_textbox_inertia = QLineEdit()
         self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
@@ -288,15 +298,6 @@ class MainApp(QMainWindow):
         max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
         max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
         layout.addLayout(max_clusters_layout)
-
-        # Button for generating inertia plot
-        button_layout = QHBoxLayout()
-        inertia_button = QPushButton("Generate Inertia Plot")
-        inertia_button.clicked.connect(self.generate_inertia_plot)
-        self.style_button(inertia_button)  # Reuse button styling
-        button_layout.addWidget(inertia_button)
-
-        # Add additional UI components for Inertia Clustering here
 
         layout.addLayout(button_layout)
         self.inertia_clustering_tab.setLayout(layout)
@@ -839,10 +840,6 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Add inputs for number of clusters
-        self.inertia_selected_K_textbox = QLineEdit()
-        self.inertia_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
-        layout.addWidget(self.inertia_selected_K_textbox)
 
         # Button for plotting inertia rock type
         plot_button = QPushButton("Plot Inertia Rock Type Data")
@@ -1904,7 +1901,7 @@ class MainApp(QMainWindow):
             self.plot_canvas = FigureCanvas(fig)
             self.plots_tab.layout().addWidget(self.plot_canvas)
 
-    def init_clustering_tab(self):
+    def init_distortion_clustering_tab(self):
         layout = QVBoxLayout()
 
         # Header
@@ -1946,7 +1943,7 @@ class MainApp(QMainWindow):
 
         layout.addLayout(button_layout)
 
-        self.clustering_tab.setLayout(layout)
+        self.distortion_clustering_tab.setLayout(layout)
     
     def generate_distortion_plot(self):
         rqi = []
