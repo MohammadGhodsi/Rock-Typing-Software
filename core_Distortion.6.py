@@ -956,7 +956,7 @@ class MainApp(QMainWindow):
         # Perform clustering (default to 3 clusters if no input)
         try:
 
-            n_clusters = int(self.selected_K_textbox.text())
+            n_clusters = int(self.distortion_selected_K_textbox.text())
 
             if n_clusters <= 0:
 
@@ -1916,19 +1916,19 @@ class MainApp(QMainWindow):
 
         # Add inputs for max clusters
         max_clusters_layout = QHBoxLayout()
-        self.max_clusters_textbox = QLineEdit()
-        self.max_clusters_textbox.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
-        self.max_clusters_textbox.setValidator(QIntValidator(1, 50))
+        self.inertia_max_clusters_textox = QLineEdit()
+        self.inertia_max_clusters_textox.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.inertia_max_clusters_textox.setValidator(QIntValidator(1, 50))
         max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
-        max_clusters_layout.addWidget(self.max_clusters_textbox)
+        max_clusters_layout.addWidget(self.inertia_max_clusters_textox)
         layout.addLayout(max_clusters_layout)
 
         # Add Recommended K inputs
         recommended_k_layout = QHBoxLayout()
-        self.selected_K_textbox = QLineEdit()
-        self.selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
+        self.distortion_selected_K_textbox = QLineEdit()
+        self.distortion_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
         recommended_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
-        recommended_k_layout.addWidget(self.selected_K_textbox)
+        recommended_k_layout.addWidget(self.distortion_selected_K_textbox)
         layout.addLayout(recommended_k_layout)
 
         # Spacer for alignment
@@ -2067,7 +2067,7 @@ class MainApp(QMainWindow):
         X = np.array(list(zip(log_rqi, log_phi_z)))
 
         # Get the maximum number of clusters for inertia plot
-        max_clusters_text = self.max_clusters_textbox_inertia.text()
+        inertia_max_clusters_text = self.max_clusters_textbox_inertia.text()
         try:
             max_clusters = int(max_clusters_text)
             if max_clusters <= 0:
@@ -2147,7 +2147,7 @@ class MainApp(QMainWindow):
         if cont:
             index = ind["ind"][0]
             chosen_k = index + 1
-            self.selected_K_textbox.setText(str(chosen_k))
+            self.distortion_selected_K_textbox.setText(str(chosen_k))
             QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
     
     def find_selected_K(self, wcss):
