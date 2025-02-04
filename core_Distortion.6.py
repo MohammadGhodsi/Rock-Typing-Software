@@ -71,8 +71,6 @@ class MainApp(QMainWindow):
 
         self.tabs.setStyleSheet("""
 
-
-
             QTabWidget::pane { 
 
                 border: 1px solid #0078d7; 
@@ -114,7 +112,6 @@ class MainApp(QMainWindow):
 
         """)
 
-
         # Add tabs to the QTabWidget
 
         self.dataset_tab = QWidget()
@@ -134,7 +131,6 @@ class MainApp(QMainWindow):
         self.inertia_clustering_tab = QWidget()
         
         self.inertia_rock_type_tab = QWidget()
-
 
         self.tabs.addTab(self.dataset_tab, QIcon("dataset_icon.png"), "Dataset")  # Add icons for tabs
 
@@ -274,8 +270,7 @@ class MainApp(QMainWindow):
     
     def init_inertia_clustering_tab(self):
 
-        
-        
+  
         header_label = QLabel("Inertia Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
