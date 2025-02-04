@@ -840,9 +840,9 @@ class MainApp(QMainWindow):
         layout.addWidget(header_label)
 
         # Add inputs for number of clusters
-        self.selected_K_textbox = QLineEdit()
-        self.selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
-        layout.addWidget(self.selected_K_textbox)
+        self.inertia_selected_K_textbox = QLineEdit()
+        self.inertia_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
+        layout.addWidget(self.inertia_selected_K_textbox)
 
         # Button for plotting inertia rock type
         plot_button = QPushButton("Plot Inertia Rock Type Data")
@@ -884,7 +884,7 @@ class MainApp(QMainWindow):
         # Initialize n_clusters
         n_clusters = None
         try:
-            n_clusters = int(self.selected_K_textbox.text())
+            n_clusters = int(self.inertia_selected_K_textbox.text())
             if n_clusters <= 0:
                 raise ValueError
         except ValueError:
