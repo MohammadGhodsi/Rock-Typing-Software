@@ -772,9 +772,9 @@ class MainApp(QMainWindow):
         axes[1].axis('off')
 
         # Add canvas to layout
-        self.rock_type_canvas = FigureCanvas(fig)
-        layout.addWidget(self.rock_type_canvas)
-        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
+        self.rock_type_canvas_distortion = FigureCanvas(fig)
+        layout.addWidget(self.rock_type_canvas_distortion)
+        self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_click)
 
         # Spacer for alignment
         layout.addStretch()
@@ -819,8 +819,8 @@ class MainApp(QMainWindow):
 
 
         # Add canvas to layout
-        self.rock_type_canvas = FigureCanvas(fig)
-        layout.addWidget(self.rock_type_canvas)
+        self.rock_type_canvas_inertia = FigureCanvas(fig)
+        layout.addWidget(self.rock_type_canvas_inertia)
 
 
         # Spacer for alignment
@@ -886,12 +886,11 @@ class MainApp(QMainWindow):
         cluster_colors = plt.cm.tab10.colors
         
         # Clear the previous plots
-        self.rock_type_canvas.figure.clear()
+        self.rock_type_canvas_inertia.figure.clear()
 
         # Create a 1x2 grid for the subplots
-        axes = self.rock_type_canvas.figure.subplots(1, 2)
-        self.rock_type_canvas.figure.tight_layout(pad=5.0)
-
+        axes = self.rock_type_canvas_inertia.figure.subplots(1, 2)
+        self.rock_type_canvas_inertia.figure.tight_layout(pad=5.0)
 
         # Plot 1: Absolute Permeability vs Porosity
         scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')
@@ -925,7 +924,7 @@ class MainApp(QMainWindow):
         axes[1].set_ylim(min_limit, max_limit)
 
         # Update the canvas
-        self.rock_type_canvas.draw()
+        self.rock_type_canvas_inertia.draw()
     
     def update_distortion_rock_type(self):
 
@@ -984,11 +983,11 @@ class MainApp(QMainWindow):
         cluster_colors = plt.cm.tab10.colors
         
         # Clear the previous plots
-        self.rock_type_canvas.figure.clear()
+        self.rock_type_canvas_distortion.figure.clear()
 
         # Create a 1x2 grid for the subplots
-        axes = self.rock_type_canvas.figure.subplots(1, 2)
-        self.rock_type_canvas.figure.tight_layout(pad=5.0)
+        axes = self.rock_type_canvas_distortion.figure.subplots(1, 2)
+        self.rock_type_canvas_distortion.figure.tight_layout(pad=5.0)
 
         # Plot 1: Absolute Permeability vs Porosity
         scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')  # Change size and marker style
@@ -1044,14 +1043,14 @@ class MainApp(QMainWindow):
         ]
 
 
-        self.rock_type_canvas.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
+        self.rock_type_canvas_distortion.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
 
-        self.rock_type_canvas.mpl_connect('button_press_event', self.handle_plot_click)
+        self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_click)
 
 
         # Update the canvas
 
-        self.rock_type_canvas.draw()
+        self.rock_type_canvas_distortion.draw()
     
     def handle_rock_type_hover_event(self, event):
         for plot in self.rock_type_plot_data:
