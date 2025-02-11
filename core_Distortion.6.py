@@ -519,7 +519,7 @@ class MainApp(QMainWindow):
             except Exception as e:
 
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-    
+
     def perform_distance_clustering(self):
 
         # Extract data from the table for clustering
