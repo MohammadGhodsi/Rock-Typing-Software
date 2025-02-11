@@ -154,9 +154,9 @@ class MainApp(QMainWindow):
         
         self.init_inertia_rock_type_tab()
         
+        self.init_distortion_rock_type_tab()
+        
         self.init_ml_tab()
-
-        self.init_rock_type_tab()
 
         self.init_distance_clustering_tab() 
           
@@ -753,7 +753,7 @@ class MainApp(QMainWindow):
 
         return clusters
     
-    def init_rock_type_tab(self):
+    def init_distortion_rock_type_tab(self):
         layout = QVBoxLayout()
 
         # Header
