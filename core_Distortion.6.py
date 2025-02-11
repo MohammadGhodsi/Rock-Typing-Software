@@ -40,35 +40,25 @@ class MainApp(QMainWindow):
     def initUI(self):
 
         # Main layout
-
         main_layout = QVBoxLayout()
 
-
         # Horizontal layout for header
-
         top_layout = QHBoxLayout()
 
 
         # Header Label
-
         header_label = QLabel("Rock Typing Application")
-
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman'; color: #333;")
-
         header_label.setAlignment(Qt.AlignLeft)
-
         top_layout.addWidget(header_label)
 
 
         # Add top layout to the main layout
-
         main_layout.addLayout(top_layout)
 
 
         # Initialize tabs
-
         self.tabs = QTabWidget()  # Initialize QTabWidget
-
         self.tabs.setStyleSheet("""
 
             QTabWidget::pane { 
@@ -113,23 +103,16 @@ class MainApp(QMainWindow):
         """)
 
         # Add tabs to the QTabWidget
-
         self.dataset_tab = QWidget()
-
         self.plots_tab = QWidget()
-
         self.distortion_clustering_tab = QWidget()
-    
         self.rock_type_tab = QWidget()
-
         self.ml_tab = QWidget()
-
         self.distance_clustering_tab = QWidget()  # New tab for Distance Clustering
         
         # New tabs for Inertia Clustering and Inertia Rock Type
-        
         self.inertia_clustering_tab = QWidget()
-        
+
         self.inertia_rock_type_tab = QWidget()
 
         self.tabs.addTab(self.dataset_tab, QIcon("dataset_icon.png"), "Dataset")  # Add icons for tabs
@@ -150,21 +133,17 @@ class MainApp(QMainWindow):
 
 
         # Add Tabs to the main layout
-
         main_layout.addWidget(self.tabs)
 
 
         # Set central widget layout
-
         central_widget = QWidget()
-
+        
         central_widget.setLayout(main_layout)
-
+        
         self.setCentralWidget(central_widget)
 
-
         # Initialize individual tabs
-
         self.init_dataset_tab()
 
         self.init_plots_tab()
@@ -182,7 +161,6 @@ class MainApp(QMainWindow):
         self.init_distance_clustering_tab() 
           
         # Connect mouse events for the tabs
-        
         self.tabs.tabBar().installEventFilter(self)  
         
     def eventFilter(self, source, event):
@@ -195,7 +173,6 @@ class MainApp(QMainWindow):
         layout = QVBoxLayout()
 
         # Header
-
         header_label = QLabel("Distance Clustering")
 
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
@@ -206,14 +183,12 @@ class MainApp(QMainWindow):
 
 
         # Create a figure with subplots
-
         fig, axes = plt.subplots(1, 2, figsize=(10, 10))
 
         fig.tight_layout(pad=5.0)
 
 
         # Set titles for empty plots
-
         axes[0].set_title("Porosity vs Permeability")
 
         axes[0].set_xlabel("Porosity")
@@ -233,14 +208,12 @@ class MainApp(QMainWindow):
 
 
         # Add canvas to layout
-
         self.distance_clustering_canvas = FigureCanvas(fig)
 
         layout.addWidget(self.distance_clustering_canvas)
 
 
         # Add input fields for distance clustering parameters
-
         self.distance_input = QLineEdit()
 
         self.distance_input.setPlaceholderText("Enter distance threshold")
@@ -249,7 +222,6 @@ class MainApp(QMainWindow):
 
 
         # Button to perform distance clustering
-
         cluster_button = QPushButton("Perform Distance Clustering")
 
         cluster_button.clicked.connect(self.perform_distance_clustering)
@@ -263,8 +235,8 @@ class MainApp(QMainWindow):
 
 
         # Connect hover event for tooltips
-
         self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
+        
         self.distance_clustering_canvas.mpl_connect('button_press_event', self.show_distance_clustering_context_menu)
     
     def init_inertia_clustering_tab(self):
@@ -343,14 +315,12 @@ class MainApp(QMainWindow):
 
 
         # Create a 1x2 grid for the subplots
-
         axes = self.distance_clustering_canvas.figure.subplots(1, 2)
 
         self.distance_clustering_canvas.figure.tight_layout(pad=5.0)
 
 
         # Plot 1: Porosity vs Permeability
-
         axes[0].scatter(porosity, permeability, color='blue', alpha=0.6, s=100)
 
         axes[0].set_title("Porosity vs Permeability")
@@ -363,7 +333,6 @@ class MainApp(QMainWindow):
 
 
         # Plot 2: Log(RQI) vs Log(Phi z)
-
         log_rqi = np.log(np.array(rqi))
 
         log_phi_z = np.log(np.array(phi_z))
@@ -380,8 +349,8 @@ class MainApp(QMainWindow):
 
 
         # Update the canvas
-
         self.distance_clustering_canvas.draw()
+        
         self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
     
     def show_distance_clustering_context_menu(self, event):
@@ -823,56 +792,39 @@ class MainApp(QMainWindow):
         self.rock_type_tab.setLayout(layout)
     
     def init_inertia_rock_type_tab(self):
-
         layout = QVBoxLayout()
         
         # Header
-
         header_label = QLabel("Inertia Rock Type Visualization")
-
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-
         header_label.setAlignment(Qt.AlignCenter)
-
         layout.addWidget(header_label)
 
         # Button for plotting inertia rock type
-
         plot_button_inertia = QPushButton("Plot Inertia Rock Type Data")
-
         plot_button_inertia.clicked.connect(self.update_inertia_rock_type)
-
         self.style_button(plot_button_inertia)  # Reuse button styling
 
         layout.addWidget(plot_button_inertia)
-
         # Create a figure with subplots
 
         fig, axes = plt.subplots(1, 2, figsize=(10, 10))
-
         fig.tight_layout(pad=5.0)
 
 
         # Placeholders for axes
-
         axes[0].set_title("Empty Plot 1")
-
         axes[0].axis('off')
-
         axes[1].set_title("Empty Plot 2")
-
         axes[1].axis('off')
 
 
         # Add canvas to layout
-
         self.rock_type_canvas = FigureCanvas(fig)
-
         layout.addWidget(self.rock_type_canvas)
 
 
         # Spacer for alignment
-
         layout.addStretch()
 
 
@@ -974,7 +926,7 @@ class MainApp(QMainWindow):
         axes[1].set_ylim(min_limit, max_limit)
 
         # Update the canvas
-        #self.rock_type_canvas.draw()
+        self.rock_type_canvas.draw()
     
     def update_distortion_rock_type(self):
 
