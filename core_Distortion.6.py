@@ -189,7 +189,7 @@ class MainApp(QMainWindow):
         if event.type() == QEvent.Enter and source == self.tabs.tabBar():
             self.animate_tab(self.tabs.tabBar())
         return super().eventFilter(source, event)
-          
+  
     def init_distance_clustering_tab(self):
 
         layout = QVBoxLayout()
@@ -269,49 +269,48 @@ class MainApp(QMainWindow):
     
     def init_inertia_clustering_tab(self):
         layout = QVBoxLayout()
-
+    
         # Header
         header_label = QLabel("Inertia Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Create a figure with subplots
-        fig, ax = plt.subplots()
-        ax.set_title("Inertia Plot Placeholder")
-        ax.axis('off')  # Placeholder, no axes visible
-
-        # Add the figure canvas to the layout
-        self.inertia_canvas = FigureCanvas(fig)
-        layout.addWidget(self.inertia_canvas)
+        # Inertia Plot Layout
+        self.inertia_plot_layout = QVBoxLayout()
+        layout.addLayout(self.inertia_plot_layout)
 
         # Add inputs for max clusters
         max_clusters_layout = QHBoxLayout()
         self.max_clusters_textbox_inertia = QLineEdit()
-        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 0)")
+        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
         self.max_clusters_textbox_inertia.setValidator(QIntValidator(1, 50))
         max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
         max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
         layout.addLayout(max_clusters_layout)
 
-        # Add Recommended K inputs for inertia clustering
-        inertia_selected_k_layout = QHBoxLayout()
+        # Add Recommended K inputs
+        recommended_k_layout = QHBoxLayout()
         self.inertia_selected_K_textbox = QLineEdit()
         self.inertia_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
-        inertia_selected_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
-        inertia_selected_k_layout.addWidget(self.inertia_selected_K_textbox)
-        layout.addLayout(inertia_selected_k_layout)
+        recommended_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
+        recommended_k_layout.addWidget(self.inertia_selected_K_textbox)
+        layout.addLayout(recommended_k_layout)
 
-        # Button for generating inertia plot
+        # Spacer for alignment
+        layout.addStretch()
+
+        # Button for clustering, placed at the bottom
         button_layout = QHBoxLayout()
-        inertia_button = QPushButton("Generate Inertia Plot")
-        inertia_button.clicked.connect(self.generate_inertia_plot)
-        self.style_button(inertia_button)  # Reuse button styling
-        button_layout.addWidget(inertia_button)
+        cluster_button = QPushButton("Generate Inertia Plot")
+        cluster_button.clicked.connect(self.generate_inertia_plot)
+        self.style_button(cluster_button)  # Reuse button styling
+        button_layout.addWidget(cluster_button)
 
         layout.addLayout(button_layout)
 
         self.inertia_clustering_tab.setLayout(layout)
+        
     
     def update_distance_clustering_tab(self):
 
