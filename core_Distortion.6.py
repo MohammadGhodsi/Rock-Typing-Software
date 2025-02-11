@@ -288,7 +288,7 @@ class MainApp(QMainWindow):
         # Add inputs for max clusters
         max_clusters_layout = QHBoxLayout()
         self.max_clusters_textbox_inertia = QLineEdit()
-        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 0)")
         self.max_clusters_textbox_inertia.setValidator(QIntValidator(1, 50))
         max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
         max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
@@ -1953,7 +1953,7 @@ class MainApp(QMainWindow):
 
     def init_distortion_clustering_tab(self):
         layout = QVBoxLayout()
-
+    
         # Header
         header_label = QLabel("Distortion Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
@@ -2136,7 +2136,6 @@ class MainApp(QMainWindow):
         # Create the plot
         fig, ax = plt.subplots(figsize=(5, 10))
         
-
         scatter = ax.scatter(
             range(1, max_clusters + 1), inertias, color='blue', s=100, label='Inertia Points'
         )
@@ -2172,6 +2171,7 @@ class MainApp(QMainWindow):
         self.hover_circle = None  # To store the circle artist for hover effect
         
         fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_hover_inertia_plot(event, scatter, ax))
+        
         fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_inertia_plot(event, inertias))
         
         # Replace or update the canvas
