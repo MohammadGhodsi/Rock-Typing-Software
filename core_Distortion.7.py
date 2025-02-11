@@ -817,11 +817,9 @@ class MainApp(QMainWindow):
         axes[1].set_title("Empty Plot 2")
         axes[1].axis('off')
 
-
         # Add canvas to layout
         self.rock_type_canvas_inertia = FigureCanvas(fig)
         layout.addWidget(self.rock_type_canvas_inertia)
-
 
         # Spacer for alignment
         layout.addStretch()
@@ -922,6 +920,10 @@ class MainApp(QMainWindow):
         max_limit = max(max(log_phi_z), max(log_rqi))
         axes[1].set_xlim(min_limit, max_limit)
         axes[1].set_ylim(min_limit, max_limit)
+
+        self.rock_type_canvas_inertia.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
+
+        self.rock_type_canvas_inertia.mpl_connect('button_press_event', self.handle_plot_click)
 
         # Update the canvas
         self.rock_type_canvas_inertia.draw()
@@ -1081,14 +1083,16 @@ class MainApp(QMainWindow):
                         bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
                         fontsize=10
                     )
-                    self.rock_type_canvas.draw_idle()
+                    self.rock_type_canvas_distortion.draw_idle()
+                    self.rock_type_canvas_inertia.draw_idle()
                     return
 
         # Remove tooltip if not hovering over any point
         if self.rock_type_tooltip:
             self.rock_type_tooltip.remove()
             self.rock_type_tooltip = None
-            self.rock_type_canvas.draw_idle()
+            self.rock_type_canvas_distortion.draw_idle()
+            self.rock_type_canvas_inertia.draw_idle()
     
     def init_dataset_tab(self):
         layout = QVBoxLayout()
