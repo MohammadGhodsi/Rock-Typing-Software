@@ -2534,7 +2534,6 @@ class MainApp(QMainWindow):
         animation.start()
 
    
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     # Create and display the splash screen
