@@ -2080,6 +2080,7 @@ class MainApp(QMainWindow):
         
         # Replace or update the canvas
         if hasattr(self, 'inertia_canvas') and self.inertia_canvas:
+            
             self.inertia_clustering_tab.layout().removeWidget(self.inertia_canvas)
             self.inertia_canvas.deleteLater()
             self.inertia_canvas = None
@@ -2087,7 +2088,7 @@ class MainApp(QMainWindow):
         self.inertia_canvas = FigureCanvas(fig)
         self.inertia_clustering_tab.layout().addWidget(self.inertia_canvas)
         self.inertia_canvas.draw()
-    
+
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
