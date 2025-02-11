@@ -315,50 +315,29 @@ class MainApp(QMainWindow):
     def update_distance_clustering_tab(self):
 
         # Extract data from the table for plotting
-
         porosity = []
-
         permeability = []
-
         rqi = []
-
         phi_z = []
 
-
         for row in range(self.table.rowCount()):
-
             try:
-
                 if self.table.item(row, 0) and self.table.item(row, 0).text():
-
                     porosity.append(float(self.table.item(row, 0).text()))
-
                 if self.table.item(row, 1) and self.table.item(row, 1).text():
-
                     permeability.append(float(self.table.item(row, 1).text()))
-
                 if self.table.item(row, 2) and self.table.item(row, 2).text():
-
                     rqi.append(float(self.table.item(row, 2).text()))
-
                 if self.table.item(row, 3) and self.table.item(row, 3).text():
-
                     phi_z.append(float(self.table.item(row, 3).text()))
-
             except ValueError:
-
                 continue  # Skip rows with invalid or missing data
 
-
         if not porosity or not permeability or not rqi or not phi_z:
-
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
-
             return
 
-
         # Clear the previous plots
-
         self.distance_clustering_canvas.figure.clear()
         
 
@@ -835,7 +814,7 @@ class MainApp(QMainWindow):
         # Button for plotting, placed at the bottom
         button_layout = QHBoxLayout()
         plot_button_distortion = QPushButton("Plot Distortion Rock Type Data")  # Updated button text
-        plot_button_distortion.clicked.connect(self.update_rock_type_tab)
+        plot_button_distortion.clicked.connect(self.update_distortion_rock_type)
         self.style_button(plot_button_distortion)  # Reuse button styling
         button_layout.addWidget(plot_button_distortion)
 
@@ -861,7 +840,7 @@ class MainApp(QMainWindow):
 
         plot_button_inertia = QPushButton("Plot Inertia Rock Type Data")
 
-        plot_button_inertia.clicked.connect(self.update_inertia_rock_type_tab)
+        plot_button_inertia.clicked.connect(self.update_inertia_rock_type)
 
         self.style_button(plot_button_inertia)  # Reuse button styling
 
@@ -899,7 +878,7 @@ class MainApp(QMainWindow):
 
         self.inertia_rock_type_tab.setLayout(layout)
     
-    def update_inertia_rock_type_tab(self):
+    def update_inertia_rock_type(self):
         # Extract data from the table
         porosity = []
         permeability = []
@@ -929,6 +908,7 @@ class MainApp(QMainWindow):
 
         # Initialize n_clusters
         n_clusters = None
+        
         try:
             n_clusters = int(self.inertia_selected_K_textbox.text())
             if n_clusters <= 0:
@@ -945,6 +925,15 @@ class MainApp(QMainWindow):
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
         clusters = kmeans.fit_predict(X)
 
+        # Filter valid data for logarithmic plots
+        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
+        log_rqi = np.log(np.array(rqi)[valid_indices])
+        log_phi_z = np.log(np.array(phi_z)[valid_indices])
+        filtered_clusters = clusters[valid_indices]
+        
+        # Assign cluster colors
+        cluster_colors = plt.cm.tab10.colors
+        
         # Clear the previous plots
         self.rock_type_canvas.figure.clear()
 
@@ -952,29 +941,42 @@ class MainApp(QMainWindow):
         axes = self.rock_type_canvas.figure.subplots(1, 2)
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
+
         # Plot 1: Absolute Permeability vs Porosity
         scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')
         axes[0].set_title("Absolute Permeability (md) vs Porosity")
         axes[0].set_xlabel("Porosity")
         axes[0].set_ylabel("Absolute Permeability (md)")
         axes[0].grid(True)
+        legend1 = axes[0].legend(*scatter1.legend_elements(), title="Cluster")
+        axes[0].add_artist(legend1)
 
         # Plot 2: log(RQI) vs log(Phi z)
-        valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
-        log_rqi = np.log(np.array(rqi)[valid_indices])
-        log_phi_z = np.log(np.array(phi_z)[valid_indices])
-        filtered_clusters = clusters[valid_indices]
-
+        #valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
+        #log_rqi = np.log(np.array(rqi)[valid_indices])
+        #log_phi_z = np.log(np.array(phi_z)[valid_indices])
+        #filtered_clusters = clusters[valid_indices]
+        
+        # Plot 2: log(RQI) vs log(Phi z)
         scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=filtered_clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')
         axes[1].set_title("log(RQI) vs log(Phi z)")
         axes[1].set_xlabel("log(Phi z)")
         axes[1].set_ylabel("log(RQI)")
         axes[1].grid(True)
+        legend2 = axes[1].legend(*scatter2.legend_elements(), title="Cluster")
+        axes[1].add_artist(legend2)
+
+        # Synchronize X and Y axis limits
+        
+        min_limit = min(min(log_phi_z), min(log_rqi))
+        max_limit = max(max(log_phi_z), max(log_rqi))
+        axes[1].set_xlim(min_limit, max_limit)
+        axes[1].set_ylim(min_limit, max_limit)
 
         # Update the canvas
-        self.rock_type_canvas.draw()
+        #self.rock_type_canvas.draw()
     
-    def update_rock_type_tab(self):
+    def update_distortion_rock_type(self):
 
         # Extract data from the table
         porosity = []
@@ -998,116 +1000,70 @@ class MainApp(QMainWindow):
         if not porosity or not permeability or not rqi or not phi_z:
             QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
             return
+        
         # Prepare data for clustering
         X = np.array(list(zip(porosity, permeability)))
+        
         # Initialize n_clusters
         n_clusters = None
-        # Perform clustering (default to 3 clusters if no input)
+        
         try:
-
             n_clusters = int(self.distortion_selected_K_textbox.text())
-
             if n_clusters <= 0:
-
                 raise ValueError
-
         except ValueError:
-
             QMessageBox.warning(self, "Error", "Please enter a valid number of clusters.")
-
             return  # Exit the function if the input is invalid
 
-
         if n_clusters > len(X):
-
             QMessageBox.warning(self, "Error", f"Number of clusters ({n_clusters}) exceeds the number of samples ({len(X)}).")
-
             return
-
-
+        
+        # Perform KMeans clustering
         kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-
         clusters = kmeans.fit_predict(X)
 
-
         # Filter valid data for logarithmic plots
-
         valid_indices = np.where((np.array(rqi) > 0) & (np.array(phi_z) > 0))[0]
-
         log_rqi = np.log(np.array(rqi)[valid_indices])
-
         log_phi_z = np.log(np.array(phi_z)[valid_indices])
-
         filtered_clusters = clusters[valid_indices]
 
-
         # Assign cluster colors
-
         cluster_colors = plt.cm.tab10.colors
-
-
+        
         # Clear the previous plots
-
         self.rock_type_canvas.figure.clear()
 
-
         # Create a 1x2 grid for the subplots
-
         axes = self.rock_type_canvas.figure.subplots(1, 2)
-
         self.rock_type_canvas.figure.tight_layout(pad=5.0)
 
-
         # Plot 1: Absolute Permeability vs Porosity
-
-        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, 
-
-                                    s=150, edgecolor='black', marker='o')  # Change size and marker style
-
-
+        scatter1 = axes[0].scatter(porosity, permeability, c=clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')  # Change size and marker style
         axes[0].set_title("Absolute Permeability (md) vs Porosity")
-
         axes[0].set_xlabel("Porosity")
-
         axes[0].set_ylabel("Absolute Permeability (md)")
-
         axes[0].grid(True)
-
         legend1 = axes[0].legend(*scatter1.legend_elements(), title="Cluster")
-
         axes[0].add_artist(legend1)
 
-
         # Plot 2: log(RQI) vs log(Phi z)
-
-        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.6, 
-
-                                    s=150, edgecolor='black', marker='o')  # Change size and marker style
-
-
+        scatter2 = axes[1].scatter(log_phi_z, log_rqi, c=clusters, cmap='tab10', alpha=0.6, s=150, edgecolor='black', marker='o')  # Change size and marker style
         axes[1].set_title("log(RQI) vs log(Phi z)")
-
         axes[1].set_xlabel("log(Phi z)")
-
         axes[1].set_ylabel("log(RQI)")
-
         axes[1].grid(True)
-
         legend2 = axes[1].legend(*scatter2.legend_elements(), title="Cluster")
-
         axes[1].add_artist(legend2)
 
 
         # Synchronize X and Y axis limits
 
         min_limit = min(min(log_phi_z), min(log_rqi))
-
         max_limit = max(max(log_phi_z), max(log_rqi))
-
         axes[1].set_xlim(min_limit, max_limit)
-
         axes[1].set_ylim(min_limit, max_limit)
-
 
         # Save plot data for export
 
