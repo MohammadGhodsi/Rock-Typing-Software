@@ -282,8 +282,7 @@ class MainApp(QMainWindow):
         layout.addLayout(button_layout)
 
         self.inertia_clustering_tab.setLayout(layout)
-        
-    
+         
     def update_distance_clustering_tab(self):
 
         # Extract data from the table for plotting
