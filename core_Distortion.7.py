@@ -2106,7 +2106,7 @@ class MainApp(QMainWindow):
 
         optimal_k = np.argmax(second_diff) + 2  # +2 because np.diff reduces the length twice
         return optimal_k
-    
+        
     def on_hover_distortion_plot(self, event, scatter, ax):
         if event.inaxes:
             # Check if hovering over a point
