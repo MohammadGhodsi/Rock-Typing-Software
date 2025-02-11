@@ -2162,10 +2162,7 @@ class MainApp(QMainWindow):
         
         # Add legend to the plot
         ax.legend(loc='best', fontsize=10, title="Legend")
-        
-        # Set aspect ratio to "equal"
-        ax.set_aspect('equal', adjustable='datalim')  # Ensure circles are not distorted
-        
+
         # Attach hover and click events
         self.hover_circle = None  # To store the circle artist for hover effect
         
