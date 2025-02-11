@@ -627,9 +627,7 @@ class MainApp(QMainWindow):
         # Plot the results
 
         self.plot_distance_clustering(points, clusters, porosity, permeability, rqi, phi_z)
-        
-        
-    
+           
     def plot_distance_clustering(self, points, clusters, porosity, permeability, rqi, phi_z):
 
         # Clear the previous plots
@@ -2089,7 +2087,6 @@ class MainApp(QMainWindow):
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
     
-
     def generate_inertia_plot(self):
         rqi = []
         phi_z = []
@@ -2250,7 +2247,6 @@ class MainApp(QMainWindow):
                     self.hover_circle.remove()
                     self.hover_circle = None
                     self.inertia_canvas.draw_idle()
-    
     
     def on_click_distortion_plot(self, event, distortions):
         cont, ind = event.inaxes.collections[0].contains(event)
