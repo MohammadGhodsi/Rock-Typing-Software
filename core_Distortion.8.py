@@ -944,60 +944,7 @@ class MainApp(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
     
-    def plot_svm_results(self, classifier, scaler, original_features, target):
-        # Create a mesh grid for decision boundary visualization
-        h = 0.02  # Step size in mesh
-        x_min, x_max = max(0, np.array(original_features)[:, 0].min() - 1), np.array(original_features)[:, 0].max() + 1
-        y_min, y_max = max(0, np.array(original_features)[:, 1].min() - 1), np.array(original_features)[:, 1].max() + 1
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-
-        # Predict on the grid points using the scaled features
-        Z = classifier.predict(scaler.transform(np.c_[xx.ravel(), yy.ravel()]))
-        Z = Z.reshape(xx.shape)
-
-        # Plot data points using original features
-        fig, ax = plt.subplots(figsize=(10, 8))
-        ax.contour(xx, yy, Z, levels=[0.5, 1.5], colors="black", linewidths=2, linestyles="dashed")
-
-        scatter = ax.scatter(
-            np.array(original_features)[:, 0],
-            np.array(original_features)[:, 1],
-            c=target,
-            cmap=plt.cm.coolwarm,
-            edgecolors="k",
-            s=100,
-            marker="o",
-        )
-
-        # Set titles, labels, and limits
-        ax.set_title("SVM Classification of Rock Types (with Decision Boundary Lines)")
-        ax.set_xlabel("Porosity")
-        ax.set_ylabel("Permeability")
-        ax.legend(*scatter.legend_elements(), title="Rock Types", loc="upper right")
-        
-        # Limit X-axis from 0 to 1.0
-        ax.set_xlim(0, 1.0)
-
-        # Save plot data for CSV export
-        self.current_svm_data = {
-            "porosity": np.array(original_features)[:, 0],
-            "permeability": np.array(original_features)[:, 1],
-            "rock_type": target
-        }
-
-        # Attach context menu for export
-        fig.canvas.mpl_connect('button_press_event', self.show_context_menu)
-
-        # Check if a canvas already exists and remove it
-        if hasattr(self, 'ml_canvas') and self.ml_canvas:
-            self.ml_tab.layout().removeWidget(self.ml_canvas)
-            self.ml_canvas.deleteLater()
-
-        # Add the new canvas to the layout
-        self.ml_canvas = FigureCanvas(fig)
-        self.ml_tab.layout().insertWidget(1, self.ml_canvas)  # Insert just after the header label
-        self.ml_canvas.draw()
-    
+   
     def show_plot(self, fig):
         if hasattr(self, 'canvas') and self.canvas:
             self.plots_tab.layout().removeWidget(self.canvas)
