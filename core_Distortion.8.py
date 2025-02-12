@@ -797,32 +797,40 @@ class MainApp(QMainWindow):
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Button for plotting inertia rock type
-        plot_button_inertia = QPushButton("Plot Inertia Rock Type Data")
-        plot_button_inertia.clicked.connect(self.update_inertia_rock_type)
-        self.style_button(plot_button_inertia)  # Reuse button styling
-
-        layout.addWidget(plot_button_inertia)
-        # Create a figure with subplots
-
         fig, axes = plt.subplots(1, 2, figsize=(10, 10))
         fig.tight_layout(pad=5.0)
-
 
         # Placeholders for axes
         axes[0].set_title("Empty Plot 1")
         axes[0].axis('off')
         axes[1].set_title("Empty Plot 2")
         axes[1].axis('off')
-
+        
         # Add canvas to layout
         self.rock_type_canvas_inertia = FigureCanvas(fig)
         layout.addWidget(self.rock_type_canvas_inertia)
+        self.rock_type_canvas_inertia.mpl_connect('button_press_event', self.handle_plot_inertia_click)
+        
+        # Button for plotting inertia rock type
+        plot_button_inertia = QPushButton("Plot Inertia Rock Type Data")
+        plot_button_inertia.clicked.connect(self.update_inertia_rock_type)
+        self.style_button(plot_button_inertia)  # Reuse button styling
 
         # Spacer for alignment
         layout.addStretch()
 
+        # Button for plotting, placed at the bottom
+        button_layout = QHBoxLayout()
+        plot_button_inertia = QPushButton("Plot Inertia Rock Type Data")  # Updated button text
+        plot_button_inertia.clicked.connect(self.update_inertia_rock_type)
+        self.style_button(plot_button_inertia)  # Reuse button styling
+        button_layout.addWidget(plot_button_inertia)
+        
+        #layout.addWidget(plot_button_inertia)
+        # Create a figure with subplots
 
+        layout.addLayout(button_layout)
+        
         self.inertia_rock_type_tab.setLayout(layout)
     
     def update_inertia_rock_type(self):
