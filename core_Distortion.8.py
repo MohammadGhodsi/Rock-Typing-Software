@@ -772,7 +772,7 @@ class MainApp(QMainWindow):
         # Add canvas to layout
         self.rock_type_canvas_distortion = FigureCanvas(fig)
         layout.addWidget(self.rock_type_canvas_distortion)
-        self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_click)
+        self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_distortion_click)
 
         # Spacer for alignment
         layout.addStretch()
@@ -921,7 +921,7 @@ class MainApp(QMainWindow):
 
         self.rock_type_canvas_inertia.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
 
-        self.rock_type_canvas_inertia.mpl_connect('button_press_event', self.handle_plot_click)
+        self.rock_type_canvas_inertia.mpl_connect('button_press_event', self.handle_plot_inertia_click)
 
         # Update the canvas
         self.rock_type_canvas_inertia.draw()
@@ -1045,7 +1045,7 @@ class MainApp(QMainWindow):
 
         self.rock_type_canvas_distortion.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
 
-        self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_click)
+        self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_distortion_click)
 
 
         # Update the canvas
@@ -2218,6 +2218,61 @@ class MainApp(QMainWindow):
                 export_csv_action.triggered.connect(self.export_plot_data_to_csv)
 
             menu.exec_(QCursor.pos())
+
+    def handle_plot_distortion_click(self, event):
+        if event.button == 3:  # Right-click
+            menu = QMenu(self)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #cccccc;
+                }
+                QMenu::item {
+                    padding: 8px 20px;
+                }
+                QMenu::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+            """)
+
+            save_plot_action = menu.addAction("Save Plot As...")
+            save_plot_action.triggered.connect(lambda: self.save_plot(self.plot_canvas))
+
+            if hasattr(self, "current_plot_data") and self.current_plot_data:
+                export_csv_action = menu.addAction("Export Data as CSV")
+                export_csv_action.triggered.connect(self.export_plot_data_to_csv)
+
+            menu.exec_(QCursor.pos())
+
+    def handle_plot_inertia_click(self, event):
+        if event.button == 3:  # Right-click
+            menu = QMenu(self)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #cccccc;
+                }
+                QMenu::item {
+                    padding: 8px 20px;
+                }
+                QMenu::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+            """)
+
+            save_plot_action = menu.addAction("Save Plot As...")
+            save_plot_action.triggered.connect(lambda: self.save_plot(self.plot_canvas))
+
+            if hasattr(self, "current_plot_data") and self.current_plot_data:
+                export_csv_action = menu.addAction("Export Data as CSV")
+                export_csv_action.triggered.connect(self.export_plot_data_to_csv)
+
+            menu.exec_(QCursor.pos())
+
 
     def export_plot_data_to_csv(self):
         if not hasattr(self, "current_plot_data") or not self.current_plot_data:
