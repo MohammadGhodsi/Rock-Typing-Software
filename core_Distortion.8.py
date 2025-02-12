@@ -919,7 +919,7 @@ class MainApp(QMainWindow):
         axes[1].set_xlim(min_limit, max_limit)
         axes[1].set_ylim(min_limit, max_limit)
 
-        self.rock_type_canvas_inertia.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
+        self.rock_type_canvas_inertia.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event_inertia)
 
         self.rock_type_canvas_inertia.mpl_connect('button_press_event', self.handle_plot_inertia_click)
 
@@ -1043,7 +1043,7 @@ class MainApp(QMainWindow):
         ]
 
 
-        self.rock_type_canvas_distortion.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event)
+        self.rock_type_canvas_distortion.mpl_connect('motion_notify_event', self.handle_rock_type_hover_event_distortion)
 
         self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_distortion_click)
 
@@ -1052,7 +1052,7 @@ class MainApp(QMainWindow):
 
         self.rock_type_canvas_distortion.draw()
     
-    def handle_rock_type_hover_event(self, event):
+    def handle_rock_type_hover_event_distortion(self, event):
         for plot in self.rock_type_plot_data:
             scatter = plot["scatter"]
             x_data = plot["x_data"]
@@ -1082,7 +1082,7 @@ class MainApp(QMainWindow):
                         fontsize=10
                     )
                     self.rock_type_canvas_distortion.draw_idle()
-                    self.rock_type_canvas_inertia.draw_idle()
+                  
                     return
 
         # Remove tooltip if not hovering over any point
@@ -1090,7 +1090,46 @@ class MainApp(QMainWindow):
             self.rock_type_tooltip.remove()
             self.rock_type_tooltip = None
             self.rock_type_canvas_distortion.draw_idle()
+            
+    def handle_rock_type_hover_event_inertia(self, event):
+        for plot in self.rock_type_plot_data:
+            scatter = plot["scatter"]
+            x_data = plot["x_data"]
+            y_data = plot["y_data"]
+            axis = plot["axis"]
+
+            if event.inaxes == axis:
+                cont, ind = scatter.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    x = x_data[index]
+                    y = y_data[index]
+                    tooltip_text = f"({x:.2f}, {y:.2f})"
+
+                    # Remove previous tooltip
+                    if self.rock_type_tooltip:
+                        self.rock_type_tooltip.remove()
+
+                    # Create new tooltip
+                    self.rock_type_tooltip = axis.annotate(
+                        tooltip_text,
+                        (x, y),
+                        textcoords="offset points",
+                        xytext=(10, 10),
+                        ha='center',
+                        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                        fontsize=10
+                    )    
+                    self.rock_type_canvas_inertia.draw_idle()
+                    return
+
+        # Remove tooltip if not hovering over any point
+        if self.rock_type_tooltip:
+            self.rock_type_tooltip.remove()
+            self.rock_type_tooltip = None
             self.rock_type_canvas_inertia.draw_idle()
+    
+    
     
     def init_dataset_tab(self):
         layout = QVBoxLayout()
