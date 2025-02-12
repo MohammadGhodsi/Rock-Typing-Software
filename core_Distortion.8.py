@@ -11,10 +11,10 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtCore import QPropertyAnimation, QRect , QEvent , QEasingCurve
 from scipy.spatial.distance import cdist
 from sklearn.cluster import KMeans
-from sklearn.svm import SVC
-from sklearn.metrics import classification_report, confusion_matrix
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
+#from sklearn.svm import SVC
+#from sklearn.metrics import classification_report, confusion_matrix
+#from sklearn.preprocessing import StandardScaler
+#from sklearn.model_selection import train_test_split
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel, QFileDialog,
     QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget,
@@ -127,8 +127,6 @@ class MainApp(QMainWindow):
         
         self.tabs.addTab(self.inertia_rock_type_tab, QIcon("inertia_rock_type_icon.png"), "Inertia Rock Type")
 
-        self.tabs.addTab(self.ml_tab, QIcon("ml_icon.png"), "Machine Learning")
-
         self.tabs.addTab(self.distance_clustering_tab, QIcon("distance_clustering_icon.png"), "Distance Clustering")  # Add new tab
 
 
@@ -156,7 +154,7 @@ class MainApp(QMainWindow):
         
         self.init_distortion_rock_type_tab()
         
-        self.init_ml_tab()
+        
 
         self.init_distance_clustering_tab() 
           
@@ -1626,95 +1624,6 @@ class MainApp(QMainWindow):
 
         self.plots_tab.setLayout(layout)  
     
-    def init_ml_tab(self):
-        layout = QVBoxLayout()
-
-        # Header at the top
-        header_label = QLabel("Machine Learning")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-        header_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(header_label)
-
-        # Create a placeholder plot
-        fig, ax = plt.subplots()
-        ax.set_title("SVM Results Placeholder")
-        ax.axis('off')  # Placeholder, no axes visible
-
-        # Add the figure canvas
-        self.ml_canvas = FigureCanvas(fig)
-        layout.addWidget(self.ml_canvas)
-
-        # Add a spacer to push the button to the bottom
-        layout.addStretch()
-
-        # Add the button at the bottom
-        self.svm_button = QPushButton("Train and Evaluate SVM")
-        self.svm_button.clicked.connect(self.train_evaluate_svm)
-        self.style_button(self.svm_button)  # Style the button
-        layout.addWidget(self.svm_button)
-
-        # Set the layout for the ML tab
-        self.ml_tab.setLayout(layout)
-    
-    def train_evaluate_svm(self):
-        # Extract features (log(RQI) and log(Phi z)) and target from the table
-        features = []
-        target = []
-        for row in range(self.table.rowCount()):
-            try:
-                rqi = float(self.table.item(row, 2).text()) if self.table.item(row, 2) else None
-                phi_z = float(self.table.item(row, 3).text()) if self.table.item(row, 3) else None
-
-                if rqi is not None and phi_z is not None and rqi > 0 and phi_z > 0:
-                    log_rqi = np.log(rqi)
-                    log_phi_z = np.log(phi_z)
-                    features.append([log_rqi, log_phi_z])
-                    target.append(self.determine_rock_type(log_rqi, log_phi_z))  # Replace with your logic
-            except ValueError:
-                continue
-
-        if not features or not target:
-            QMessageBox.warning(self, "Warning", "Insufficient data for SVM training.")
-            return
-
-        features = np.array(features)
-        target = np.array(target)
-
-        # Check if there are at least two distinct classes
-        if len(set(target)) < 2:
-            QMessageBox.warning(self, "Warning", "SVM training requires at least two distinct classes.")
-            return
-        
-        # Standardize the features
-        scaler = StandardScaler()
-        features_scaled = scaler.fit_transform(features)
-
-        # Train-test split
-        X_train, X_test, y_train, y_test = train_test_split(features_scaled, target, test_size=0.2, random_state=42)
-
-        # Train SVM
-        svm_classifier = SVC(kernel='linear', random_state=42)
-        svm_classifier.fit(X_train, y_train)
-
-        # Predictions
-        y_pred = svm_classifier.predict(X_test)
-
-        # Generate classification report
-        report = classification_report(y_test, y_pred)
-        print("Classification Report:\n", report)
-
-        # Plot results
-        self.plot_svm_results(svm_classifier, scaler, features, target)
-    
-    def determine_rock_type(self, porosity, permeability):
-        # Replace this with the actual logic to determine rock type based on porosity and permeability
-        if porosity < 0.15:
-            return 0  # For example, clay
-        elif 0.15 <= porosity < 0.25:
-            return 1  # For example, sand
-        else:
-            return 2  # For example, limestone
-    
     def style_button(self, button):
         button.setStyleSheet(
             """
@@ -1764,60 +1673,6 @@ class MainApp(QMainWindow):
             QMessageBox.information(self, "Success", f"Clustering performed with {n_clusters} clusters.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
-    
-    def plot_svm_results(self, classifier, scaler, original_features, target):
-        # Create a mesh grid for decision boundary visualization
-        h = 0.02  # Step size in mesh
-        x_min, x_max = max(0, np.array(original_features)[:, 0].min() - 1), np.array(original_features)[:, 0].max() + 1
-        y_min, y_max = max(0, np.array(original_features)[:, 1].min() - 1), np.array(original_features)[:, 1].max() + 1
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-
-        # Predict on the grid points using the scaled features
-        Z = classifier.predict(scaler.transform(np.c_[xx.ravel(), yy.ravel()]))
-        Z = Z.reshape(xx.shape)
-
-        # Plot data points using original features
-        fig, ax = plt.subplots(figsize=(10, 8))
-        ax.contour(xx, yy, Z, levels=[0.5, 1.5], colors="black", linewidths=2, linestyles="dashed")
-
-        scatter = ax.scatter(
-            np.array(original_features)[:, 0],
-            np.array(original_features)[:, 1],
-            c=target,
-            cmap=plt.cm.coolwarm,
-            edgecolors="k",
-            s=100,
-            marker="o",
-        )
-
-        # Set titles, labels, and limits
-        ax.set_title("SVM Classification of Rock Types (with Decision Boundary Lines)")
-        ax.set_xlabel("Porosity")
-        ax.set_ylabel("Permeability")
-        ax.legend(*scatter.legend_elements(), title="Rock Types", loc="upper right")
-        
-        # Limit X-axis from 0 to 1.0
-        ax.set_xlim(0, 1.0)
-
-        # Save plot data for CSV export
-        self.current_svm_data = {
-            "porosity": np.array(original_features)[:, 0],
-            "permeability": np.array(original_features)[:, 1],
-            "rock_type": target
-        }
-
-        # Attach context menu for export
-        fig.canvas.mpl_connect('button_press_event', self.show_context_menu)
-
-        # Check if a canvas already exists and remove it
-        if hasattr(self, 'ml_canvas') and self.ml_canvas:
-            self.ml_tab.layout().removeWidget(self.ml_canvas)
-            self.ml_canvas.deleteLater()
-
-        # Add the new canvas to the layout
-        self.ml_canvas = FigureCanvas(fig)
-        self.ml_tab.layout().insertWidget(1, self.ml_canvas)  # Insert just after the header label
-        self.ml_canvas.draw()
     
     def show_plot(self, fig):
         if hasattr(self, 'canvas') and self.canvas:
@@ -2402,31 +2257,7 @@ class MainApp(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
     
-    def export_svm_data_to_csv(self):
-        if not hasattr(self, "current_svm_data") or not self.current_svm_data:
-            QMessageBox.warning(self, "No Data", "No SVM data available for export.")
-            return
-
-        # Open a file dialog to save the CSV
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options
-        )
-
-        if file_path:
-            try:
-                # Extract SVM data
-                data = self.current_svm_data
-                df = pd.DataFrame({
-                    "Porosity": data["porosity"],
-                    "Permeability (md)": data["permeability"],
-                    "Rock Type": data["rock_type"]
-                })
-                df.to_csv(file_path, index=False)
-                QMessageBox.information(self, "Success", "SVM data exported successfully.")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-
+    
     def animate_tab(self, tab_widget):
         # Create an animation for the tab widget
         animation = QPropertyAnimation(tab_widget, b"geometry")
