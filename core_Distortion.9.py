@@ -153,9 +153,7 @@ class MainApp(QMainWindow):
         self.init_inertia_rock_type_tab()
         
         self.init_distortion_rock_type_tab()
-        
-        
-
+          
         self.init_distance_clustering_tab() 
           
         # Connect mouse events for the tabs
@@ -577,7 +575,7 @@ class MainApp(QMainWindow):
         # Clear the previous plots
 
         self.distance_clustering_canvas.figure.clear()
-
+    
 
         axes = self.distance_clustering_canvas.figure.subplots(1, 2)  # Create 1x2 subplots
 
@@ -1136,8 +1134,6 @@ class MainApp(QMainWindow):
             self.rock_type_tooltip.remove()
             self.rock_type_tooltip = None
             self.rock_type_canvas_inertia.draw_idle()
-    
-    
     
     def init_dataset_tab(self):
         layout = QVBoxLayout()
@@ -1739,38 +1735,6 @@ class MainApp(QMainWindow):
         self.canvas = FigureCanvas(fig)
         self.plots_tab.layout().addWidget(self.canvas)
 
-    def update_plot(self, item):
-        # Extract data from the table
-        porosity = []
-        permeability = []
-
-        for row in range(self.table.rowCount()):
-            try:
-                p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
-                k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
-                if p is not None and k is not None:
-                    porosity.append(p)
-                    permeability.append(k)
-            except ValueError:
-                continue
-
-        # Plot data
-        if hasattr(self, 'plot_canvas') and self.plot_canvas:
-            self.plots_tab.layout().removeWidget(self.plot_canvas)
-            self.plot_canvas.deleteLater()
-
-        if porosity and permeability:
-            fig, ax = plt.subplots()
-            ax.scatter(porosity, permeability, color='blue', label="Data Points")
-            ax.set_title("Porosity vs Absolute Permeability")
-            ax.set_xlabel("Porosity")
-            ax.set_ylabel("Absolute Permeability (md)")
-            ax.legend()
-            ax.grid()
-
-            self.plot_canvas = FigureCanvas(fig)
-            self.plots_tab.layout().addWidget(self.plot_canvas)
-
     def init_distortion_clustering_tab(self):
         layout = QVBoxLayout()
     
@@ -2002,7 +1966,6 @@ class MainApp(QMainWindow):
         self.inertia_clustering_tab.layout().addWidget(self.inertia_canvas)
         self.inertia_canvas.draw()
 
-    
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
@@ -2331,7 +2294,6 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
 
-
     def export_plot_data_to_csv(self):
         if not hasattr(self, "current_plot_data") or not self.current_plot_data:
             QMessageBox.warning(self, "No Data", "No plot data available for export.")
@@ -2369,7 +2331,6 @@ class MainApp(QMainWindow):
                 QMessageBox.information(self, "Success", "Plot data exported successfully.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-    
     
     def animate_tab(self, tab_widget):
         # Create an animation for the tab widget
