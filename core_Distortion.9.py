@@ -235,50 +235,6 @@ class MainApp(QMainWindow):
         
         self.distance_clustering_canvas.mpl_connect('button_press_event', self.show_distance_clustering_context_menu)
     
-    def init_inertia_clustering_tab(self):
-        layout = QVBoxLayout()
-    
-        # Header
-        header_label = QLabel("Inertia Clustering")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-        header_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(header_label)
-
-        # Inertia Plot Layout
-        self.inertia_plot_layout = QVBoxLayout()
-        layout.addLayout(self.inertia_plot_layout)
-
-        # Add inputs for max clusters
-        max_clusters_layout = QHBoxLayout()
-        self.max_clusters_textbox_inertia = QLineEdit()
-        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
-        self.max_clusters_textbox_inertia.setValidator(QIntValidator(1, 50))
-        max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
-        max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
-        layout.addLayout(max_clusters_layout)
-
-        # Add Recommended K inputs
-        recommended_k_layout = QHBoxLayout()
-        self.inertia_selected_K_textbox = QLineEdit()
-        self.inertia_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
-        recommended_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
-        recommended_k_layout.addWidget(self.inertia_selected_K_textbox)
-        layout.addLayout(recommended_k_layout)
-
-        # Spacer for alignment
-        layout.addStretch()
-
-        # Button for clustering, placed at the bottom
-        button_layout = QHBoxLayout()
-        cluster_button = QPushButton("Generate Inertia Plot")
-        cluster_button.clicked.connect(self.generate_inertia_plot)
-        self.style_button(cluster_button)  # Reuse button styling
-        button_layout.addWidget(cluster_button)
-
-        layout.addLayout(button_layout)
-
-        self.inertia_clustering_tab.setLayout(layout)
-         
     def update_distance_clustering_tab(self):
 
         # Extract data from the table for plotting
@@ -579,6 +535,8 @@ class MainApp(QMainWindow):
 
         axes = self.distance_clustering_canvas.figure.subplots(1, 2)  # Create 1x2 subplots
 
+        
+        
 
         # Assign colors for clusters
 
@@ -593,7 +551,7 @@ class MainApp(QMainWindow):
 
             cluster_porosity, cluster_permeability = zip(*cluster_points)
 
-            axes[0].scatter(cluster_porosity, cluster_permeability, color=colors(cluster_index), alpha=0.6, s=100, label=f'Cluster {cluster_index + 1}')
+            axes[0].scatter(cluster_porosity, cluster_permeability, color=colors(cluster_index), alpha=0.6, s=150, linewidth=0.1, label=f'Cluster {cluster_index + 1}')
 
 
         axes[0].set_title("Porosity vs Permeability")
@@ -617,7 +575,7 @@ class MainApp(QMainWindow):
 
                 cluster_log_phi_z, cluster_log_rqi = zip(*cluster_points)
 
-                axes[1].scatter(cluster_log_phi_z, cluster_log_rqi, color=colors(cluster_index), alpha=0.6, s=100, label=f'Cluster {cluster_index + 1}')
+                axes[1].scatter(cluster_log_phi_z, cluster_log_rqi, color=colors(cluster_index), alpha=0.6, s=150, linewidth=0.1,  label=f'Cluster {cluster_index + 1}')
 
 
         axes[1].set_title("Log(RQI) vs Log(Phi z)")
@@ -631,6 +589,8 @@ class MainApp(QMainWindow):
         axes[1].legend()
 
 
+        
+        
         # Update the canvas
 
         self.distance_clustering_canvas.draw()
@@ -748,44 +708,53 @@ class MainApp(QMainWindow):
 
         return clusters
     
-    def init_distortion_rock_type_tab(self):
+   
+######## Inertia Section ###############
+    
+    def init_inertia_clustering_tab(self):
         layout = QVBoxLayout()
-
+    
         # Header
-        header_label = QLabel("Distortion Rock Type Visualization")  # Updated header
+        header_label = QLabel("Inertia Clustering")
         header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
         header_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(header_label)
 
-        # Create a figure with subplots
-        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
-        fig.tight_layout(pad=5.0)
+        # Inertia Plot Layout
+        self.inertia_plot_layout = QVBoxLayout()
+        layout.addLayout(self.inertia_plot_layout)
 
-        # Placeholders for axes
-        axes[0].set_title("Empty Plot 1")
-        axes[0].axis('off')
-        axes[1].set_title("Empty Plot 2")
-        axes[1].axis('off')
+        # Add inputs for max clusters
+        max_clusters_layout = QHBoxLayout()
+        self.max_clusters_textbox_inertia = QLineEdit()
+        self.max_clusters_textbox_inertia.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.max_clusters_textbox_inertia.setValidator(QIntValidator(1, 50))
+        max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
+        max_clusters_layout.addWidget(self.max_clusters_textbox_inertia)
+        layout.addLayout(max_clusters_layout)
 
-        # Add canvas to layout
-        self.rock_type_canvas_distortion = FigureCanvas(fig)
-        layout.addWidget(self.rock_type_canvas_distortion)
-        self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_distortion_click)
+        # Add Recommended K inputs
+        recommended_k_layout = QHBoxLayout()
+        self.inertia_selected_K_textbox = QLineEdit()
+        self.inertia_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
+        recommended_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
+        recommended_k_layout.addWidget(self.inertia_selected_K_textbox)
+        layout.addLayout(recommended_k_layout)
 
         # Spacer for alignment
         layout.addStretch()
 
-        # Button for plotting, placed at the bottom
+        # Button for clustering, placed at the bottom
         button_layout = QHBoxLayout()
-        plot_button_distortion = QPushButton("Plot Distortion Rock Type Data")  # Updated button text
-        plot_button_distortion.clicked.connect(self.update_distortion_rock_type)
-        self.style_button(plot_button_distortion)  # Reuse button styling
-        button_layout.addWidget(plot_button_distortion)
+        cluster_button = QPushButton("Generate Inertia Plot")
+        cluster_button.clicked.connect(self.generate_inertia_plot)
+        self.style_button(cluster_button)  # Reuse button styling
+        button_layout.addWidget(cluster_button)
 
         layout.addLayout(button_layout)
 
-        self.rock_type_tab.setLayout(layout)
-    
+        self.inertia_clustering_tab.setLayout(layout)
+         
     def init_inertia_rock_type_tab(self):
         layout = QVBoxLayout()
         
@@ -931,6 +900,287 @@ class MainApp(QMainWindow):
 
         # Update the canvas
         self.rock_type_canvas_inertia.draw()
+    
+    def generate_inertia_plot(self):
+        rqi = []
+        phi_z = []
+
+        # Extract RQI and Phi z data from the table
+        for row in range(self.table.rowCount()):
+            try:
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+                    rqi_value = float(self.table.item(row, 2).text())
+                    if rqi_value > 0:  # Ensure we only log positive values
+                        rqi.append(rqi_value)
+
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+                    phi_z_value = float(self.table.item(row, 3).text())
+                    if phi_z_value > 0:  # Ensure we only log positive values
+                        phi_z.append(phi_z_value)
+            except ValueError:
+                QMessageBox.warning(self, "Invalid Input", f"Non-numeric value in row {row + 1}. Skipping the row.")
+                continue
+
+        if not rqi or not phi_z:
+            QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in RQI and Phi z columns before generating the Inertia Plot.")
+            return
+
+        # Prepare data for clustering using log values
+        log_rqi = np.log(np.array(rqi))
+        log_phi_z = np.log(np.array(phi_z))
+        X = np.array(list(zip(log_rqi, log_phi_z)))
+
+        # Get the maximum number of clusters for inertia plot
+        inertia_max_clusters_text = self.max_clusters_textbox_inertia.text()
+        try:
+            max_clusters = int(inertia_max_clusters_text)
+            if max_clusters <= 0:
+                raise ValueError
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
+            return
+
+        # Generate inertia plot
+        inertias = []
+        for k in range(1, max_clusters + 1):
+            kmeans = KMeans(n_clusters=k, random_state=42)
+            kmeans.fit(X)
+            inertias.append(kmeans.inertia_)
+
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(5, 10))
+        
+        scatter = ax.scatter(
+            range(1, max_clusters + 1), inertias, color='blue', s=100, label='Inertia Points'
+        )
+        
+        ax.plot(range(1, max_clusters + 1), inertias, marker='o', color='blue', linestyle='-', label='Inertia Curve')
+        
+        ax.set_xlim(1, max_clusters)  # Ensure X-axis ranges from 1 to max_clusters
+        
+        # Highlight the optimal K with a red circle
+        optimal_k = self.find_optimal_k(inertias)
+        selected_circle = ax.scatter(
+            optimal_k,
+            inertias[optimal_k - 1],
+            facecolors='none',
+            s=500,
+            linewidth=2,
+            label='Recommended k'
+        )
+        
+        # Set plot labels and title
+        ax.set_title("Inertia Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
+        ax.set_xlabel("Number of Clusters", fontsize=12)
+        ax.set_ylabel("Inertia", fontsize=12)
+        
+        # Add legend to the plot
+        ax.legend(loc='best', fontsize=10, title="Legend")
+
+        # Attach hover and click events
+        self.hover_circle = None  # To store the circle artist for hover effect
+        
+        fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_hover_inertia_plot(event, scatter, ax))
+        
+        fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_inertia_plot(event, inertias))
+        
+        # Replace or update the canvas
+        if hasattr(self, 'inertia_canvas') and self.inertia_canvas:
+            
+            self.inertia_clustering_tab.layout().removeWidget(self.inertia_canvas)
+            self.inertia_canvas.deleteLater()
+            self.inertia_canvas = None
+
+        self.inertia_canvas = FigureCanvas(fig)
+        self.inertia_clustering_tab.layout().addWidget(self.inertia_canvas)
+        self.inertia_canvas.draw()
+
+     def handle_rock_type_hover_event_inertia(self, event):
+        for plot in self.rock_type_plot_data:
+            scatter = plot["scatter"]
+            x_data = plot["x_data"]
+            y_data = plot["y_data"]
+            axis = plot["axis"]
+
+            if event.inaxes == axis:
+                cont, ind = scatter.contains(event)
+                if cont:
+                    index = ind["ind"][0]
+                    x = x_data[index]
+                    y = y_data[index]
+                    tooltip_text = f"({x:.2f}, {y:.2f})"
+
+                    # Remove previous tooltip
+                    if self.rock_type_tooltip:
+                        self.rock_type_tooltip.remove()
+
+                    # Create new tooltip
+                    self.rock_type_tooltip = axis.annotate(
+                        tooltip_text,
+                        (x, y),
+                        textcoords="offset points",
+                        xytext=(10, 10),
+                        ha='center',
+                        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+                        fontsize=10
+                    )    
+                    self.rock_type_canvas_inertia.draw_idle()
+                    return
+
+        # Remove tooltip if not hovering over any point
+        if self.rock_type_tooltip:
+            self.rock_type_tooltip.remove()
+            self.rock_type_tooltip = None
+            self.rock_type_canvas_inertia.draw_idle()
+    
+    def on_hover_inertia_plot(self, event, scatter, ax):
+        if event.inaxes:
+            # Check if hovering over a point
+            cont, ind = scatter.contains(event)
+            if cont:
+                index = ind["ind"][0]
+                x, y = scatter.get_offsets()[index]
+                
+                # Remove existing circle
+                if self.hover_circle:
+                    self.hover_circle.remove()
+                
+                # Add a new circle around the hovered point
+                self.hover_circle = plt.Circle((x, y), radius=0.2, color='red', fill=False, linewidth=2)
+                ax.add_artist(self.hover_circle)
+                self.inertia_canvas.draw_idle()  # Redraw the canvas
+            else:
+                # Remove the circle if not hovering over any point
+                if self.hover_circle:
+                    self.hover_circle.remove()
+                    self.hover_circle = None
+                    self.inertia_canvas.draw_idle()
+    
+    def on_click_inertia_plot(self, event, inertias):
+
+        cont, ind = event.inaxes.collections[0].contains(event)
+
+        if cont:
+
+            index = ind["ind"][0]
+
+            chosen_k = index + 1
+
+            self.inertia_selected_K_textbox.setText(str(chosen_k))
+
+            QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
+    
+    def handle_plot_inertia_click(self, event):
+        if event.button == 3:  # Right-click
+            menu = QMenu(self)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #cccccc;
+                }
+                QMenu::item {
+                    padding: 8px 20px;
+                }
+                QMenu::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+            """)
+
+            save_plot_action = menu.addAction("Save Plot As...")
+            save_plot_action.triggered.connect(lambda: self.save_plot(self.rock_type_canvas_inertia))
+
+            if hasattr(self, "current_plot_data") and self.current_plot_data:
+                export_csv_action = menu.addAction("Export Data as CSV")
+                export_csv_action.triggered.connect(self.export_plot_data_to_csv)
+
+            menu.exec_(QCursor.pos())
+
+######## Distortion Section ###############
+
+    def init_distortion_clustering_tab(self):
+        layout = QVBoxLayout()
+    
+        # Header
+        header_label = QLabel("Distortion Clustering")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+
+        # Distortion Plot Layout
+        self.distortion_plot_layout = QVBoxLayout()
+        layout.addLayout(self.distortion_plot_layout)
+
+        # Add inputs for max clusters
+        max_clusters_layout = QHBoxLayout()
+        self.max_clusters_textbox_distortion = QLineEdit()
+        self.max_clusters_textbox_distortion.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
+        self.max_clusters_textbox_distortion.setValidator(QIntValidator(1, 50))
+        max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
+        max_clusters_layout.addWidget(self.max_clusters_textbox_distortion)
+        layout.addLayout(max_clusters_layout)
+
+        # Add Recommended K inputs
+        recommended_k_layout = QHBoxLayout()
+        self.distortion_selected_K_textbox = QLineEdit()
+        self.distortion_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
+        recommended_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
+        recommended_k_layout.addWidget(self.distortion_selected_K_textbox)
+        layout.addLayout(recommended_k_layout)
+
+        # Spacer for alignment
+        layout.addStretch()
+
+        # Button for clustering, placed at the bottom
+        button_layout = QHBoxLayout()
+        cluster_button = QPushButton("Generate Distortion Plot")
+        cluster_button.clicked.connect(self.generate_distortion_plot)
+        self.style_button(cluster_button)  # Reuse button styling
+        button_layout.addWidget(cluster_button)
+
+        layout.addLayout(button_layout)
+
+        self.distortion_clustering_tab.setLayout(layout)
+    
+    def init_distortion_rock_type_tab(self):
+        layout = QVBoxLayout()
+
+        # Header
+        header_label = QLabel("Distortion Rock Type Visualization")  # Updated header
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+
+        # Create a figure with subplots
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
+        fig.tight_layout(pad=5.0)
+
+        # Placeholders for axes
+        axes[0].set_title("Empty Plot 1")
+        axes[0].axis('off')
+        axes[1].set_title("Empty Plot 2")
+        axes[1].axis('off')
+
+        # Add canvas to layout
+        self.rock_type_canvas_distortion = FigureCanvas(fig)
+        layout.addWidget(self.rock_type_canvas_distortion)
+        self.rock_type_canvas_distortion.mpl_connect('button_press_event', self.handle_plot_distortion_click)
+
+        # Spacer for alignment
+        layout.addStretch()
+
+        # Button for plotting, placed at the bottom
+        button_layout = QHBoxLayout()
+        plot_button_distortion = QPushButton("Plot Distortion Rock Type Data")  # Updated button text
+        plot_button_distortion.clicked.connect(self.update_distortion_rock_type)
+        self.style_button(plot_button_distortion)  # Reuse button styling
+        button_layout.addWidget(plot_button_distortion)
+
+        layout.addLayout(button_layout)
+
+        self.rock_type_tab.setLayout(layout)
+    
     
     def update_distortion_rock_type(self):
 
@@ -1097,44 +1347,6 @@ class MainApp(QMainWindow):
             self.rock_type_tooltip = None
             self.rock_type_canvas_distortion.draw_idle()
             
-    def handle_rock_type_hover_event_inertia(self, event):
-        for plot in self.rock_type_plot_data:
-            scatter = plot["scatter"]
-            x_data = plot["x_data"]
-            y_data = plot["y_data"]
-            axis = plot["axis"]
-
-            if event.inaxes == axis:
-                cont, ind = scatter.contains(event)
-                if cont:
-                    index = ind["ind"][0]
-                    x = x_data[index]
-                    y = y_data[index]
-                    tooltip_text = f"({x:.2f}, {y:.2f})"
-
-                    # Remove previous tooltip
-                    if self.rock_type_tooltip:
-                        self.rock_type_tooltip.remove()
-
-                    # Create new tooltip
-                    self.rock_type_tooltip = axis.annotate(
-                        tooltip_text,
-                        (x, y),
-                        textcoords="offset points",
-                        xytext=(10, 10),
-                        ha='center',
-                        bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
-                        fontsize=10
-                    )    
-                    self.rock_type_canvas_inertia.draw_idle()
-                    return
-
-        # Remove tooltip if not hovering over any point
-        if self.rock_type_tooltip:
-            self.rock_type_tooltip.remove()
-            self.rock_type_tooltip = None
-            self.rock_type_canvas_inertia.draw_idle()
-    
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -1735,49 +1947,6 @@ class MainApp(QMainWindow):
         self.canvas = FigureCanvas(fig)
         self.plots_tab.layout().addWidget(self.canvas)
 
-    def init_distortion_clustering_tab(self):
-        layout = QVBoxLayout()
-    
-        # Header
-        header_label = QLabel("Distortion Clustering")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-        header_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(header_label)
-
-        # Distortion Plot Layout
-        self.distortion_plot_layout = QVBoxLayout()
-        layout.addLayout(self.distortion_plot_layout)
-
-        # Add inputs for max clusters
-        max_clusters_layout = QHBoxLayout()
-        self.max_clusters_textbox_distortion = QLineEdit()
-        self.max_clusters_textbox_distortion.setPlaceholderText("Maximum Number of Clusters (e.g., 10)")
-        self.max_clusters_textbox_distortion.setValidator(QIntValidator(1, 50))
-        max_clusters_layout.addWidget(QLabel("Maximum Number of Clusters:"))
-        max_clusters_layout.addWidget(self.max_clusters_textbox_distortion)
-        layout.addLayout(max_clusters_layout)
-
-        # Add Recommended K inputs
-        recommended_k_layout = QHBoxLayout()
-        self.distortion_selected_K_textbox = QLineEdit()
-        self.distortion_selected_K_textbox.setPlaceholderText("Recommended Number of Clusters")
-        recommended_k_layout.addWidget(QLabel("Recommended Number of Clusters:"))
-        recommended_k_layout.addWidget(self.distortion_selected_K_textbox)
-        layout.addLayout(recommended_k_layout)
-
-        # Spacer for alignment
-        layout.addStretch()
-
-        # Button for clustering, placed at the bottom
-        button_layout = QHBoxLayout()
-        cluster_button = QPushButton("Generate Distortion Plot")
-        cluster_button.clicked.connect(self.generate_distortion_plot)
-        self.style_button(cluster_button)  # Reuse button styling
-        button_layout.addWidget(cluster_button)
-
-        layout.addLayout(button_layout)
-
-        self.distortion_clustering_tab.setLayout(layout)
     
     def generate_distortion_plot(self):
         rqi = []
@@ -1872,101 +2041,7 @@ class MainApp(QMainWindow):
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
     
-    def generate_inertia_plot(self):
-        rqi = []
-        phi_z = []
-
-        # Extract RQI and Phi z data from the table
-        for row in range(self.table.rowCount()):
-            try:
-                if self.table.item(row, 2) and self.table.item(row, 2).text():
-                    rqi_value = float(self.table.item(row, 2).text())
-                    if rqi_value > 0:  # Ensure we only log positive values
-                        rqi.append(rqi_value)
-
-                if self.table.item(row, 3) and self.table.item(row, 3).text():
-                    phi_z_value = float(self.table.item(row, 3).text())
-                    if phi_z_value > 0:  # Ensure we only log positive values
-                        phi_z.append(phi_z_value)
-            except ValueError:
-                QMessageBox.warning(self, "Invalid Input", f"Non-numeric value in row {row + 1}. Skipping the row.")
-                continue
-
-        if not rqi or not phi_z:
-            QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in RQI and Phi z columns before generating the Inertia Plot.")
-            return
-
-        # Prepare data for clustering using log values
-        log_rqi = np.log(np.array(rqi))
-        log_phi_z = np.log(np.array(phi_z))
-        X = np.array(list(zip(log_rqi, log_phi_z)))
-
-        # Get the maximum number of clusters for inertia plot
-        inertia_max_clusters_text = self.max_clusters_textbox_inertia.text()
-        try:
-            max_clusters = int(inertia_max_clusters_text)
-            if max_clusters <= 0:
-                raise ValueError
-        except ValueError:
-            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
-            return
-
-        # Generate inertia plot
-        inertias = []
-        for k in range(1, max_clusters + 1):
-            kmeans = KMeans(n_clusters=k, random_state=42)
-            kmeans.fit(X)
-            inertias.append(kmeans.inertia_)
-
-        # Create the plot
-        fig, ax = plt.subplots(figsize=(5, 10))
-        
-        scatter = ax.scatter(
-            range(1, max_clusters + 1), inertias, color='blue', s=100, label='Inertia Points'
-        )
-        
-        ax.plot(range(1, max_clusters + 1), inertias, marker='o', color='blue', linestyle='-', label='Inertia Curve')
-        
-        ax.set_xlim(1, max_clusters)  # Ensure X-axis ranges from 1 to max_clusters
-        
-        # Highlight the optimal K with a red circle
-        optimal_k = self.find_optimal_k(inertias)
-        selected_circle = ax.scatter(
-            optimal_k,
-            inertias[optimal_k - 1],
-            facecolors='none',
-            edgecolors='red',
-            s=500,
-            linewidth=2,
-            label='Recommended k'
-        )
-        
-        # Set plot labels and title
-        ax.set_title("Inertia Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
-        ax.set_xlabel("Number of Clusters", fontsize=12)
-        ax.set_ylabel("Inertia", fontsize=12)
-        
-        # Add legend to the plot
-        ax.legend(loc='best', fontsize=10, title="Legend")
-
-        # Attach hover and click events
-        self.hover_circle = None  # To store the circle artist for hover effect
-        
-        fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_hover_inertia_plot(event, scatter, ax))
-        
-        fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_inertia_plot(event, inertias))
-        
-        # Replace or update the canvas
-        if hasattr(self, 'inertia_canvas') and self.inertia_canvas:
-            
-            self.inertia_clustering_tab.layout().removeWidget(self.inertia_canvas)
-            self.inertia_canvas.deleteLater()
-            self.inertia_canvas = None
-
-        self.inertia_canvas = FigureCanvas(fig)
-        self.inertia_clustering_tab.layout().addWidget(self.inertia_canvas)
-        self.inertia_canvas.draw()
-
+    
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
@@ -2008,28 +2083,6 @@ class MainApp(QMainWindow):
                     self.hover_circle = None
                     self.distortion_canvas.draw_idle()
     
-    def on_hover_inertia_plot(self, event, scatter, ax):
-        if event.inaxes:
-            # Check if hovering over a point
-            cont, ind = scatter.contains(event)
-            if cont:
-                index = ind["ind"][0]
-                x, y = scatter.get_offsets()[index]
-                
-                # Remove existing circle
-                if self.hover_circle:
-                    self.hover_circle.remove()
-                
-                # Add a new circle around the hovered point
-                self.hover_circle = plt.Circle((x, y), radius=0.2, color='red', fill=False, linewidth=2)
-                ax.add_artist(self.hover_circle)
-                self.inertia_canvas.draw_idle()  # Redraw the canvas
-            else:
-                # Remove the circle if not hovering over any point
-                if self.hover_circle:
-                    self.hover_circle.remove()
-                    self.hover_circle = None
-                    self.inertia_canvas.draw_idle()
     
     def on_click_distortion_plot(self, event, distortions):
         cont, ind = event.inaxes.collections[0].contains(event)
@@ -2039,19 +2092,6 @@ class MainApp(QMainWindow):
             self.distortion_selected_K_textbox.setText(str(chosen_k))
             QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
     
-    def on_click_inertia_plot(self, event, inertias):
-
-        cont, ind = event.inaxes.collections[0].contains(event)
-
-        if cont:
-
-            index = ind["ind"][0]
-
-            chosen_k = index + 1
-
-            self.inertia_selected_K_textbox.setText(str(chosen_k))
-
-            QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
     
     def find_selected_K(self, wcss):
         """
@@ -2268,33 +2308,7 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
 
-    def handle_plot_inertia_click(self, event):
-        if event.button == 3:  # Right-click
-            menu = QMenu(self)
-            menu.setStyleSheet("""
-                QMenu {
-                    background-color: #ffffff;
-                    color: #000000;
-                    border: 1px solid #cccccc;
-                }
-                QMenu::item {
-                    padding: 8px 20px;
-                }
-                QMenu::item:selected {
-                    background-color: #0078d7;
-                    color: #ffffff;
-                }
-            """)
-
-            save_plot_action = menu.addAction("Save Plot As...")
-            save_plot_action.triggered.connect(lambda: self.save_plot(self.rock_type_canvas_inertia))
-
-            if hasattr(self, "current_plot_data") and self.current_plot_data:
-                export_csv_action = menu.addAction("Export Data as CSV")
-                export_csv_action.triggered.connect(self.export_plot_data_to_csv)
-
-            menu.exec_(QCursor.pos())
-
+    
     def export_plot_data_to_csv(self):
         if not hasattr(self, "current_plot_data") or not self.current_plot_data:
             QMessageBox.warning(self, "No Data", "No plot data available for export.")
