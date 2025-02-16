@@ -164,7 +164,6 @@ class MainApp(QMainWindow):
             self.animate_tab(self.tabs.tabBar())
         return super().eventFilter(source, event)
   
-   
     def cluster_points(self, points, threshold):
 
         from scipy.spatial.distance import cdist
@@ -1575,8 +1574,8 @@ class MainApp(QMainWindow):
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
     
     
-####
-          
+#### Date entry section ############
+             
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -1671,30 +1670,6 @@ class MainApp(QMainWindow):
         # Show the context menu at the global position
         menu.exec_(global_position)
     
-    def export_to_csv(self):
-        # Open a file dialog to get the file path
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
-
-        if file_path:  # If a valid file path is selected
-            try:
-                # Prepare data for CSV export
-                data = []
-                for row in range(self.table.rowCount()):
-                    row_data = []
-                    for column in range(self.table.columnCount()):
-                        item = self.table.item(row, column)
-                        row_data.append(item.text() if item else '')  # Get text from table item
-                    data.append(row_data)
-
-                # Write data to CSV file
-                df = pd.DataFrame(data)
-                df.to_csv(file_path, index=False, header=[self.table.horizontalHeaderItem(i).text() for i in range(self.table.columnCount())])
-
-                QMessageBox.information(self, "Success", "Data has been exported successfully.")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-
     def handle_paste(self):
         clipboard = QApplication.clipboard()
         data = clipboard.text()
@@ -1742,6 +1717,45 @@ class MainApp(QMainWindow):
             for row in range(self.table.rowCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
+
+
+####
+
+
+
+
+
+
+
+    
+    
+    def export_to_csv(self):
+        # Open a file dialog to get the file path
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
+
+        if file_path:  # If a valid file path is selected
+            try:
+                # Prepare data for CSV export
+                data = []
+                for row in range(self.table.rowCount()):
+                    row_data = []
+                    for column in range(self.table.columnCount()):
+                        item = self.table.item(row, column)
+                        row_data.append(item.text() if item else '')  # Get text from table item
+                    data.append(row_data)
+
+                # Write data to CSV file
+                df = pd.DataFrame(data)
+                df.to_csv(file_path, index=False, header=[self.table.horizontalHeaderItem(i).text() for i in range(self.table.columnCount())])
+
+                QMessageBox.information(self, "Success", "Data has been exported successfully.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
+
+    
+    
+    
     def validate_and_calculate(self, item):
         # Temporarily block signals to prevent recursion
         self.table.blockSignals(True)
