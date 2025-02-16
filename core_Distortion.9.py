@@ -1934,7 +1934,7 @@ class MainApp(QMainWindow):
             for row in range(self.table.rowCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
-     def extract_table_data(self):
+    def extract_table_data(self):
         data = []
         for row in range(self.table.rowCount()):
             row_data = []
@@ -2187,14 +2187,6 @@ class MainApp(QMainWindow):
         optimal_k = int(user_k)
         self.perform_clustering(optimal_k)
     
-    
-    
-####
-
-  
-    
-    
-    
     def show_plot(self, fig):
         if hasattr(self, 'canvas') and self.canvas:
             self.plots_tab.layout().removeWidget(self.canvas)
@@ -2204,82 +2196,13 @@ class MainApp(QMainWindow):
         self.canvas = FigureCanvas(fig)
         self.plots_tab.layout().addWidget(self.canvas)
 
-    def find_selected_K(self, wcss):
-        """
-        A more sophisticated method to find the "distortion" point using the Kneedle algorithm.
-
-        Parameters:
-        - wcss: List of WCSS values for different k values.
-
-        Returns:
-        - Recommended number of clusters based on the distortion method.
-        """
-        if len(wcss) < 2:
-            return 1  # if there's not enough data, default to 1 cluster
-
-        # Calculate the first derivative (how much WCSS is dropping)
-        first_derivative = np.diff(wcss)
-        
-        # Calculate second derivative (acceleration)
-        second_derivative = np.diff(first_derivative)
-
-        # Find the index of the maximum value of the first derivative (indicating the distortion)
-        distortion_index = np.argmax(first_derivative)  # This locates the point of maximum drop
-
-        # Find the best k - this is the index of the distortion point + 1 due to np.diff reducing length by 1
-        selected_K = distortion_index + 1
-
-        # Ensure the recommended k is within the range of available k values
-        return min(selected_K, len(wcss))  
     
+####
+
+
     
-    def add_button_and_textbox(self, optimal_k):
-        # Create a button and text box overlay
-        if not hasattr(self, 'assign_cluster_button'):
-            # Button to assign cluster number
-            self.assign_cluster_button = QPushButton("Assign Cluster Number", self)
-            self.assign_cluster_button.setGeometry(50, 50, 150, 30)  # Adjust position and size
-            self.assign_cluster_button.clicked.connect(self.assign_cluster_number)
 
-        if not hasattr(self, 'cluster_input'):
-            # Text box to display the optimal number of clusters
-            self.cluster_input = QLineEdit(self)
-            self.cluster_input.setGeometry(220, 50, 50, 30)  # Adjust position and size
-            self.cluster_input.setText(str(optimal_k))
-            self.cluster_input.setValidator(QIntValidator(1, 10))  # Allow only numbers between 1 and 10
 
-        self.assign_cluster_button.show()
-        self.cluster_input.show()
-   
-    def assign_cluster_number(self):
-        # Handle the assignment of the cluster number from the text box
-        cluster_number = int(self.cluster_input.text())
-        QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
-
-    def show_plot_context_menu(self, event, plot_type):
-        if event.button == 3:  # Right-click
-            menu = QMenu(self)
-            menu.setStyleSheet("""
-                QMenu {
-                    background-color: #ffffff;
-                    color: #000000;
-                    border: 1px solid #cccccc;
-                }
-                QMenu::item {
-                    padding: 8px 20px;
-                }
-                QMenu::item:selected {
-                    background-color: #0078d7;
-                    color: #ffffff;
-                }
-            """)
-
-            if plot_type == "distortion" and "distortion" in self.current_clustering_data:
-                export_csv_action = menu.addAction("Export Distortion Data As CSV")
-                export_csv_action.triggered.connect(self.export_distortion_to_csv)
-
-            menu.exec_(QCursor.pos())
-    
     def save_plot(self, canvas):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(
