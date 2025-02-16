@@ -156,55 +156,7 @@ class MainApp(QMainWindow):
           
         # Connect mouse events for the tabs
         self.tabs.tabBar().installEventFilter(self)  
-        
-    def cluster_points(self, points, threshold):
 
-        from scipy.spatial.distance import cdist
-
-
-        # Calculate the distance matrix
-
-        distance_matrix = cdist(points, points)
-
-
-        # Initialize clusters
-
-        clusters = []
-
-        visited = set()
-
-
-        for i in range(len(points)):
-
-            if i in visited:
-
-                continue
-
-
-            # Start a new cluster
-
-            current_cluster = [i]
-
-            visited.add(i)
-
-
-            # Find all points within the threshold distance
-
-            for j in range(len(points)):
-
-                if j != i and distance_matrix[i][j] <= threshold:
-
-                    current_cluster.append(j)
-
-                    visited.add(j)
-
-
-            clusters.append(current_cluster)
-
-
-        return clusters
-    
-   
 ####### Simple Plot  #############
 
     def update_plots(self):
@@ -2268,6 +2220,53 @@ class MainApp(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
      
+    def cluster_points(self, points, threshold):
+
+        from scipy.spatial.distance import cdist
+
+
+        # Calculate the distance matrix
+
+        distance_matrix = cdist(points, points)
+
+
+        # Initialize clusters
+
+        clusters = []
+
+        visited = set()
+
+
+        for i in range(len(points)):
+
+            if i in visited:
+
+                continue
+
+
+            # Start a new cluster
+
+            current_cluster = [i]
+
+            visited.add(i)
+
+
+            # Find all points within the threshold distance
+
+            for j in range(len(points)):
+
+                if j != i and distance_matrix[i][j] <= threshold:
+
+                    current_cluster.append(j)
+
+                    visited.add(j)
+
+
+            clusters.append(current_cluster)
+
+
+        return clusters
+        
 ########  Executing the application ############
  
 if __name__ == "__main__":
