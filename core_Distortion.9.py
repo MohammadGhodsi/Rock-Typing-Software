@@ -493,7 +493,7 @@ class MainApp(QMainWindow):
         self.inertia_clustering_tab.layout().addWidget(self.inertia_canvas)
         self.inertia_canvas.draw()
 
-     def handle_rock_type_hover_event_inertia(self, event):
+    def handle_rock_type_hover_event_inertia(self, event):
         for plot in self.rock_type_plot_data:
             scatter = plot["scatter"]
             x_data = plot["x_data"]
@@ -1037,7 +1037,7 @@ class MainApp(QMainWindow):
 
 ######## Distance Section ###############
     
-     def init_distance_clustering_tab(self):
+    def init_distance_clustering_tab(self):
 
         layout = QVBoxLayout()
 
@@ -1534,7 +1534,7 @@ class MainApp(QMainWindow):
 
                 self.distance_clustering_canvas.draw_idle()
     
-     def export_distance_clustering_data_to_csv(self):
+    def export_distance_clustering_data_to_csv(self):
         if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
             QMessageBox.warning(self, "No Data", "No distance clustering data available for export.")
             return
