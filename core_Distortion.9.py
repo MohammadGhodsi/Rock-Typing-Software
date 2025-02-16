@@ -1,7 +1,6 @@
 
 
 ##### Importing libraries ########
-
 import sys
 import time
 import numpy as np
@@ -1743,7 +1742,7 @@ class MainApp(QMainWindow):
                 QMessageBox.information(self, "Success", "Distance clustering data exported successfully.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-     
+
 ###### Date entry section ############
              
     def init_dataset_tab(self):
@@ -2269,9 +2268,9 @@ class MainApp(QMainWindow):
 
 
         return clusters
-        
+
 ########  Executing the application ############
- 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     # Create and display the splash screen
