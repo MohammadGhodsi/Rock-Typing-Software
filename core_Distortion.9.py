@@ -1472,6 +1472,7 @@ class MainApp(QMainWindow):
         # Plot 2: log(RQI) vs log(Phi z)
 
         log_rqi = np.log(rqi) if rqi else []
+        
         log_phi_z = np.log(phi_z) if phi_z else []
 
         if log_phi_z.size > 0 and log_rqi.size > 0:  # Updated condition
