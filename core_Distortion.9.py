@@ -464,7 +464,8 @@ class MainApp(QMainWindow):
             facecolors='none',
             s=500,
             linewidth=2,
-            label='Recommended k'
+            label='Recommended k',
+            edgecolor='red'
         )
         
         # Set plot labels and title
