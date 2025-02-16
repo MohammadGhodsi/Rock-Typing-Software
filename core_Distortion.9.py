@@ -159,11 +159,6 @@ class MainApp(QMainWindow):
         # Connect mouse events for the tabs
         self.tabs.tabBar().installEventFilter(self)  
         
-    def eventFilter(self, source, event):
-        if event.type() == QEvent.Enter and source == self.tabs.tabBar():
-            self.animate_tab(self.tabs.tabBar())
-        return super().eventFilter(source, event)
-  
     def cluster_points(self, points, threshold):
 
         from scipy.spatial.distance import cdist
@@ -1717,8 +1712,6 @@ class MainApp(QMainWindow):
             for row in range(self.table.rowCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
-
-
 ####
 
 
@@ -2366,14 +2359,6 @@ class MainApp(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
     
-    def animate_tab(self, tab_widget):
-        # Create an animation for the tab widget
-        animation = QPropertyAnimation(tab_widget, b"geometry")
-        animation.setDuration(300)  # Duration of the animation in milliseconds
-        animation.setStartValue(QRect(tab_widget.x(), tab_widget.y(), tab_widget.width(), tab_widget.height()))
-        animation.setEndValue(QRect(tab_widget.x(), tab_widget.y(), tab_widget.width() + 10, tab_widget.height()))  # Slightly increase width
-        animation.setEasingCurve(QEasingCurve.OutCubic)  # Smooth easing curve
-        animation.start()
 
    
 if __name__ == "__main__":
