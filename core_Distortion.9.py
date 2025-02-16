@@ -164,503 +164,7 @@ class MainApp(QMainWindow):
             self.animate_tab(self.tabs.tabBar())
         return super().eventFilter(source, event)
   
-    def init_distance_clustering_tab(self):
-
-        layout = QVBoxLayout()
-
-        # Header
-        header_label = QLabel("Distance Clustering")
-
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-
-        header_label.setAlignment(Qt.AlignCenter)
-
-        layout.addWidget(header_label)
-
-
-        # Create a figure with subplots
-        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
-
-        fig.tight_layout(pad=5.0)
-
-
-        # Set titles for empty plots
-        axes[0].set_title("Porosity vs Permeability")
-
-        axes[0].set_xlabel("Porosity")
-
-        axes[0].set_ylabel("Permeability (md)")
-
-        axes[0].grid(True)
-
-
-        axes[1].set_title("Log(RQI) vs Log(Phi z)")
-
-        axes[1].set_xlabel("Log(Phi z)")
-
-        axes[1].set_ylabel("Log(RQI)")
-
-        axes[1].grid(True)
-
-
-        # Add canvas to layout
-        self.distance_clustering_canvas = FigureCanvas(fig)
-
-        layout.addWidget(self.distance_clustering_canvas)
-
-
-        # Add input fields for distance clustering parameters
-        self.distance_input = QLineEdit()
-
-        self.distance_input.setPlaceholderText("Enter distance threshold")
-
-        layout.addWidget(self.distance_input)
-
-
-        # Button to perform distance clustering
-        cluster_button = QPushButton("Perform Distance Clustering")
-
-        cluster_button.clicked.connect(self.perform_distance_clustering)
-
-        self.style_button(cluster_button)  # Reuse button styling
-
-        layout.addWidget(cluster_button)
-
-
-        self.distance_clustering_tab.setLayout(layout)
-
-
-        # Connect hover event for tooltips
-        self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
-        
-        self.distance_clustering_canvas.mpl_connect('button_press_event', self.show_distance_clustering_context_menu)
-    
-    def update_distance_clustering_tab(self):
-
-        # Extract data from the table for plotting
-        porosity = []
-        permeability = []
-        rqi = []
-        phi_z = []
-
-        for row in range(self.table.rowCount()):
-            try:
-                if self.table.item(row, 0) and self.table.item(row, 0).text():
-                    porosity.append(float(self.table.item(row, 0).text()))
-                if self.table.item(row, 1) and self.table.item(row, 1).text():
-                    permeability.append(float(self.table.item(row, 1).text()))
-                if self.table.item(row, 2) and self.table.item(row, 2).text():
-                    rqi.append(float(self.table.item(row, 2).text()))
-                if self.table.item(row, 3) and self.table.item(row, 3).text():
-                    phi_z.append(float(self.table.item(row, 3).text()))
-            except ValueError:
-                continue  # Skip rows with invalid or missing data
-
-        if not porosity or not permeability or not rqi or not phi_z:
-            QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
-            return
-
-        # Clear the previous plots
-        self.distance_clustering_canvas.figure.clear()
-        
-
-
-        # Create a 1x2 grid for the subplots
-        axes = self.distance_clustering_canvas.figure.subplots(1, 2)
-
-        self.distance_clustering_canvas.figure.tight_layout(pad=5.0)
-
-
-        # Plot 1: Porosity vs Permeability
-        axes[0].scatter(porosity, permeability, color='blue', alpha=0.6, s=100)
-
-        axes[0].set_title("Porosity vs Permeability")
-
-        axes[0].set_xlabel("Porosity")
-
-        axes[0].set_ylabel("Permeability (md)")
-
-        axes[0].grid(True)
-
-
-        # Plot 2: Log(RQI) vs Log(Phi z)
-        log_rqi = np.log(np.array(rqi))
-
-        log_phi_z = np.log(np.array(phi_z))
-
-        axes[1].scatter(log_phi_z, log_rqi, color='orange', alpha=0.6, s=100)
-
-        axes[1].set_title("Log(RQI) vs Log(Phi z)")
-
-        axes[1].set_xlabel("Log(Phi z)")
-
-        axes[1].set_ylabel("Log(RQI)")
-
-        axes[1].grid(True)
-
-
-        # Update the canvas
-        self.distance_clustering_canvas.draw()
-        
-        self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
-    
-    def show_distance_clustering_context_menu(self, event):
-
-        if event.button == 3:  # Right-click
-
-            menu = QMenu(self)
-
-            menu.setStyleSheet("""
-
-                QMenu {
-
-                    background-color: #ffffff;
-
-                    color: #000000;
-
-                    border: 1px solid #cccccc;
-
-                }
-
-                QMenu::item {
-
-                    padding: 8px 20px;
-
-                }
-
-                QMenu::item:selected {
-
-                    background-color: #0078d7;
-
-                    color: #ffffff;
-
-                }
-
-            """)
-
-
-            save_plot_action = menu.addAction("Save Plot As...")
-
-            save_plot_action.triggered.connect(lambda: self.save_plot(self.distance_clustering_canvas))
-
-
-            export_data_action = menu.addAction("Export Merged Data as CSV")
-
-            export_data_action.triggered.connect(self.export_merged_distance_clustering_data_to_csv)
-
-
-            menu.exec_(QCursor.pos())
-    
-    def export_merged_distance_clustering_data_to_csv(self):
-
-        if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
-
-            QMessageBox.warning(self, "No Data", "No distance clustering data available for export.")
-
-            return
-
-
-        # Extract data for merging
-
-        log_rqi = np.array(self.current_distance_clustering_data["log_rqi"])
-
-        log_phi_z = np.array(self.current_distance_clustering_data["log_phi_z"])
-
-        clusters = self.current_distance_clustering_data["clusters"]
-
-
-        # Prepare data for DataFrame
-
-        data = []
-
-        for cluster_index, cluster in enumerate(clusters):
-
-            for idx in cluster:
-
-                # Append the required data to the list
-
-                data.append({
-
-                    "Porosity": self.table.item(idx, 0).text() if self.table.item(idx, 0) else None,
-
-                    "Permeability": self.table.item(idx, 1).text() if self.table.item(idx, 1) else None,
-
-                    "Log(RQI)": log_rqi[idx],
-
-                    "Log(Phi z)": log_phi_z[idx],
-
-                    "Cluster": cluster_index
-
-                })
-
-
-        # Create DataFrame
-
-        df = pd.DataFrame(data)
-
-
-        # Open a file dialog to save the CSV
-
-        options = QFileDialog.Options()
-
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
-
-
-        if file_path:
-
-            try:
-
-                df.to_csv(file_path, index=False)
-
-                QMessageBox.information(self, "Success", "Merged distance clustering data exported successfully.")
-
-            except Exception as e:
-
-                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-
-    def perform_distance_clustering(self):
-
-        # Extract data from the table for clustering
-
-        log_rqi = []
-
-        log_phi_z = []
-
-        porosity = []
-
-        permeability = []
-
-        rqi = []
-
-        phi_z = []
-
-
-        for row in range(self.table.rowCount()):
-
-            try:
-
-                if self.table.item(row, 2) and self.table.item(row, 2).text():
-
-                    log_rqi.append(np.log(float(self.table.item(row, 2).text())))
-
-                    rqi.append(float(self.table.item(row, 2).text()))
-
-
-                if self.table.item(row, 3) and self.table.item(row, 3).text():
-
-                    log_phi_z.append(np.log(float(self.table.item(row, 3).text())))
-
-                    phi_z.append(float(self.table.item(row, 3).text()))
-
-
-                if self.table.item(row, 0) and self.table.item(row, 0).text():
-
-                    porosity.append(float(self.table.item(row, 0).text()))
-
-
-                if self.table.item(row, 1) and self.table.item(row, 1).text():
-
-                    permeability.append(float(self.table.item(row, 1).text()))
-
-
-            except ValueError:
-
-                continue  # Skip rows with invalid or missing data
-
-
-        if not log_rqi or not log_phi_z:
-
-            QMessageBox.warning(self, "Warning", "Insufficient data to perform clustering.")
-
-            return
-
-
-        # Convert lists to numpy arrays for distance calculations
-
-        log_rqi = np.array(log_rqi)
-
-        log_phi_z = np.array(log_phi_z)
-
-        points = np.column_stack((log_rqi, log_phi_z))
-
-
-        # Get the distance threshold from the input
-
-        distance_threshold = self.distance_input.text()
-
-        try:
-
-            distance_threshold = float(distance_threshold)
-
-        except ValueError:
-
-            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number for the distance threshold.")
-
-            return
-
-
-        # Perform clustering based on distance threshold
-
-        clusters = self.cluster_points(points, distance_threshold)
-        
-        # After clustering, store the data
-
-        self.current_distance_clustering_data = {
-
-            "log_rqi": log_rqi,
-
-            "log_phi_z": log_phi_z,
-
-            "clusters": clusters,
-
-            # Add any other relevant data you want to export
-
-        }
-        
-            # Debugging output
-
-        print("Distance clustering data stored:", self.current_distance_clustering_data)
-
-
-        # Plot the results
-
-        self.plot_distance_clustering(points, clusters, porosity, permeability, rqi, phi_z)
-           
-    def plot_distance_clustering(self, points, clusters, porosity, permeability, rqi, phi_z):
-
-        # Clear the previous plots
-
-        self.distance_clustering_canvas.figure.clear()
-    
-
-        axes = self.distance_clustering_canvas.figure.subplots(1, 2)  # Create 1x2 subplots
-
-        
-        
-
-        # Assign colors for clusters
-
-        colors = plt.get_cmap('tab10', len(clusters))  # Get a colormap with enough colors
-
-
-        # Plot 1: Porosity vs Permeability
-
-        for cluster_index, cluster in enumerate(clusters):
-
-            cluster_points = [(porosity[i], permeability[i]) for i in cluster]
-
-            cluster_porosity, cluster_permeability = zip(*cluster_points)
-
-            axes[0].scatter(cluster_porosity, cluster_permeability, color=colors(cluster_index), alpha=0.6, s=150, linewidth=0.1, label=f'Cluster {cluster_index + 1}')
-
-
-        axes[0].set_title("Porosity vs Permeability")
-
-        axes[0].set_xlabel("Porosity")
-
-        axes[0].set_ylabel("Permeability (md)")
-
-        axes[0].grid(True)
-
-        axes[0].legend()
-
-
-        # Plot 2: Log(RQI) vs Log(Phi z)
-
-        for cluster_index, cluster in enumerate(clusters):
-
-            cluster_points = [(np.log(phi_z[i]), np.log(rqi[i])) for i in cluster if rqi[i] > 0 and phi_z[i] > 0]
-
-            if cluster_points:  # Check if there are points in the cluster
-
-                cluster_log_phi_z, cluster_log_rqi = zip(*cluster_points)
-
-                axes[1].scatter(cluster_log_phi_z, cluster_log_rqi, color=colors(cluster_index), alpha=0.6, s=150, linewidth=0.1,  label=f'Cluster {cluster_index + 1}')
-
-
-        axes[1].set_title("Log(RQI) vs Log(Phi z)")
-
-        axes[1].set_xlabel("Log(Phi z)")
-
-        axes[1].set_ylabel("Log(RQI)")
-
-        axes[1].grid(True)
-
-        axes[1].legend()
-
-
-        
-        
-        # Update the canvas
-
-        self.distance_clustering_canvas.draw()
-    
-    def handle_distance_clustering_hover_event(self, event):
-
-        if event.inaxes is not None:  # Check if the event is within the axes
-
-            for ax in self.distance_clustering_canvas.figure.axes:
-
-                if event.inaxes == ax:
-
-                    for scatter in ax.collections:  # Iterate through scatter plots
-
-                        cont, ind = scatter.contains(event)
-
-                        if cont:
-
-                            index = ind["ind"][0]
-
-                            x = scatter.get_offsets()[index][0]
-
-                            y = scatter.get_offsets()[index][1]
-
-                            tooltip_text = f"({x:.2f}, {y:.2f})"
-
-
-                            # Remove previous tooltip
-
-                            if self.tooltip:
-
-                                self.tooltip.remove()
-
-
-                            # Create new tooltip
-
-                            self.tooltip = ax.annotate(
-
-                                tooltip_text,
-
-                                (x, y),
-
-                                textcoords="offset points",
-
-                                xytext=(10, 10),
-
-                                ha='center',
-
-                                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
-
-                                fontsize=10
-
-                            )
-
-
-                            self.distance_clustering_canvas.draw_idle()
-
-                            return
-
-
-            # Remove tooltip if not hovering over any point
-
-            if self.tooltip:
-
-                self.tooltip.remove()
-
-                self.tooltip = None
-
-                self.distance_clustering_canvas.draw_idle()
-    
+   
     def cluster_points(self, points, threshold):
 
         from scipy.spatial.distance import cdist
@@ -1536,9 +1040,542 @@ class MainApp(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
         
+
+######## Distance Section ###############
     
-    ##
+     def init_distance_clustering_tab(self):
+
+        layout = QVBoxLayout()
+
+        # Header
+        header_label = QLabel("Distance Clustering")
+
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+
+        header_label.setAlignment(Qt.AlignCenter)
+
+        layout.addWidget(header_label)
+
+
+        # Create a figure with subplots
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))
+
+        fig.tight_layout(pad=5.0)
+
+
+        # Set titles for empty plots
+        axes[0].set_title("Porosity vs Permeability")
+
+        axes[0].set_xlabel("Porosity")
+
+        axes[0].set_ylabel("Permeability (md)")
+
+        axes[0].grid(True)
+
+
+        axes[1].set_title("Log(RQI) vs Log(Phi z)")
+
+        axes[1].set_xlabel("Log(Phi z)")
+
+        axes[1].set_ylabel("Log(RQI)")
+
+        axes[1].grid(True)
+
+
+        # Add canvas to layout
+        self.distance_clustering_canvas = FigureCanvas(fig)
+
+        layout.addWidget(self.distance_clustering_canvas)
+
+
+        # Add input fields for distance clustering parameters
+        self.distance_input = QLineEdit()
+
+        self.distance_input.setPlaceholderText("Enter distance threshold")
+
+        layout.addWidget(self.distance_input)
+
+
+        # Button to perform distance clustering
+        cluster_button = QPushButton("Perform Distance Clustering")
+
+        cluster_button.clicked.connect(self.perform_distance_clustering)
+
+        self.style_button(cluster_button)  # Reuse button styling
+
+        layout.addWidget(cluster_button)
+
+
+        self.distance_clustering_tab.setLayout(layout)
+
+
+        # Connect hover event for tooltips
+        self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
+        
+        self.distance_clustering_canvas.mpl_connect('button_press_event', self.show_distance_clustering_context_menu)
     
+    def update_distance_clustering_tab(self):
+
+        # Extract data from the table for plotting
+        porosity = []
+        permeability = []
+        rqi = []
+        phi_z = []
+
+        for row in range(self.table.rowCount()):
+            try:
+                if self.table.item(row, 0) and self.table.item(row, 0).text():
+                    porosity.append(float(self.table.item(row, 0).text()))
+                if self.table.item(row, 1) and self.table.item(row, 1).text():
+                    permeability.append(float(self.table.item(row, 1).text()))
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+                    rqi.append(float(self.table.item(row, 2).text()))
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+                    phi_z.append(float(self.table.item(row, 3).text()))
+            except ValueError:
+                continue  # Skip rows with invalid or missing data
+
+        if not porosity or not permeability or not rqi or not phi_z:
+            QMessageBox.warning(self, "Warning", "Insufficient data to plot. Please enter valid data.")
+            return
+
+        # Clear the previous plots
+        self.distance_clustering_canvas.figure.clear()
+        
+
+
+        # Create a 1x2 grid for the subplots
+        axes = self.distance_clustering_canvas.figure.subplots(1, 2)
+
+        self.distance_clustering_canvas.figure.tight_layout(pad=5.0)
+
+
+        # Plot 1: Porosity vs Permeability
+        axes[0].scatter(porosity, permeability, color='blue', alpha=0.6, s=100)
+
+        axes[0].set_title("Porosity vs Permeability")
+
+        axes[0].set_xlabel("Porosity")
+
+        axes[0].set_ylabel("Permeability (md)")
+
+        axes[0].grid(True)
+
+
+        # Plot 2: Log(RQI) vs Log(Phi z)
+        log_rqi = np.log(np.array(rqi))
+
+        log_phi_z = np.log(np.array(phi_z))
+
+        axes[1].scatter(log_phi_z, log_rqi, color='orange', alpha=0.6, s=100)
+
+        axes[1].set_title("Log(RQI) vs Log(Phi z)")
+
+        axes[1].set_xlabel("Log(Phi z)")
+
+        axes[1].set_ylabel("Log(RQI)")
+
+        axes[1].grid(True)
+
+
+        # Update the canvas
+        self.distance_clustering_canvas.draw()
+        
+        self.distance_clustering_canvas.mpl_connect('motion_notify_event', self.handle_distance_clustering_hover_event)
+    
+    def show_distance_clustering_context_menu(self, event):
+
+        if event.button == 3:  # Right-click
+
+            menu = QMenu(self)
+
+            menu.setStyleSheet("""
+
+                QMenu {
+
+                    background-color: #ffffff;
+
+                    color: #000000;
+
+                    border: 1px solid #cccccc;
+
+                }
+
+                QMenu::item {
+
+                    padding: 8px 20px;
+
+                }
+
+                QMenu::item:selected {
+
+                    background-color: #0078d7;
+
+                    color: #ffffff;
+
+                }
+
+            """)
+
+
+            save_plot_action = menu.addAction("Save Plot As...")
+
+            save_plot_action.triggered.connect(lambda: self.save_plot(self.distance_clustering_canvas))
+
+
+            export_data_action = menu.addAction("Export Merged Data as CSV")
+
+            export_data_action.triggered.connect(self.export_merged_distance_clustering_data_to_csv)
+
+
+            menu.exec_(QCursor.pos())
+    
+    def export_merged_distance_clustering_data_to_csv(self):
+
+        if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
+
+            QMessageBox.warning(self, "No Data", "No distance clustering data available for export.")
+
+            return
+
+
+        # Extract data for merging
+
+        log_rqi = np.array(self.current_distance_clustering_data["log_rqi"])
+
+        log_phi_z = np.array(self.current_distance_clustering_data["log_phi_z"])
+
+        clusters = self.current_distance_clustering_data["clusters"]
+
+
+        # Prepare data for DataFrame
+
+        data = []
+
+        for cluster_index, cluster in enumerate(clusters):
+
+            for idx in cluster:
+
+                # Append the required data to the list
+
+                data.append({
+
+                    "Porosity": self.table.item(idx, 0).text() if self.table.item(idx, 0) else None,
+
+                    "Permeability": self.table.item(idx, 1).text() if self.table.item(idx, 1) else None,
+
+                    "Log(RQI)": log_rqi[idx],
+
+                    "Log(Phi z)": log_phi_z[idx],
+
+                    "Cluster": cluster_index
+
+                })
+
+
+        # Create DataFrame
+
+        df = pd.DataFrame(data)
+
+
+        # Open a file dialog to save the CSV
+
+        options = QFileDialog.Options()
+
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
+
+
+        if file_path:
+
+            try:
+
+                df.to_csv(file_path, index=False)
+
+                QMessageBox.information(self, "Success", "Merged distance clustering data exported successfully.")
+
+            except Exception as e:
+
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
+
+    def perform_distance_clustering(self):
+
+        # Extract data from the table for clustering
+
+        log_rqi = []
+
+        log_phi_z = []
+
+        porosity = []
+
+        permeability = []
+
+        rqi = []
+
+        phi_z = []
+
+
+        for row in range(self.table.rowCount()):
+
+            try:
+
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+
+                    log_rqi.append(np.log(float(self.table.item(row, 2).text())))
+
+                    rqi.append(float(self.table.item(row, 2).text()))
+
+
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+
+                    log_phi_z.append(np.log(float(self.table.item(row, 3).text())))
+
+                    phi_z.append(float(self.table.item(row, 3).text()))
+
+
+                if self.table.item(row, 0) and self.table.item(row, 0).text():
+
+                    porosity.append(float(self.table.item(row, 0).text()))
+
+
+                if self.table.item(row, 1) and self.table.item(row, 1).text():
+
+                    permeability.append(float(self.table.item(row, 1).text()))
+
+
+            except ValueError:
+
+                continue  # Skip rows with invalid or missing data
+
+
+        if not log_rqi or not log_phi_z:
+
+            QMessageBox.warning(self, "Warning", "Insufficient data to perform clustering.")
+
+            return
+
+
+        # Convert lists to numpy arrays for distance calculations
+
+        log_rqi = np.array(log_rqi)
+
+        log_phi_z = np.array(log_phi_z)
+
+        points = np.column_stack((log_rqi, log_phi_z))
+
+
+        # Get the distance threshold from the input
+
+        distance_threshold = self.distance_input.text()
+
+        try:
+
+            distance_threshold = float(distance_threshold)
+
+        except ValueError:
+
+            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number for the distance threshold.")
+
+            return
+
+
+        # Perform clustering based on distance threshold
+
+        clusters = self.cluster_points(points, distance_threshold)
+        
+        # After clustering, store the data
+
+        self.current_distance_clustering_data = {
+
+            "log_rqi": log_rqi,
+
+            "log_phi_z": log_phi_z,
+
+            "clusters": clusters,
+
+            # Add any other relevant data you want to export
+
+        }
+        
+            # Debugging output
+
+        print("Distance clustering data stored:", self.current_distance_clustering_data)
+
+
+        # Plot the results
+
+        self.plot_distance_clustering(points, clusters, porosity, permeability, rqi, phi_z)
+           
+    def plot_distance_clustering(self, points, clusters, porosity, permeability, rqi, phi_z):
+
+        # Clear the previous plots
+
+        self.distance_clustering_canvas.figure.clear()
+    
+
+        axes = self.distance_clustering_canvas.figure.subplots(1, 2)  # Create 1x2 subplots
+
+        
+        
+
+        # Assign colors for clusters
+
+        colors = plt.get_cmap('tab10', len(clusters))  # Get a colormap with enough colors
+
+
+        # Plot 1: Porosity vs Permeability
+
+        for cluster_index, cluster in enumerate(clusters):
+
+            cluster_points = [(porosity[i], permeability[i]) for i in cluster]
+
+            cluster_porosity, cluster_permeability = zip(*cluster_points)
+
+            axes[0].scatter(cluster_porosity, cluster_permeability, color=colors(cluster_index), alpha=0.6, s=150, linewidth=0.1, label=f'Cluster {cluster_index + 1}')
+
+
+        axes[0].set_title("Porosity vs Permeability")
+
+        axes[0].set_xlabel("Porosity")
+
+        axes[0].set_ylabel("Permeability (md)")
+
+        axes[0].grid(True)
+
+        axes[0].legend()
+
+
+        # Plot 2: Log(RQI) vs Log(Phi z)
+
+        for cluster_index, cluster in enumerate(clusters):
+
+            cluster_points = [(np.log(phi_z[i]), np.log(rqi[i])) for i in cluster if rqi[i] > 0 and phi_z[i] > 0]
+
+            if cluster_points:  # Check if there are points in the cluster
+
+                cluster_log_phi_z, cluster_log_rqi = zip(*cluster_points)
+
+                axes[1].scatter(cluster_log_phi_z, cluster_log_rqi, color=colors(cluster_index), alpha=0.6, s=150, linewidth=0.1,  label=f'Cluster {cluster_index + 1}')
+
+
+        axes[1].set_title("Log(RQI) vs Log(Phi z)")
+
+        axes[1].set_xlabel("Log(Phi z)")
+
+        axes[1].set_ylabel("Log(RQI)")
+
+        axes[1].grid(True)
+
+        axes[1].legend()
+
+
+        
+        
+        # Update the canvas
+
+        self.distance_clustering_canvas.draw()
+    
+    def handle_distance_clustering_hover_event(self, event):
+
+        if event.inaxes is not None:  # Check if the event is within the axes
+
+            for ax in self.distance_clustering_canvas.figure.axes:
+
+                if event.inaxes == ax:
+
+                    for scatter in ax.collections:  # Iterate through scatter plots
+
+                        cont, ind = scatter.contains(event)
+
+                        if cont:
+
+                            index = ind["ind"][0]
+
+                            x = scatter.get_offsets()[index][0]
+
+                            y = scatter.get_offsets()[index][1]
+
+                            tooltip_text = f"({x:.2f}, {y:.2f})"
+
+
+                            # Remove previous tooltip
+
+                            if self.tooltip:
+
+                                self.tooltip.remove()
+
+
+                            # Create new tooltip
+
+                            self.tooltip = ax.annotate(
+
+                                tooltip_text,
+
+                                (x, y),
+
+                                textcoords="offset points",
+
+                                xytext=(10, 10),
+
+                                ha='center',
+
+                                bbox=dict(boxstyle="round,pad=0.3", edgecolor="black", facecolor="lightyellow"),
+
+                                fontsize=10
+
+                            )
+
+
+                            self.distance_clustering_canvas.draw_idle()
+
+                            return
+
+
+            # Remove tooltip if not hovering over any point
+
+            if self.tooltip:
+
+                self.tooltip.remove()
+
+                self.tooltip = None
+
+                self.distance_clustering_canvas.draw_idle()
+    
+     def export_distance_clustering_data_to_csv(self):
+        if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
+            QMessageBox.warning(self, "No Data", "No distance clustering data available for export.")
+            return
+
+        # Open a file dialog to save the CSV
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
+
+        if file_path:
+            try:
+                # Extract and filter data
+                log_rqi = np.array(self.current_distance_clustering_data["log_rqi"])  # Convert to NumPy array
+                log_phi_z = np.array(self.current_distance_clustering_data["log_phi_z"])  # Convert to NumPy array
+                clusters = self.current_distance_clustering_data["clusters"]  # This should be a list of lists
+
+                # Prepare data for DataFrame
+                data = []
+                for cluster_index, cluster in enumerate(clusters):
+                    for idx in cluster:
+                        data.append({
+                            "log_RQI": log_rqi[idx],
+                            "log_Phi_z": log_phi_z[idx],
+                            "Cluster": cluster_index
+                        })
+
+                # Create DataFrame
+                df = pd.DataFrame(data)
+                df.to_csv(file_path, index=False)
+
+                QMessageBox.information(self, "Success", "Distance clustering data exported successfully.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
+    
+    
+####
           
     def init_dataset_tab(self):
         layout = QVBoxLayout()
@@ -2247,40 +2284,7 @@ class MainApp(QMainWindow):
         if file_path:
             canvas.figure.savefig(file_path)
     
-    def export_distance_clustering_data_to_csv(self):
-        if not hasattr(self, "current_distance_clustering_data") or not self.current_distance_clustering_data:
-            QMessageBox.warning(self, "No Data", "No distance clustering data available for export.")
-            return
-
-        # Open a file dialog to save the CSV
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
-
-        if file_path:
-            try:
-                # Extract and filter data
-                log_rqi = np.array(self.current_distance_clustering_data["log_rqi"])  # Convert to NumPy array
-                log_phi_z = np.array(self.current_distance_clustering_data["log_phi_z"])  # Convert to NumPy array
-                clusters = self.current_distance_clustering_data["clusters"]  # This should be a list of lists
-
-                # Prepare data for DataFrame
-                data = []
-                for cluster_index, cluster in enumerate(clusters):
-                    for idx in cluster:
-                        data.append({
-                            "log_RQI": log_rqi[idx],
-                            "log_Phi_z": log_phi_z[idx],
-                            "Cluster": cluster_index
-                        })
-
-                # Create DataFrame
-                df = pd.DataFrame(data)
-                df.to_csv(file_path, index=False)
-
-                QMessageBox.information(self, "Success", "Distance clustering data exported successfully.")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-    
+   
     def handle_plot_click(self, event):
         if event.button == 3:  # Right-click
             menu = QMenu(self)
