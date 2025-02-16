@@ -207,6 +207,229 @@ class MainApp(QMainWindow):
         return clusters
     
    
+####### Simple Plot  #############
+
+    def update_plots(self):
+
+        # Extract data from the table
+
+        porosity = []
+
+        permeability = []
+
+        rqi = []
+
+        phi_z = []
+
+
+        for row in range(self.table.rowCount()):
+
+            try:
+
+                p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
+
+                k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
+
+                r = float(self.table.item(row, 2).text()) if self.table.item(row, 2) else None
+
+                z = float(self.table.item(row, 3).text()) if self.table.item(row, 3) else None
+
+
+                if p is not None and k is not None:
+
+                    porosity.append(p)
+
+                    permeability.append(k)
+
+
+                if r is not None and z is not None:
+
+                    rqi.append(r)
+
+                    phi_z.append(z)
+
+
+            except ValueError as e:
+
+                print(f"Error parsing row {row}: {e}")
+
+                continue
+
+
+        # Clear the existing figure
+
+        self.plot_canvas.figure.clear()
+
+
+        # Create a 1x2 grid for two plots
+
+        axes = self.plot_canvas.figure.subplots(1, 2)
+
+        self.plot_canvas.figure.tight_layout(pad=5.0)
+
+
+        # Plot 1: Absolute Permeability vs Porosity
+
+        scatter1 = axes[0].scatter(
+
+            porosity, 
+
+            permeability, 
+
+            color='royalblue', 
+
+            s=100,  # Size of the dots
+
+            alpha=0.6,  # Transparency
+
+            edgecolor='black',  # Edge color for better visibility
+
+            linewidth=0.5,  # Edge width
+
+            marker='o',  # Marker style
+
+            label="Data Points"
+
+        )
+
+
+        axes[0].set_title("Absolute Permeability (md) vs Porosity", fontsize=16, fontweight='bold')
+
+        axes[0].set_xlabel("Porosity", fontsize=14)
+
+        axes[0].set_ylabel("Absolute Permeability (md)", fontsize=14)
+
+        axes[0].grid(True, linestyle='--', alpha=0.7)  # Add grid lines
+
+        axes[0].legend()
+
+
+        # Calculate power law fit
+
+        if len(porosity) > 0 and len(permeability) > 0:
+
+            log_porosity = np.log(porosity)
+            log_permeability = np.log(permeability)
+
+            # Perform linear regression on log-log scale
+            coeffs = np.polyfit(log_porosity, log_permeability, 1)
+            a = np.exp(coeffs[1])  # Intercept
+            b = coeffs[0]  # Slope
+
+            # Generate trend line data
+            porosity_fit = np.linspace(min(porosity), max(porosity), 100)
+            permeability_fit = a * (porosity_fit ** b)
+
+            # Plot the trend line
+            axes[0].plot(porosity_fit, permeability_fit, color='orange', label=f'Trend Line: y = {a:.2f}x^{b:.2f}')
+            axes[0].legend()
+
+        # Plot 2: log(RQI) vs log(Phi z)
+
+        log_rqi = np.log(rqi) if rqi else []
+        
+        log_phi_z = np.log(phi_z) if phi_z else []
+
+        if log_phi_z.size > 0 and log_rqi.size > 0:  # Updated condition
+            scatter2 = axes[1].scatter(
+                log_phi_z, 
+                log_rqi, 
+                color='tomato', 
+                s=100,  # Size of the dots
+                alpha=0.6,  # Transparency
+                edgecolor='black',  # Edge color for better visibility
+                linewidth=0.5,  # Edge width
+                marker='o',  # Marker style
+                label="Data Points"
+
+            )
+
+
+            axes[1].set_title("log(RQI) vs log(Phi z)", fontsize=16, fontweight='bold')
+
+            axes[1].set_xlabel("log(Phi z)", fontsize=14)
+
+            axes[1].set_ylabel("log(RQI)", fontsize=14)
+
+            axes[1].grid(True, linestyle='--', alpha=0.7)  # Add grid lines
+
+            axes[1].legend()
+
+
+            # Synchronize X and Y axis limits
+
+            min_limit = min(min(log_phi_z), min(log_rqi))
+
+            max_limit = max(max(log_phi_z), max(log_rqi))
+
+            axes[1].set_xlim(min_limit, max_limit)
+
+            axes[1].set_ylim(min_limit, max_limit)
+
+
+        # Update the canvas
+
+        self.plot_canvas.draw()
+
+
+        # Reconnect tooltip functionality
+
+        self.plot_canvas.mpl_connect('motion_notify_event', lambda event: self.handle_hover_event(event))
+        
+        self.plot_data = [
+
+        {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
+
+        {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
+
+        ]
+    
+    def init_plots_tab(self):
+        layout = QVBoxLayout()
+
+        header_label = QLabel("Plots")
+        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
+        header_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header_label)
+
+        # Create a 1x2 grid of subplots (two plots)
+        fig, axes = plt.subplots(1, 2, figsize=(10, 10))  # <== Modified: 1 row, 2 columns
+        fig.tight_layout(pad=5.0)
+        
+        # Set titles for empty plots
+        axes[0].set_title("Empty Plot 1")  # Empty placeholder
+        axes[0].axis('off')               # Turn off axes for clarity
+
+        axes[1].set_title("Empty Plot 2")  # Empty placeholder
+        axes[1].axis('off')               # Turn off axes for clarity
+
+        # Add the figure to the plots tab
+        self.plot_canvas = FigureCanvas(fig)
+        layout.addWidget(self.plot_canvas)
+        self.plot_canvas.mpl_connect('button_press_event', self.handle_plot_click)
+
+        # Add a "Plot Data" button
+        plot_button = QPushButton("Plot Data")
+        plot_button.clicked.connect(self.update_plots)
+        plot_button.setStyleSheet(
+            """
+            QPushButton {
+                background-color: #0078d7;
+                color: white;
+                font-size: 18px;
+                border-radius: 8px;
+                font-family: 'Times New Roman';
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #005a9e;
+            }
+            """
+        )
+        layout.addWidget(plot_button)
+
+        self.plots_tab.setLayout(layout)  
+    
 ######## Inertia Section ###############
     
     def init_inertia_clustering_tab(self):
@@ -1035,7 +1258,6 @@ class MainApp(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
         
-
 ######## Distance Section ###############
     
     def init_distance_clustering_tab(self):
@@ -1568,9 +1790,8 @@ class MainApp(QMainWindow):
                 QMessageBox.information(self, "Success", "Distance clustering data exported successfully.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-    
-    
-#### Date entry section ############
+     
+###### Date entry section ############
              
     def init_dataset_tab(self):
         layout = QVBoxLayout()
@@ -1713,16 +1934,20 @@ class MainApp(QMainWindow):
             for row in range(self.table.rowCount()):
                 self.table.setItem(row, column, QTableWidgetItem(""))
 
-####
+     def extract_table_data(self):
+        data = []
+        for row in range(self.table.rowCount()):
+            row_data = []
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                row_data.append(float(item.text()) if item and item.text() else None)
+            data.append(row_data)
 
+        columns = ["Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"]
+        self.data = pd.DataFrame(data, columns=columns)
 
+#######  Miscellaneous section ##########
 
-
-
-
-
-    
-    
     def export_to_csv(self):
         # Open a file dialog to get the file path
         options = QFileDialog.Options()
@@ -1747,9 +1972,6 @@ class MainApp(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
 
-    
-    
-    
     def validate_and_calculate(self, item):
         # Temporarily block signals to prevent recursion
         self.table.blockSignals(True)
@@ -1799,181 +2021,6 @@ class MainApp(QMainWindow):
         finally:
             # Re-enable signals after processing
             self.table.blockSignals(False)
-    
-    def update_plots(self):
-
-        # Extract data from the table
-
-        porosity = []
-
-        permeability = []
-
-        rqi = []
-
-        phi_z = []
-
-
-        for row in range(self.table.rowCount()):
-
-            try:
-
-                p = float(self.table.item(row, 0).text()) if self.table.item(row, 0) else None
-
-                k = float(self.table.item(row, 1).text()) if self.table.item(row, 1) else None
-
-                r = float(self.table.item(row, 2).text()) if self.table.item(row, 2) else None
-
-                z = float(self.table.item(row, 3).text()) if self.table.item(row, 3) else None
-
-
-                if p is not None and k is not None:
-
-                    porosity.append(p)
-
-                    permeability.append(k)
-
-
-                if r is not None and z is not None:
-
-                    rqi.append(r)
-
-                    phi_z.append(z)
-
-
-            except ValueError as e:
-
-                print(f"Error parsing row {row}: {e}")
-
-                continue
-
-
-        # Clear the existing figure
-
-        self.plot_canvas.figure.clear()
-
-
-        # Create a 1x2 grid for two plots
-
-        axes = self.plot_canvas.figure.subplots(1, 2)
-
-        self.plot_canvas.figure.tight_layout(pad=5.0)
-
-
-        # Plot 1: Absolute Permeability vs Porosity
-
-        scatter1 = axes[0].scatter(
-
-            porosity, 
-
-            permeability, 
-
-            color='royalblue', 
-
-            s=100,  # Size of the dots
-
-            alpha=0.6,  # Transparency
-
-            edgecolor='black',  # Edge color for better visibility
-
-            linewidth=0.5,  # Edge width
-
-            marker='o',  # Marker style
-
-            label="Data Points"
-
-        )
-
-
-        axes[0].set_title("Absolute Permeability (md) vs Porosity", fontsize=16, fontweight='bold')
-
-        axes[0].set_xlabel("Porosity", fontsize=14)
-
-        axes[0].set_ylabel("Absolute Permeability (md)", fontsize=14)
-
-        axes[0].grid(True, linestyle='--', alpha=0.7)  # Add grid lines
-
-        axes[0].legend()
-
-
-        # Calculate power law fit
-
-        if len(porosity) > 0 and len(permeability) > 0:
-
-            log_porosity = np.log(porosity)
-            log_permeability = np.log(permeability)
-
-            # Perform linear regression on log-log scale
-            coeffs = np.polyfit(log_porosity, log_permeability, 1)
-            a = np.exp(coeffs[1])  # Intercept
-            b = coeffs[0]  # Slope
-
-            # Generate trend line data
-            porosity_fit = np.linspace(min(porosity), max(porosity), 100)
-            permeability_fit = a * (porosity_fit ** b)
-
-            # Plot the trend line
-            axes[0].plot(porosity_fit, permeability_fit, color='orange', label=f'Trend Line: y = {a:.2f}x^{b:.2f}')
-            axes[0].legend()
-
-        # Plot 2: log(RQI) vs log(Phi z)
-
-        log_rqi = np.log(rqi) if rqi else []
-        
-        log_phi_z = np.log(phi_z) if phi_z else []
-
-        if log_phi_z.size > 0 and log_rqi.size > 0:  # Updated condition
-            scatter2 = axes[1].scatter(
-                log_phi_z, 
-                log_rqi, 
-                color='tomato', 
-                s=100,  # Size of the dots
-                alpha=0.6,  # Transparency
-                edgecolor='black',  # Edge color for better visibility
-                linewidth=0.5,  # Edge width
-                marker='o',  # Marker style
-                label="Data Points"
-
-            )
-
-
-            axes[1].set_title("log(RQI) vs log(Phi z)", fontsize=16, fontweight='bold')
-
-            axes[1].set_xlabel("log(Phi z)", fontsize=14)
-
-            axes[1].set_ylabel("log(RQI)", fontsize=14)
-
-            axes[1].grid(True, linestyle='--', alpha=0.7)  # Add grid lines
-
-            axes[1].legend()
-
-
-            # Synchronize X and Y axis limits
-
-            min_limit = min(min(log_phi_z), min(log_rqi))
-
-            max_limit = max(max(log_phi_z), max(log_rqi))
-
-            axes[1].set_xlim(min_limit, max_limit)
-
-            axes[1].set_ylim(min_limit, max_limit)
-
-
-        # Update the canvas
-
-        self.plot_canvas.draw()
-
-
-        # Reconnect tooltip functionality
-
-        self.plot_canvas.mpl_connect('motion_notify_event', lambda event: self.handle_hover_event(event))
-        
-        self.plot_data = [
-
-        {"scatter": scatter1, "x_data": porosity, "y_data": permeability, "axis": axes[0]},
-
-        {"scatter": scatter2, "x_data": log_phi_z.tolist(), "y_data": log_rqi.tolist(), "axis": axes[1]}
-
-        ]
     
     def show_tooltip(self, event, scatter, x_data, y_data, axis):
         if event.inaxes != axis:
@@ -2080,52 +2127,6 @@ class MainApp(QMainWindow):
 
             self.plot_canvas.draw_idle()
     
-    def init_plots_tab(self):
-        layout = QVBoxLayout()
-
-        header_label = QLabel("Plots")
-        header_label.setStyleSheet("font-size: 35px; font-weight: bold; font-family: 'Times New Roman';")
-        header_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(header_label)
-
-        # Create a 1x2 grid of subplots (two plots)
-        fig, axes = plt.subplots(1, 2, figsize=(10, 10))  # <== Modified: 1 row, 2 columns
-        fig.tight_layout(pad=5.0)
-        
-        # Set titles for empty plots
-        axes[0].set_title("Empty Plot 1")  # Empty placeholder
-        axes[0].axis('off')               # Turn off axes for clarity
-
-        axes[1].set_title("Empty Plot 2")  # Empty placeholder
-        axes[1].axis('off')               # Turn off axes for clarity
-
-        # Add the figure to the plots tab
-        self.plot_canvas = FigureCanvas(fig)
-        layout.addWidget(self.plot_canvas)
-        self.plot_canvas.mpl_connect('button_press_event', self.handle_plot_click)
-
-        # Add a "Plot Data" button
-        plot_button = QPushButton("Plot Data")
-        plot_button.clicked.connect(self.update_plots)
-        plot_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #0078d7;
-                color: white;
-                font-size: 18px;
-                border-radius: 8px;
-                font-family: 'Times New Roman';
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #005a9e;
-            }
-            """
-        )
-        layout.addWidget(plot_button)
-
-        self.plots_tab.setLayout(layout)  
-    
     def style_button(self, button):
         button.setStyleSheet(
             """
@@ -2176,6 +2177,24 @@ class MainApp(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Clustering failed: {e}")
     
+    def custom_clustering(self):
+        # Handling custom clustering with user-defined K
+        user_k = self.max_clusters_textbox.text()
+        if not user_k:
+            QMessageBox.warning(self, "Warning", "Please enter a valid number for K.")
+            return
+
+        optimal_k = int(user_k)
+        self.perform_clustering(optimal_k)
+    
+    
+    
+####
+
+  
+    
+    
+    
     def show_plot(self, fig):
         if hasattr(self, 'canvas') and self.canvas:
             self.plots_tab.layout().removeWidget(self.canvas)
@@ -2185,7 +2204,6 @@ class MainApp(QMainWindow):
         self.canvas = FigureCanvas(fig)
         self.plots_tab.layout().addWidget(self.canvas)
 
-    
     def find_selected_K(self, wcss):
         """
         A more sophisticated method to find the "distortion" point using the Kneedle algorithm.
@@ -2214,15 +2232,6 @@ class MainApp(QMainWindow):
         # Ensure the recommended k is within the range of available k values
         return min(selected_K, len(wcss))  
     
-    def custom_clustering(self):
-        # Handling custom clustering with user-defined K
-        user_k = self.max_clusters_textbox.text()
-        if not user_k:
-            QMessageBox.warning(self, "Warning", "Please enter a valid number for K.")
-            return
-
-        optimal_k = int(user_k)
-        self.perform_clustering(optimal_k)
     
     def add_button_and_textbox(self, optimal_k):
         # Create a button and text box overlay
@@ -2246,18 +2255,6 @@ class MainApp(QMainWindow):
         # Handle the assignment of the cluster number from the text box
         cluster_number = int(self.cluster_input.text())
         QMessageBox.information(self, "Cluster Assignment", f"Cluster number {cluster_number} assigned.")
-
-    def extract_table_data(self):
-        data = []
-        for row in range(self.table.rowCount()):
-            row_data = []
-            for col in range(self.table.columnCount()):
-                item = self.table.item(row, col)
-                row_data.append(float(item.text()) if item and item.text() else None)
-            data.append(row_data)
-
-        columns = ["Porosity", "Absolute Permeability (md)", "RQI", "Phi z", "FZI"]
-        self.data = pd.DataFrame(data, columns=columns)
 
     def show_plot_context_menu(self, event, plot_type):
         if event.button == 3:  # Right-click
@@ -2283,7 +2280,6 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
     
-    
     def save_plot(self, canvas):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(
@@ -2292,7 +2288,6 @@ class MainApp(QMainWindow):
         if file_path:
             canvas.figure.savefig(file_path)
     
-   
     def handle_plot_click(self, event):
         if event.button == 3:  # Right-click
             menu = QMenu(self)
@@ -2321,7 +2316,6 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
 
-     
     def export_plot_data_to_csv(self):
         if not hasattr(self, "current_plot_data") or not self.current_plot_data:
             QMessageBox.warning(self, "No Data", "No plot data available for export.")
