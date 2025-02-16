@@ -1839,10 +1839,11 @@ class MainApp(QMainWindow):
             optimal_k,
             distortions[optimal_k - 1],
             facecolors='none',
-            edgecolors='red',
-            s=500,
-            linewidth=2,
-            label='Recommended k'
+            edgecolors='black',
+            s=100,
+            linewidth=0.5,
+            label='Recommended k',
+            alpha=0.6,  # Transparency
         )
 
         # Set plot labels and title
