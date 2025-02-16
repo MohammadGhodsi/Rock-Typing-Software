@@ -1181,7 +1181,6 @@ class MainApp(QMainWindow):
 
         self.rock_type_tab.setLayout(layout)
     
-    
     def update_distortion_rock_type(self):
 
         # Extract data from the table
@@ -1307,6 +1306,160 @@ class MainApp(QMainWindow):
         # Update the canvas
 
         self.rock_type_canvas_distortion.draw()
+    
+    def generate_distortion_plot(self):
+        rqi = []
+        phi_z = []
+
+        # Extract RQI and Phi z data from the table
+        for row in range(self.table.rowCount()):
+            try:
+                if self.table.item(row, 2) and self.table.item(row, 2).text():
+                    rqi_value = float(self.table.item(row, 2).text())
+                    if rqi_value > 0:  # Ensure we only log positive values
+                        rqi.append(rqi_value)
+
+                if self.table.item(row, 3) and self.table.item(row, 3).text():
+                    phi_z_value = float(self.table.item(row, 3).text())
+                    if phi_z_value > 0:  # Ensure we only log positive values
+                        phi_z.append(phi_z_value)
+            except ValueError:
+                QMessageBox.warning(self, "Invalid Input", f"Non-numeric value in row {row + 1}. Skipping the row.")
+                continue
+
+        if not rqi or not phi_z:
+            QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in RQI and Phi z columns before generating the Distortion Plot.")
+            return
+
+        # Prepare data for clustering using log values
+        log_rqi = np.log(np.array(rqi))
+        log_phi_z = np.log(np.array(phi_z))
+        X = np.array(list(zip(log_rqi, log_phi_z)))
+
+        # Get the maximum number of clusters for distortion plot
+        max_clusters_text_distortion = self.max_clusters_textbox_distortion.text()
+        try:
+            max_clusters = int(max_clusters_text_distortion)
+            if max_clusters <= 0:
+                raise ValueError
+        except ValueError:
+            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
+            return
+
+        # Generate distortion plot
+        distortions = []
+        for k in range(1, max_clusters + 1):
+            kmeans = KMeans(n_clusters=k, random_state=42)
+            kmeans.fit(X)
+            distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
+            distortions.append(distortion)
+        
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(5, 10))
+        scatter = ax.scatter(
+            range(1, max_clusters + 1), distortions, color='blue', s=100, label='Distortion Points'
+        )
+        ax.plot(range(1, max_clusters + 1), distortions, marker='o', color='blue', linestyle='-', label='Distortion Curve')
+
+        # Highlight the optimal K with a red circle
+        optimal_k = self.find_optimal_k(distortions)
+        selected_circle = ax.scatter(
+            optimal_k,
+            distortions[optimal_k - 1],
+            facecolors='none',
+            edgecolors='black',
+            s=100,
+            linewidth=0.5,
+            label='Recommended k',
+            alpha=0.6,  # Transparency
+        )
+
+        # Set plot labels and title
+        ax.set_title("Distortion Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
+        ax.set_xlabel("Number of Clusters", fontsize=12)
+        ax.set_ylabel("Distortion", fontsize=12)
+
+        # Add legend to the plot
+        ax.legend(loc='best', fontsize=10, title="Legend")
+
+        # Set aspect ratio to "equal"
+        ax.set_aspect('equal', adjustable='datalim')  # Ensure circles are not distorted
+
+        # Attach hover and click events
+        self.hover_circle = None  # To store the circle artist for hover effect
+        fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_hover_distortion_plot(event, scatter, ax))
+        fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_distortion_plot(event, distortions))
+
+        # Replace or update the canvas
+        if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
+            self.distortion_plot_layout.removeWidget(self.distortion_canvas)
+            self.distortion_canvas.deleteLater()
+            self.distortion_canvas = None
+
+        self.distortion_canvas = FigureCanvas(fig)
+        self.distortion_plot_layout.addWidget(self.distortion_canvas)
+        self.distortion_canvas.draw()
+    
+    def on_hover_distortion_plot(self, event, scatter, ax):
+        if event.inaxes:
+            # Check if hovering over a point
+            cont, ind = scatter.contains(event)
+            if cont:
+                index = ind["ind"][0]
+                x, y = scatter.get_offsets()[index]
+                
+                # Remove existing circle
+                if self.hover_circle:
+                    self.hover_circle.remove()
+                
+                # Add a new circle around the hovered point
+                self.hover_circle = plt.Circle((x, y), radius=0.2, color='red', fill=False, linewidth=2)
+                ax.add_artist(self.hover_circle)
+                self.distortion_canvas.draw_idle()  # Redraw the canvas
+            else:
+                # Remove the circle if not hovering over any point
+                if self.hover_circle:
+                    self.hover_circle.remove()
+                    self.hover_circle = None
+                    self.distortion_canvas.draw_idle()
+    
+    def on_click_distortion_plot(self, event, distortions):
+        cont, ind = event.inaxes.collections[0].contains(event)
+        if cont:
+            index = ind["ind"][0]
+            chosen_k = index + 1
+            self.distortion_selected_K_textbox.setText(str(chosen_k))
+            QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
+    
+    def handle_plot_distortion_click(self, event):
+        if event.button == 3:  # Right-click
+            menu = QMenu(self)
+            menu.setStyleSheet("""
+                QMenu {
+                    background-color: #ffffff;
+                    color: #000000;
+                    border: 1px solid #cccccc;
+                }
+                QMenu::item {
+                    padding: 8px 20px;
+                }
+                QMenu::item:selected {
+                    background-color: #0078d7;
+                    color: #ffffff;
+                }
+            """)
+
+            save_plot_action = menu.addAction("Save Plot As...")
+            save_plot_action.triggered.connect(lambda: self.save_plot(self.rock_type_canvas_distortion))
+
+            if hasattr(self, "current_plot_data") and self.current_plot_data:
+                export_csv_action = menu.addAction("Export Data as CSV")
+                export_csv_action.triggered.connect(self.export_plot_data_to_csv)
+
+            menu.exec_(QCursor.pos())
+
+    
+    ##
     
     def handle_rock_type_hover_event_distortion(self, event):
         for plot in self.rock_type_plot_data:
@@ -1948,98 +2101,6 @@ class MainApp(QMainWindow):
         self.plots_tab.layout().addWidget(self.canvas)
 
     
-    def generate_distortion_plot(self):
-        rqi = []
-        phi_z = []
-
-        # Extract RQI and Phi z data from the table
-        for row in range(self.table.rowCount()):
-            try:
-                if self.table.item(row, 2) and self.table.item(row, 2).text():
-                    rqi_value = float(self.table.item(row, 2).text())
-                    if rqi_value > 0:  # Ensure we only log positive values
-                        rqi.append(rqi_value)
-
-                if self.table.item(row, 3) and self.table.item(row, 3).text():
-                    phi_z_value = float(self.table.item(row, 3).text())
-                    if phi_z_value > 0:  # Ensure we only log positive values
-                        phi_z.append(phi_z_value)
-            except ValueError:
-                QMessageBox.warning(self, "Invalid Input", f"Non-numeric value in row {row + 1}. Skipping the row.")
-                continue
-
-        if not rqi or not phi_z:
-            QMessageBox.warning(self, "Insufficient Data", "Please enter valid data in RQI and Phi z columns before generating the Distortion Plot.")
-            return
-
-        # Prepare data for clustering using log values
-        log_rqi = np.log(np.array(rqi))
-        log_phi_z = np.log(np.array(phi_z))
-        X = np.array(list(zip(log_rqi, log_phi_z)))
-
-        # Get the maximum number of clusters for distortion plot
-        max_clusters_text_distortion = self.max_clusters_textbox_distortion.text()
-        try:
-            max_clusters = int(max_clusters_text_distortion)
-            if max_clusters <= 0:
-                raise ValueError
-        except ValueError:
-            QMessageBox.warning(self, "Invalid Input", "Please enter a valid number of clusters.")
-            return
-
-        # Generate distortion plot
-        distortions = []
-        for k in range(1, max_clusters + 1):
-            kmeans = KMeans(n_clusters=k, random_state=42)
-            kmeans.fit(X)
-            distortion = sum(np.min(cdist(X, kmeans.cluster_centers_, 'euclidean'), axis=1)) / X.shape[0]
-            distortions.append(distortion)
-        
-        # Create the plot
-        fig, ax = plt.subplots(figsize=(5, 10))
-        scatter = ax.scatter(
-            range(1, max_clusters + 1), distortions, color='blue', s=100, label='Distortion Points'
-        )
-        ax.plot(range(1, max_clusters + 1), distortions, marker='o', color='blue', linestyle='-', label='Distortion Curve')
-
-        # Highlight the optimal K with a red circle
-        optimal_k = self.find_optimal_k(distortions)
-        selected_circle = ax.scatter(
-            optimal_k,
-            distortions[optimal_k - 1],
-            facecolors='none',
-            edgecolors='black',
-            s=100,
-            linewidth=0.5,
-            label='Recommended k',
-            alpha=0.6,  # Transparency
-        )
-
-        # Set plot labels and title
-        ax.set_title("Distortion Method to Find the Optimal Number of Clusters", fontsize=14, fontweight='bold')
-        ax.set_xlabel("Number of Clusters", fontsize=12)
-        ax.set_ylabel("Distortion", fontsize=12)
-
-        # Add legend to the plot
-        ax.legend(loc='best', fontsize=10, title="Legend")
-
-        # Set aspect ratio to "equal"
-        ax.set_aspect('equal', adjustable='datalim')  # Ensure circles are not distorted
-
-        # Attach hover and click events
-        self.hover_circle = None  # To store the circle artist for hover effect
-        fig.canvas.mpl_connect('motion_notify_event', lambda event: self.on_hover_distortion_plot(event, scatter, ax))
-        fig.canvas.mpl_connect('button_press_event', lambda event: self.on_click_distortion_plot(event, distortions))
-
-        # Replace or update the canvas
-        if hasattr(self, 'distortion_canvas') and self.distortion_canvas:
-            self.distortion_plot_layout.removeWidget(self.distortion_canvas)
-            self.distortion_canvas.deleteLater()
-            self.distortion_canvas = None
-
-        self.distortion_canvas = FigureCanvas(fig)
-        self.distortion_plot_layout.addWidget(self.distortion_canvas)
-        self.distortion_canvas.draw()
     
     
     def find_optimal_k(self, distortions):
@@ -2060,37 +2121,8 @@ class MainApp(QMainWindow):
         optimal_k = np.argmax(second_diff) + 2  # +2 because np.diff reduces the length twice
         return optimal_k
         
-    def on_hover_distortion_plot(self, event, scatter, ax):
-        if event.inaxes:
-            # Check if hovering over a point
-            cont, ind = scatter.contains(event)
-            if cont:
-                index = ind["ind"][0]
-                x, y = scatter.get_offsets()[index]
-                
-                # Remove existing circle
-                if self.hover_circle:
-                    self.hover_circle.remove()
-                
-                # Add a new circle around the hovered point
-                self.hover_circle = plt.Circle((x, y), radius=0.2, color='red', fill=False, linewidth=2)
-                ax.add_artist(self.hover_circle)
-                self.distortion_canvas.draw_idle()  # Redraw the canvas
-            else:
-                # Remove the circle if not hovering over any point
-                if self.hover_circle:
-                    self.hover_circle.remove()
-                    self.hover_circle = None
-                    self.distortion_canvas.draw_idle()
     
     
-    def on_click_distortion_plot(self, event, distortions):
-        cont, ind = event.inaxes.collections[0].contains(event)
-        if cont:
-            index = ind["ind"][0]
-            chosen_k = index + 1
-            self.distortion_selected_K_textbox.setText(str(chosen_k))
-            QMessageBox.information(self, "Chosen k", f"You have chosen k = {chosen_k}")
     
     
     def find_selected_K(self, wcss):
@@ -2281,33 +2313,7 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
 
-    def handle_plot_distortion_click(self, event):
-        if event.button == 3:  # Right-click
-            menu = QMenu(self)
-            menu.setStyleSheet("""
-                QMenu {
-                    background-color: #ffffff;
-                    color: #000000;
-                    border: 1px solid #cccccc;
-                }
-                QMenu::item {
-                    padding: 8px 20px;
-                }
-                QMenu::item:selected {
-                    background-color: #0078d7;
-                    color: #ffffff;
-                }
-            """)
-
-            save_plot_action = menu.addAction("Save Plot As...")
-            save_plot_action.triggered.connect(lambda: self.save_plot(self.rock_type_canvas_distortion))
-
-            if hasattr(self, "current_plot_data") and self.current_plot_data:
-                export_csv_action = menu.addAction("Export Data as CSV")
-                export_csv_action.triggered.connect(self.export_plot_data_to_csv)
-
-            menu.exec_(QCursor.pos())
-
+    
     
     def export_plot_data_to_csv(self):
         if not hasattr(self, "current_plot_data") or not self.current_plot_data:
