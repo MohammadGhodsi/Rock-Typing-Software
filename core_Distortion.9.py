@@ -1458,9 +1458,6 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
 
-    
-    ##
-    
     def handle_rock_type_hover_event_distortion(self, event):
         for plot in self.rock_type_plot_data:
             scatter = plot["scatter"]
@@ -1499,7 +1496,50 @@ class MainApp(QMainWindow):
             self.rock_type_tooltip.remove()
             self.rock_type_tooltip = None
             self.rock_type_canvas_distortion.draw_idle()
-            
+      
+    def find_optimal_k(self, distortions):
+        if len(distortions) == 2:
+            # If distortions length is less than 3, we can't calculate a second derivative properly
+            return max(2, len(distortions))  # Return at least 2 or the number of data points
+        if len(distortions) == 1:
+            # If distortions length is less than 2, we can't calculate a second derivative properly
+            return max(1, len(distortions))  # Return at least 2 or the number of data points
+
+        diff = np.diff(distortions)
+        second_diff = np.diff(diff)
+
+        # Add a check to ensure second_diff has enough elements for argmax
+        if len(second_diff) < 1:
+            return 2  # Default to 2 clusters if we can't compute a meaningful second derivative
+
+        optimal_k = np.argmax(second_diff) + 2  # +2 because np.diff reduces the length twice
+        return optimal_k
+      
+    def export_distortion_to_csv(self):
+        if "distortion" not in self.current_clustering_data:
+            QMessageBox.warning(self, "No Data", "No distortion data available for export.")
+            return
+
+        # Open a file dialog to save the CSV
+        options = QFileDialog.Options()
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options
+        )
+
+        if file_path:
+            try:
+                # Extract distortion data
+                data = self.current_clustering_data["distortion"]
+                df = pd.DataFrame({"Number of Clusters (k)": data["k"], "Distortion": data["values"]})
+                df.to_csv(file_path, index=False)
+                QMessageBox.information(self, "Success", "Distortion data exported successfully.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
+        
+    
+    ##
+    
+          
     def init_dataset_tab(self):
         layout = QVBoxLayout()
 
@@ -2101,30 +2141,6 @@ class MainApp(QMainWindow):
         self.plots_tab.layout().addWidget(self.canvas)
 
     
-    
-    
-    def find_optimal_k(self, distortions):
-        if len(distortions) == 2:
-            # If distortions length is less than 3, we can't calculate a second derivative properly
-            return max(2, len(distortions))  # Return at least 2 or the number of data points
-        if len(distortions) == 1:
-            # If distortions length is less than 2, we can't calculate a second derivative properly
-            return max(1, len(distortions))  # Return at least 2 or the number of data points
-
-        diff = np.diff(distortions)
-        second_diff = np.diff(diff)
-
-        # Add a check to ensure second_diff has enough elements for argmax
-        if len(second_diff) < 1:
-            return 2  # Default to 2 clusters if we can't compute a meaningful second derivative
-
-        optimal_k = np.argmax(second_diff) + 2  # +2 because np.diff reduces the length twice
-        return optimal_k
-        
-    
-    
-    
-    
     def find_selected_K(self, wcss):
         """
         A more sophisticated method to find the "distortion" point using the Kneedle algorithm.
@@ -2222,26 +2238,6 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
     
-    def export_distortion_to_csv(self):
-        if "distortion" not in self.current_clustering_data:
-            QMessageBox.warning(self, "No Data", "No distortion data available for export.")
-            return
-
-        # Open a file dialog to save the CSV
-        options = QFileDialog.Options()
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options
-        )
-
-        if file_path:
-            try:
-                # Extract distortion data
-                data = self.current_clustering_data["distortion"]
-                df = pd.DataFrame({"Number of Clusters (k)": data["k"], "Distortion": data["values"]})
-                df.to_csv(file_path, index=False)
-                QMessageBox.information(self, "Success", "Distortion data exported successfully.")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
     
     def save_plot(self, canvas):
         options = QFileDialog.Options()
@@ -2313,8 +2309,7 @@ class MainApp(QMainWindow):
 
             menu.exec_(QCursor.pos())
 
-    
-    
+     
     def export_plot_data_to_csv(self):
         if not hasattr(self, "current_plot_data") or not self.current_plot_data:
             QMessageBox.warning(self, "No Data", "No plot data available for export.")
