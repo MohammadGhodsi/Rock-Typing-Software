@@ -1,8 +1,11 @@
+
+
+##### Importing libraries ########
+
 import sys
 import time
 import numpy as np
 import pandas as pd
-
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, TextBox
 from matplotlib.backend_bases import cursors
@@ -11,16 +14,11 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from PyQt5.QtCore import QPropertyAnimation, QRect , QEvent , QEasingCurve
 from scipy.spatial.distance import cdist
 from sklearn.cluster import KMeans
-#from sklearn.svm import SVC
-#from sklearn.metrics import classification_report, confusion_matrix
-#from sklearn.preprocessing import StandardScaler
-#from sklearn.model_selection import train_test_split
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QLabel, QFileDialog,
     QVBoxLayout, QHBoxLayout, QWidget, QMessageBox, QTabWidget,
     QTableWidget, QTableWidgetItem, QMenu, QLineEdit,
     QSizePolicy, QSplashScreen, QShortcut)
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence, QIntValidator, QCursor, QPixmap, QIcon
 
@@ -2196,13 +2194,6 @@ class MainApp(QMainWindow):
         self.canvas = FigureCanvas(fig)
         self.plots_tab.layout().addWidget(self.canvas)
 
-    
-####
-
-
-    
-
-
     def save_plot(self, canvas):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getSaveFileName(
@@ -2276,9 +2267,9 @@ class MainApp(QMainWindow):
                 QMessageBox.information(self, "Success", "Plot data exported successfully.")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to export data: {e}")
-    
-
-   
+     
+########  Executing the application ############
+ 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     # Create and display the splash screen
