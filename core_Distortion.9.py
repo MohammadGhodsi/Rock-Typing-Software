@@ -23,6 +23,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence, QIntValidator, QCursor, QPixmap, QIcon
 
 class MainApp(QMainWindow):
+    
+#### Initializing application #########
+    
     def __init__(self):
         super().__init__()
         self.plot_data = []  # Initialize plot_data as an empty list
