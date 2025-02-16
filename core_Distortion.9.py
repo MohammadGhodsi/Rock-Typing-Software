@@ -1902,9 +1902,6 @@ class MainApp(QMainWindow):
             self.distortion_canvas.deleteLater()
             self.distortion_canvas = None
 
-        # After generating the scatter plot, fit the power law
-        self.plot_power_law(X, ax)  # Call the power law fitting function
-        
         self.distortion_canvas = FigureCanvas(fig)
         self.distortion_plot_layout.addWidget(self.distortion_canvas)
         self.distortion_canvas.draw()
@@ -2000,30 +1997,11 @@ class MainApp(QMainWindow):
             self.inertia_canvas.deleteLater()
             self.inertia_canvas = None
 
-        # After generating the scatter plot, fit the power law
-        self.plot_power_law(X, ax)  # Call the power law fitting function
-        
         self.inertia_canvas = FigureCanvas(fig)
         self.inertia_clustering_tab.layout().addWidget(self.inertia_canvas)
         self.inertia_canvas.draw()
 
-    def plot_power_law(self, X, ax):
-
-        # Fit a power law to the data
-
-        log_X = np.log(X)
-        coeffs = np.polyfit(log_X[:, 0], log_X[:, 1], 1)  # Linear fit on log-log scale
-        a = np.exp(coeffs[1])  # Intercept
-        b = coeffs[0]  # Slope
-
-        # Generate trend line data
-        x_fit = np.linspace(min(X[:, 0]), max(X[:, 0]), 100)
-        y_fit = a * (x_fit ** b)
-
-        # Plot the trend line
-        ax.plot(x_fit, y_fit, color='orange', label=f'Trend Line: y = {a:.2f}x^{b:.2f}')
-        ax.legend()
-
+    
     def find_optimal_k(self, distortions):
         if len(distortions) == 2:
             # If distortions length is less than 3, we can't calculate a second derivative properly
